@@ -1,0 +1,1121 @@
+/* =============================================
+   AGRILINK STYLES
+   ============================================= */
+
+:root {
+    --primary-green: #27AE60;
+    --primary-dark: #1B5E3F;
+    --primary-light: #52BE80;
+    --secondary-color: #F39C12;
+    --danger-color: #E74C3C;
+    --text-dark: #2C3E50;
+    --text-light: #7F8C8D;
+    --border-light: #ECF0F1;
+    --bg-light: #F8F9FA;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text-dark);
+    background-color: #fff;
+}
+
+/* =============================================
+   PRICE TICKER
+   ============================================= */
+
+.price-ticker {
+    background: linear-gradient(135deg, var(--text-dark) 0%, #1A252F 100%);
+    color: white;
+    padding: 12px 0;
+    overflow: hidden;
+    font-size: 0.9rem;
+}
+
+.ticker-content {
+    display: flex;
+    gap: 60px;
+    padding: 0 20px;
+    animation: scroll 30s linear infinite;
+}
+
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-100%);
+    }
+}
+
+.ticker-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.ticker-item i {
+    color: var(--primary-green);
+}
+
+.ticker-item .price {
+    font-weight: 600;
+    color: var(--primary-light);
+    margin: 0 8px;
+}
+
+.ticker-item .change {
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.ticker-item .change.positive {
+    background-color: rgba(39, 174, 96, 0.2);
+    color: #27AE60;
+}
+
+.ticker-item .change.negative {
+    background-color: rgba(231, 76, 60, 0.2);
+    color: #E74C3C;
+}
+
+/* =============================================
+   NAVIGATION
+   ============================================= */
+
+.navbar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    color: var(--primary-green) !important;
+}
+
+.navbar-brand i {
+    margin-right: 8px;
+}
+
+.nav-link {
+    color: var(--text-dark) !important;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: var(--primary-green) !important;
+}
+
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item:hover {
+    background-color: var(--bg-light);
+    color: var(--primary-green);
+}
+
+/* =============================================
+   HERO SECTION
+   ============================================= */
+
+.hero-section {
+    position: relative;
+    min-height: 650px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.hero-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #1A4D5C 0%, #0D3F4C 50%, #0A2D36 100%);
+    background-image: linear-gradient(135deg, rgba(10, 45, 54, 0.35) 0%, rgba(13, 63, 76, 0.4) 50%, rgba(26, 77, 92, 0.35) 100%);
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+}
+
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10, 45, 54, 0.15);
+    z-index: 2;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 3;
+    color: white;
+    text-align: center;
+    padding: 60px 0;
+}
+
+.hero-badge {
+    display: inline-block;
+    background-color: #27AE60;
+    color: white;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-weight: 700;
+    margin-bottom: 35px;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+.hero-badge i {
+    margin-right: 6px;
+    font-size: 0.9rem;
+}
+
+.hero-title {
+    font-size: 4rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 0;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+    letter-spacing: -0.5px;
+}
+
+.hero-title .text-success {
+    color: #27AE60 !important;
+    font-weight: 800;
+}
+
+.hero-subtitle {
+    font-size: 4rem;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 18px;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+    letter-spacing: -0.5px;
+}
+
+.hero-description {
+    font-size: 1.15rem;
+    color: rgba(255, 255, 255, 0.95);
+    margin-bottom: 30px;
+    font-weight: 400;
+    letter-spacing: 0.3px;
+}
+
+.search-form {
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.search-form .input-group {
+    border-radius: 35px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.search-form .form-control {
+    border: none;
+    padding: 16px 28px;
+    font-size: 1rem;
+    background-color: white;
+    color: #333;
+}
+
+.search-form .form-control::placeholder {
+    color: #999;
+}
+
+.search-form .form-control:focus {
+    border: none;
+    box-shadow: none;
+    color: #333;
+}
+
+.search-form .btn-success {
+    border: none;
+    padding: 16px 40px;
+    font-weight: 700;
+    background-color: #27AE60 !important;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+}
+
+.search-form .btn-success:hover {
+    background-color: #1B5E3F !important;
+}
+
+.popular-tags {
+    margin-top: 25px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    align-items: center;
+}
+
+.popular-tags strong {
+    color: rgba(255, 255, 255, 0.9);
+    margin-right: 12px;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.popular-tags .tag {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: white;
+    padding: 7px 14px;
+    border-radius: 18px;
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    transition: all 0.3s;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.popular-tags .tag:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* =============================================
+   STATISTICS SECTION
+   ============================================= */
+
+.statistics-section {
+    background: linear-gradient(135deg, #F8F9FA 0%, #F0F2F5 100%);
+}
+
+.stat-card {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-green);
+    margin: 15px 0;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+/* =============================================
+   SECTIONS STYLING
+   ============================================= */
+
+.section-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.section-subtitle {
+    font-size: 1.1rem;
+}
+
+/* =============================================
+   WHY AGRILINK SECTION
+   ============================================= */
+
+.why-agrilink {
+    background: white;
+}
+
+.feature-card {
+    text-align: center;
+    padding: 40px 30px;
+    border: 2px solid var(--border-light);
+    border-radius: 15px;
+    transition: all 0.3s;
+}
+
+.feature-card:hover {
+    border-color: var(--primary-green);
+    box-shadow: 0 8px 24px rgba(39, 174, 96, 0.1);
+    transform: translateY(-8px);
+}
+
+.feature-icon {
+    font-size: 3rem;
+    color: var(--primary-green);
+    margin-bottom: 20px;
+}
+
+.feature-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: var(--text-dark);
+}
+
+.feature-text {
+    color: var(--text-light);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+/* =============================================
+   PLATFORM FEATURES SECTION
+   ============================================= */
+
+.platform-features {
+    background: var(--bg-light);
+}
+
+.platform-card {
+    background: white;
+    border-radius: 12px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.platform-card:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    transform: translateY(-5px);
+}
+
+.platform-card .card-header {
+    padding: 30px 20px;
+    text-align: center;
+    font-size: 2rem;
+    color: white;
+    background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-light) 100%);
+    position: relative;
+}
+
+.platform-card .feature-index {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.9);
+    color: #333;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.farmer-card .card-header {
+    background: linear-gradient(135deg, #52BE80 0%, #27AE60 100%);
+}
+
+.customer-card .card-header {
+    background: linear-gradient(135deg, #3498DB 0%, #2980B9 100%);
+}
+
+.admin-card .card-header {
+    background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
+}
+
+.platform-title {
+    padding: 20px;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    border-bottom: 2px solid var(--border-light);
+}
+
+.features-list {
+    padding: 20px;
+    list-style: none;
+    flex-grow: 1;
+}
+
+.features-list li {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.features-list li:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.features-list i {
+    color: var(--primary-green);
+    margin-right: 10px;
+    font-size: 1.2rem;
+}
+
+.features-list strong {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 0.95rem;
+}
+
+.features-list p {
+    font-size: 0.88rem;
+    color: var(--text-light);
+    margin: 0;
+}
+
+.platform-card .btn {
+    margin: 20px;
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 2px solid;
+}
+
+/* =============================================
+   FARMERS SECTION
+   ============================================= */
+
+.farmers-section {
+    background: white;
+}
+
+.farmer-card {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.farmer-card-index {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #27AE60;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.farmer-card:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    transform: translateY(-8px);
+}
+
+.farmer-avatar {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 15px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid var(--primary-green);
+    background: var(--bg-light);
+}
+
+.farmer-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-light) 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.farmer-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.farmer-location {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.farmer-products {
+    margin: 10px 0;
+}
+
+.farmer-products .badge {
+    font-size: 0.8rem;
+    padding: 5px 10px;
+}
+
+.farmer-rating {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.farmer-rating .stars i {
+    font-size: 0.9rem;
+}
+
+.farmer-rating .rating-value {
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+/* =============================================
+   FRESH PICKS SECTION
+   ============================================= */
+
+.fresh-picks {
+    background: var(--bg-light);
+}
+
+.product-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+}
+
+.product-card:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    transform: translateY(-5px);
+}
+
+.product-card-index {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: #27AE60;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    z-index: 20;
+}
+
+.product-image {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    aspect-ratio: 1;
+    background: var(--bg-light);
+}
+
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+}
+
+.product-card:hover .product-image img {
+    transform: scale(1.1);
+}
+
+.image-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--border-light) 0%, #DDD 100%);
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+.badge-fresh,
+.badge-discount,
+.badge-seasonal,
+.badge-limited {
+    position: absolute;
+    font-size: 0.75rem;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    top: 10px;
+}
+
+.badge-fresh {
+    left: 10px;
+    background-color: var(--primary-green);
+    color: white;
+}
+
+.badge-discount {
+    left: 10px;
+    top: 35px;
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.badge-seasonal {
+    left: 10px;
+    top: 60px;
+    background-color: #9B59B6;
+    color: white;
+}
+
+.badge-limited {
+    right: 10px;
+    top: 10px;
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.product-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.product-card:hover .product-actions {
+    opacity: 1;
+}
+
+.product-info {
+    padding: 15px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.product-name {
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+    font-size: 1rem;
+}
+
+.product-farmer {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 5px;
+}
+
+.product-farmer i {
+    color: var(--primary-green);
+    margin-right: 5px;
+}
+
+.product-location {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 8px;
+}
+
+.product-location i {
+    color: var(--danger-color);
+    margin-right: 5px;
+}
+
+.product-tags {
+    display: flex;
+    gap: 5px;
+    margin: 8px 0;
+    flex-wrap: wrap;
+}
+
+.tag {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.tag-category {
+    background-color: var(--primary-light);
+    color: white;
+}
+
+.tag-fresh {
+    background-color: rgba(39, 174, 96, 0.1);
+    color: var(--primary-green);
+}
+
+.product-rating {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: 8px 0;
+    font-size: 0.85rem;
+}
+
+.product-rating .stars {
+    display: flex;
+    gap: 2px;
+}
+
+.product-rating .stars i {
+    font-size: 0.8rem;
+}
+
+.rating-count {
+    color: var(--text-light);
+}
+
+.product-price {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 0;
+    font-weight: 700;
+}
+
+.original-price {
+    color: var(--text-light);
+    text-decoration: line-through;
+    font-size: 0.9rem;
+}
+
+.current-price {
+    color: var(--primary-green);
+    font-size: 1.2rem;
+}
+
+/* =============================================
+   CATEGORY SECTION
+   ============================================= */
+
+.shop-by-category {
+    background: white;
+}
+
+.category-card-link {
+    text-decoration: none;
+}
+
+.category-card {
+    position: relative;
+    height: 300px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s;
+}
+
+.category-card-index {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: rgba(255,255,255,0.95);
+    color: #333;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+
+.category-card:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    transform: translateY(-8px);
+}
+
+.category-bg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s;
+}
+
+.category-card:hover .category-bg {
+    transform: scale(1.1);
+}
+
+.category-bg-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-light) 100%);
+    font-size: 3rem;
+    color: white;
+}
+
+.category-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.6) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.category-card:hover .category-overlay {
+    background: linear-gradient(135deg, rgba(39, 174, 96, 0.4) 0%, rgba(39, 174, 96, 0.7) 100%);
+}
+
+.category-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 15px;
+}
+
+.category-count {
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* =============================================
+   BUTTONS
+   ============================================= */
+
+.btn-success {
+    background-color: var(--primary-green) !important;
+    border-color: var(--primary-green) !important;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-success:hover {
+    background-color: var(--primary-dark) !important;
+    border-color: var(--primary-dark) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+
+.btn-outline-success {
+    color: var(--primary-green) !important;
+    border-color: var(--primary-green) !important;
+}
+
+.btn-outline-success:hover {
+    background-color: var(--primary-green) !important;
+    border-color: var(--primary-green) !important;
+}
+
+.btn-outline-primary {
+    color: #3498DB !important;
+    border-color: #3498DB !important;
+}
+
+.btn-outline-primary:hover {
+    background-color: #3498DB !important;
+    border-color: #3498DB !important;
+}
+
+.btn-outline-danger {
+    color: var(--danger-color) !important;
+    border-color: var(--danger-color) !important;
+}
+
+.btn-outline-danger:hover {
+    background-color: var(--danger-color) !important;
+    border-color: var(--danger-color) !important;
+}
+
+/* =============================================
+   FOOTER
+   ============================================= */
+
+footer {
+    background-color: var(--text-dark) !important;
+    margin-top: 80px;
+}
+
+footer h5,
+footer h6 {
+    color: white;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+footer .text-muted {
+    color: #BDC3C7 !important;
+}
+
+footer a {
+    transition: color 0.3s;
+}
+
+footer a:hover {
+    color: var(--primary-light) !important;
+}
+
+.social-links a {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.social-links a:hover {
+    background-color: var(--primary-green);
+    color: white !important;
+}
+
+/* =============================================
+   RESPONSIVE DESIGN
+   ============================================= */
+
+@media (max-width: 768px) {
+    .price-ticker {
+        font-size: 0.8rem;
+    }
+    
+    .hero-title,
+    .hero-subtitle {
+        font-size: 2rem;
+    }
+    
+    .hero-description {
+        font-size: 1rem;
+    }
+    
+    .search-form {
+        padding: 0 20px;
+    }
+    
+    .section-title {
+        font-size: 1.8rem;
+    }
+    
+    .feature-card {
+        padding: 30px 20px;
+    }
+    
+    .product-card {
+        margin-bottom: 20px;
+    }
+    
+    .category-card {
+        height: 250px;
+    }
+}
+
+@media (max-width: 576px) {
+    .price-ticker {
+        display: none;
+    }
+    
+    .hero-title,
+    .hero-subtitle {
+        font-size: 1.5rem;
+    }
+    
+    .hero-section {
+        min-height: 400px;
+    }
+    
+    .section-title {
+        font-size: 1.5rem;
+    }
+    
+    .ticker-content {
+        gap: 30px;
+    }
+}
+
+/* =============================================
+   ALERTS
+   ============================================= */
+
+.alert {
+    border: none;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.alert-success {
+    background-color: rgba(39, 174, 96, 0.1);
+    color: var(--primary-green);
+    border: 1px solid var(--primary-light);
+}
+
+.alert-danger {
+    background-color: rgba(231, 76, 60, 0.1);
+    color: var(--danger-color);
+    border: 1px solid var(--danger-color);
+}
+
+.alert-warning {
+    background-color: rgba(243, 156, 18, 0.1);
+    color: var(--secondary-color);
+    border: 1px solid var(--secondary-color);
+}
+
+/* =============================================
+   UTILITY CLASSES
+   ============================================= */
+
+.text-success {
+    color: var(--primary-green) !important;
+}
+
+.bg-success {
+    background-color: var(--primary-green) !important;
+}
+
+.border-bottom {
+    border-bottom: 2px solid var(--border-light) !important;
+}

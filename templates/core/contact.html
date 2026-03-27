@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contact AgriLink{{ block.super }}{% endblock %}
+
+{% block content %}
+
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <h1 class="mb-4">Contact Us</h1>
+            <p class="lead mb-5">Have questions or feedback? We'd love to hear from you!</p>
+            
+            <div class="row mb-5">
+                <div class="col-md-6 mb-4">
+                    <div class="contact-info">
+                        <i class="fas fa-map-marker-alt text-success fa-2x mb-3"></i>
+                        <h5>Our Office</h5>
+                        <p>Thapathali, Kathmandu<br>Nepal</p>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-4">
+                    <div class="contact-info">
+                        <i class="fas fa-phone text-success fa-2x mb-3"></i>
+                        <h5>Phone</h5>
+                        <p>+977-1-4567890</p>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-4">
+                    <div class="contact-info">
+                        <i class="fas fa-envelope text-success fa-2x mb-3"></i>
+                        <h5>Email</h5>
+                        <p><a href="mailto:info@agrilink.com.np">info@agrilink.com.np</a></p>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-4">
+                    <div class="contact-info">
+                        <i class="fas fa-clock text-success fa-2x mb-3"></i>
+                        <h5>Business Hours</h5>
+                        <p>Monday - Friday: 9:00 AM - 6:00 PM<br>Saturday: 10:00 AM - 4:00 PM<br>Sunday: Closed</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="contact-form-section">
+                <h3 class="mb-4">Send us a Message</h3>
+                <form method="post" class="contact-form">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Your Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Your Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="subject" class="form-label">Subject</label>
+                        <input type="text" class="form-control" id="subject" name="subject" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Message</label>
+                        <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success btn-lg">
+                        Send Message
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .contact-info {
+        padding: 20px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        text-align: center;
+    }
+    
+    .contact-info i {
+        color: #27AE60;
+    }
+    
+    .contact-form {
+        background-color: #f8f9fa;
+        padding: 30px;
+        border-radius: 8px;
+    }
+</style>
+
+{% endblock %}
