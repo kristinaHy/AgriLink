@@ -5,15 +5,14 @@
 
 {% block content %}
 
-<div class="container my-5">
-    <div class="row">
-        <div class="col-lg-5 offset-lg-4">
-            <div class="login-card">
-                <div class="card-header text-center mb-4">
-                    <i class="fas fa-sign-in-alt text-success fa-2x mb-3"></i>
-                    <h2>Welcome Back</h2>
-                    <p class="text-muted">Log in to your AgriLink account</p>
-                </div>
+<div class="login-page-bg">
+    <div class="login-card-container">
+        <div class="login-card accent">
+            <div class="brand-header text-center">
+                <div class="brand-icon"><i class="fas fa-leaf"></i></div>
+                <h2>Welcome to AgriLink</h2>
+                <p class="muted">Secure sign in to access freshest products</p>
+            </div>
                 
                 {% if messages %}
                     {% for message in messages %}
@@ -60,58 +59,111 @@
                     </button>
                 </form>
                 
-                <p class="text-center text-muted mb-3">
-                    <a href="#">Forgot your password?</a>
-                </p>
-                
-                <hr>
-                
-                <p class="text-center text-muted mb-0">
-                    Don't have an account? <a href="{% url 'register' %}" class="text-success font-weight-bold">Register here</a>
-                </p>
-                
-                <div class="register-options mt-4">
-                    <p class="text-center text-muted mb-3">Or register as:</p>
-                    <a href="{% url 'register' %}" class="btn btn-outline-success btn-sm w-100 mb-2">
-                        <i class="fas fa-tractor"></i> Farmer
-                    </a>
-                    <a href="{% url 'register' %}" class="btn btn-outline-success btn-sm w-100">
-                        <i class="fas fa-shopping-bag"></i> Customer
-                    </a>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <a href="#" class="small link-green">Forgot password?</a>
+                    <a href="{% url 'register' %}" class="small link-green">Create account</a>
                 </div>
+
             </div>
         </div>
     </div>
 </div>
 
 <style>
-    .login-card {
-        background: white;
-        border-radius: 12px;
-        padding: 40px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-    
-    .login-card .form-control {
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        padding: 12px 15px;
-        font-size: 0.95rem;
-    }
-    
-    .login-card .form-control:focus {
-        border-color: #27AE60;
-        box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.25);
-    }
-    
-    .login-card .form-label {
-        font-weight: 600;
-        margin-bottom: 8px;
-    }
-    
-    .register-options .btn {
-        font-weight: 600;
-    }
+.login-page-bg {
+    min-height: 93vh;
+    padding: 30px 0;
+    background: linear-gradient(135deg, #E8F8F1 0%, #DDF0E7 45%, #BFE7CF 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-card-container {
+    max-width: 520px;
+    width: 100%;
+}
+
+.login-card {
+    background: linear-gradient(145deg, #FFFFFF 0%, #F8FFF8 50%, #EEFCE8 100%);
+    border-radius: 20px;
+    border: 1px solid #CDEBD2;
+    box-shadow: 0 18px 45px rgba(16, 44, 23, 0.15);
+    padding: 30px;
+}
+
+.brand-header {
+    text-align: center;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #E4F3E7;
+    margin-bottom: 22px;
+}
+
+.brand-icon {
+    width: 58px;
+    height: 58px;
+    background: linear-gradient(135deg, #D0F2D0 0%, #8EE5A9 100%);
+    border-radius: 50%;
+    color: #216A33;
+    font-size: 1.45rem;
+    display: grid;
+    place-items: center;
+    margin: 0 auto 12px;
+}
+
+.brand-header h2 {
+    font-size: 1.9rem;
+    margin: 0;
+    color: #154D2D;
+}
+
+.brand-header .muted {
+    color: #637D72;
+    margin-top: 8px;
+}
+
+.form-control {
+    border: 1px solid #A1D7AA;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 0.95rem;
+}
+
+.form-control:focus {
+    border-color: #27AE60;
+    box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.2);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #27AE60 0%, #1B7B4F 100%);
+    border: none;
+    box-shadow: 0 8px 18px rgba(19, 143, 69, 0.32);
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #2dca69 0%, #1e8d53 100%);
+}
+
+.link-green {
+    color: #1E7E3A;
+    font-weight: 600;
+}
+
+.divider {
+    text-align: center;
+    padding: 16px 0;
+    color: #5C7F6B;
+}
+
+.login-types .btn-outline-success {
+    border-color: #9BE7B8;
+    color: #2A7A4B;
+}
+
+.login-types .btn-outline-success:hover {
+    background-color: rgba(39,174,96,0.08);
+    border-color: #27AE60;
+}
 </style>
 
 {% endblock %}

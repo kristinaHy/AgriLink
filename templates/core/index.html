@@ -161,7 +161,11 @@
                             </div>
                         {% endif %}
                         
-                        <a href="{% url 'product_detail' product.id %}" class="product-view-btn">{% if user.is_authenticated %}View Details{% else %}Login to view price{% endif %}</a>
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'product_detail' product.id %}" class="product-view-btn">View Details</a>
+                        {% else %}
+                            <a href="{% url 'login' %}" class="product-view-btn">Login to view price</a>
+                        {% endif %}
                     </div>
                 </div>
             {% endfor %}
