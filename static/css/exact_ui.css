@@ -922,15 +922,21 @@ body {
 }
 
 .vegetables-bg {
-    background: linear-gradient(135deg, #5FD381 0%, #4AAF6B 100%);
+    background-image: url('/static/images/vegetables.jpg');
+    background-size: cover;
+    background-position: center;
 }
 
 .fruits-bg {
-    background: linear-gradient(135deg, #E84A8F 0%, #C61F7C 100%);
+    background-image: url('/static/images/fruits.jpg');
+    background-size: cover;
+    background-position: center;
 }
 
 .seasonal-bg {
-    background: linear-gradient(135deg, #E8A938 0%, #D68821 100%);
+    background-image: url('/static/images/seasonal.jpg');
+    background-size: cover;
+    background-position: center;
 }
 
 .category-overlay {
