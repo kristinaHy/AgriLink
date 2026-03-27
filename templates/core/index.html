@@ -152,14 +152,16 @@
                             <span class="rating-count">4.8</span>
                         </div>
                         
-                        <div class="product-price">
-                            {% if product.discount_percentage > 0 %}
-                                <span class="original-price">Rs.{{ product.price }}</span>
-                            {% endif %}
-                            <span class="current-price">Rs.{{ product.discounted_price }}</span>
-                        </div>
+                        {% if user.is_authenticated %}
+                            <div class="product-price">
+                                {% if product.discount_percentage > 0 %}
+                                    <span class="original-price">Rs.{{ product.price }}</span>
+                                {% endif %}
+                                <span class="current-price">Rs.{{ product.discounted_price }}</span>
+                            </div>
+                        {% endif %}
                         
-                        <a href="{% url 'product_detail' product.id %}" class="product-view-btn">Login to view price</a>
+                        <a href="{% url 'product_detail' product.id %}" class="product-view-btn">{% if user.is_authenticated %}View Details{% else %}Login to view price{% endif %}</a>
                     </div>
                 </div>
             {% endfor %}
