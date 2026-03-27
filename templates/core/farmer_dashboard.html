@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Farmer Dashboard - AgriLink{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid my-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-0">
+                <i class="fas fa-tractor text-success"></i> Farmer Dashboard
+            </h1>
+            <p class="text-muted">Welcome, {{ user.get_full_name|default:user.username }}!</p>
+        </div>
+    </div>
+    
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-box text-success fa-2x mb-3"></i>
+                    <h5 class="card-title">{{ total_products }}</h5>
+                    <p class="card-text text-muted">Total Products</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-shopping-cart text-warning fa-2x mb-3"></i>
+                    <h5 class="card-title">{{ total_orders }}</h5>
+                    <p class="card-text text-muted">Total Orders</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-hourglass-half text-danger fa-2x mb-3"></i>
+                    <h5 class="card-title">{{ pending_orders|length }}</h5>
+                    <p class="card-text text-muted">Pending Orders</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-envelope text-info fa-2x mb-3"></i>
+                    <h5 class="card-title">{{ unread_messages }}</h5>
+                    <p class="card-text text-muted">Unread Messages</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Products Management -->
+        <div class="col-lg-8 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i> Your Products
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if products %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Product Name</th>
+                                        <th>Category</th>
+                                        <th>Price</th>
+                                        <th>Stock</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for product in products %}
+                                        <tr>
+                                            <td>{{ product.name }}</td>
+                                            <td><span class="badge bg-success">{{ product.category.name }}</span></td>
+                                            <td>Rs.{{ product.price }}</td>
+                                            <td>{{ product.quantity }} {{ product.unit }}</td>
+                                            <td>
+                                                {% if product.status == 'available' %}
+                                                    <span class="badge bg-success">{{ product.get_status_display }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ product.get_status_display }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="#" class="btn btn-sm btn-outline-primary">Edit</a>
+                                                <a href="#" class="btn btn-sm btn-outline-danger">Delete</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No products listed yet.</p>
+                    {% endif %}
+                    <a href="#" class="btn btn-success mt-3">
+                        <i class="fas fa-plus"></i> Add New Product
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Pending Orders -->
+        <div class="col-lg-4 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-hourglass-half"></i> Pending Orders
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if pending_orders %}
+                        <ul class="list-group list-group-flush">
+                            {% for order in pending_orders %}
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">Order #{{ order.order_number }}</h6>
+                                            <small class="text-muted">{{ order.created_at|date:"M d, Y" }}</small>
+                                        </div>
+                                        <span class="badge bg-warning">Rs.{{ order.total_amount }}</span>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No pending orders.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

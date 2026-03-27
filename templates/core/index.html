@@ -1,0 +1,433 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AgriLink - Fresh Produce from Himalayan Farms{% endblock %}
+
+{% block content %}
+
+<!-- Hero Section with Farm Background -->
+<section class="hero-section">
+    <div class="hero-background" style="background-image: url('https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=1200&h=600&fit=crop');"></div>
+    <div class="hero-overlay"></div>
+    
+    <div class="container hero-container">
+        <div class="hero-content-wrapper">
+            <!-- Badge -->
+            <div class="hero-badge">
+                <i class="fas fa-leaf"></i> Farm-to-door delivery across Nepal
+            </div>
+            
+            <!-- Main Heading -->
+            <h1 class="hero-main-title">
+                Fresh From <span class="text-highlight">Himalayan</span>
+                <br>
+                <span class="text-highlight">Farms</span>
+            </h1>
+            
+            <!-- Subtitle -->
+            <h2 class="hero-subtitle">To Your Home.</h2>
+            
+            <!-- Description -->
+            <p class="hero-description">
+                Buy directly from local Nepali farmers. Zero middlemen, maximum freshness.
+            </p>
+            
+            <!-- Search Bar -->
+            <form method="get" action="{% url 'search' %}" class="search-form-wrapper">
+                <div class="search-box">
+                    <input type="text" class="search-input" 
+                           name="q" placeholder="Search tomatoes, apples, spinach...">
+                    <button type="submit" class="search-btn">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Popular Tags -->
+            <div class="popular-section">
+                <span class="popular-label">Popular:</span>
+                <a href="#" class="popular-tag">Red Tomato</a>
+                <a href="#" class="popular-tag">Fuji Apple</a>
+                <a href="#" class="popular-tag">Fresh Spinach</a>
+                <a href="#" class="popular-tag">Small Potato</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Section -->
+<section class="stats-section">
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-leaf"></i>
+                </div>
+                <div class="stat-value">{{ total_farmers }}</div>
+                <div class="stat-label">ACTIVE FARMERS</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-box"></i>
+                </div>
+                <div class="stat-value">{{ total_products }}</div>
+                <div class="stat-label">PRODUCTS LISTED</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="stat-value">{{ total_customers }}</div>
+                <div class="stat-label">CUSTOMERS</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">
+                    <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <div class="stat-value">{{ total_districts }}+</div>
+                <div class="stat-label">DISTRICTS COVERED</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Why AgriLink Section -->
+<section class="why-section">
+    <div class="container">
+        <h2 class="section-title">Why AgriLink?</h2>
+        <p class="section-subtitle">Connecting Nepal's agriculture directly to conscious consumers.</p>
+        
+        <div class="features-grid">
+            <div class="feature-box">
+                <div class="feature-icon-wrapper">
+                    <i class="fas fa-tractor"></i>
+                </div>
+                <h3 class="feature-title">Direct from Farmers</h3>
+                <p class="feature-desc">No middlemen. Fair prices for both farmers and customers.</p>
+            </div>
+            
+            <div class="feature-box">
+                <div class="feature-icon-wrapper">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3 class="feature-title">Verified Sellers</h3>
+                <p class="feature-desc">Every farmer is rigorously vetted and verified by our admin team.</p>
+            </div>
+            
+            <div class="feature-box">
+                <div class="feature-icon-wrapper">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h3 class="feature-title">Secure Payments</h3>
+                <p class="feature-desc">Integrated with eSewa and Khalti for seamless local transactions.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Platform Features Section -->
+<section class="platform-section">
+    <div class="container">
+        <h2 class="section-title">Platform Features</h2>
+        <p class="section-subtitle">Everything you need, built for every user</p>
+        
+        <div class="platform-cards-wrapper">
+            <!-- Card 0: Farmers -->
+            <div class="platform-card farmers-card">
+                <div class="card-index">0</div>
+                <div class="card-header-icon">
+                    <i class="fas fa-leaf"></i>
+                </div>
+                <h3 class="card-title">For Farmers</h3>
+                
+                <div class="card-features">
+                    <div class="feature-item">
+                        <div class="feature-icon-dot">
+                            <i class="fas fa-list-check"></i>
+                        </div>
+                        <div>
+                            <h4>Product Listings</h4>
+                            <p>Add, edit, and manage your produce listings with photos, pricing, and stock levels.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon-dot">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div>
+                            <h4>Order Management</h4>
+                            <p>View incoming orders, confirm them, and update delivery status in real-time.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon-dot">
+                            <i class="fas fa-money-bill"></i>
+                        </div>
+                        <div>
+                            <h4>Instant Payments</h4>
+                            <p>Receive payments directly via eSewa or Khalti upon order confirmation.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <a href="{% url 'register' %}" class="card-btn">Get Started →</a>
+            </div>
+            
+            <!-- Card 1: Customers -->
+            <div class="platform-card customers-card">
+                <div class="card-index">1</div>
+                <div class="card-header-icon">
+                    <i class="fas fa-shopping-bag"></i>
+                </div>
+                <h3 class="card-title">For Customers</h3>
+                
+                <div class="card-features">
+                    <div class="feature-item">
+                        <div class="feature-icon-dot">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div>
+                            <h4>Smart Search & Filter</h4>
+                            <p>Browse by category, location, price range, and freshness rating.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon-dot">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div>
+                            <h4>Easy Cart & Checkout</h4>
+                            <p>Seamless cart and multiple payment options with one-click ordering.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon-dot">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                        <div>
+                            <h4>Secure Payments</h4>
+                            <p>Pay safely with eSewa or Khalti. Your financial data is always protected.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <a href="{% url 'register' %}" class="card-btn">Get Started →</a>
+            </div>
+            
+            <!-- Card 2: Admins -->
+            <div class="platform-card admins-card">
+                <div class="card-index">2</div>
+                <div class="card-header-icon">
+                    <i class="fas fa-shield"></i>
+                </div>
+                <h3 class="card-title">For Admins</h3>
+                
+                <div class="card-features">
+                    <div class="feature-item">
+                        <div class="feature-icon-dot">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div>
+                            <h4>Farmer Verification</h4>
+                            <p>Review and approve farmer registration requests before allowing listings.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon-dot">
+                            <i class="fas fa-ban"></i>
+                        </div>
+                        <div>
+                            <h4>Policy Enforcement</h4>
+                            <p>Monitor listings and remove those violating platform guidelines.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon-dot">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div>
+                            <h4>User Management</h4>
+                            <p>Manage all farmer and customer accounts from a central panel.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <a href="{% url 'login' %}" class="card-btn">Get Started →</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Meet Our Farmers Section -->
+<section class="farmers-section">
+    <div class="container">
+        <h2 class="section-title">Meet Our Farmers</h2>
+        <p class="section-subtitle">Verified local farmers supplying fresh produce directly to you</p>
+        
+        <div class="farmers-grid">
+            {% for farmer in featured_farmers %}
+                <div class="farmer-card">
+                    <div class="farmer-badge">{{ forloop.counter0 }}</div>
+                    <div class="farmer-avatar">
+                        {% if farmer.profile_picture %}
+                            <img src="{{ farmer.profile_picture.url }}" alt="{{ farmer.get_full_name }}">
+                        {% else %}
+                            <div class="avatar-placeholder">
+                                {{ farmer.first_name|default:farmer.username|first|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <h4 class="farmer-name">{{ farmer.get_full_name }}</h4>
+                    <p class="farmer-location">
+                        <i class="fas fa-map-marker-alt"></i> {{ farmer.district }}
+                    </p>
+                    <div class="farmer-category">
+                        {% with products=farmer.products.all|slice:":1" %}
+                            {% for product in products %}
+                                <span class="category-badge">
+                                    <i class="fas fa-leaf"></i> {{ product.category.name }}
+                                </span>
+                            {% endfor %}
+                        {% endwith %}
+                    </div>
+                    <div class="farmer-rating">
+                        <span class="stars">★ 4.8</span>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div class="section-cta">
+            <a href="{% url 'register' %}" class="cta-btn">
+                <i class="fas fa-tractor"></i> Apply & Join as a Farmer →
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Today's Fresh Picks Section -->
+<section class="picks-section">
+    <div class="container">
+        <div class="picks-header">
+            <div>
+                <h2 class="section-title">Today's Fresh Picks</h2>
+                <p class="section-subtitle">Handpicked from verified Nepali farmers</p>
+            </div>
+            <a href="{% url 'search' %}" class="view-all-btn">View All <i class="fas fa-arrow-right"></i></a>
+        </div>
+        
+        <div class="products-scroll">
+            {% for product in fresh_products %}
+                <div class="product-card">
+                    <div class="product-badge">{{ forloop.counter0 }}</div>
+                    
+                    <div class="product-image-wrapper">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+                        {% else %}
+                            <div class="product-image-placeholder">No Image</div>
+                        {% endif %}
+                        
+                        {% if product.is_fresh %}
+                            <span class="badge-fresh">Fresh</span>
+                        {% endif %}
+                        
+                        {% if product.discount_percentage > 0 %}
+                            <span class="badge-discount">-{{ product.discount_percentage }}%</span>
+                        {% endif %}
+                        
+                        {% if product.is_seasonal %}
+                            <span class="badge-seasonal">Seasonal</span>
+                        {% endif %}
+                        
+                        {% if product.is_limited %}
+                            <span class="badge-limited">Limited</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="product-info">
+                        <h5 class="product-name">{{ product.name }}</h5>
+                        <p class="product-farmer">
+                            <i class="fas fa-user"></i> {{ product.farmer.get_full_name }}
+                        </p>
+                        <p class="product-location">
+                            <i class="fas fa-map-marker-alt"></i> {{ product.farmer.district }}
+                        </p>
+                        
+                        <div class="product-tags">
+                            <span class="tag">{{ product.category.name }}</span>
+                            {% if product.is_fresh %}
+                                <span class="tag tag-fresh">Fresh</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="product-rating">
+                            <span class="rating-stars">★★★★☆</span>
+                            <span class="rating-count">4.8</span>
+                        </div>
+                        
+                        <div class="product-price">
+                            {% if product.discount_percentage > 0 %}
+                                <span class="original-price">Rs.{{ product.price }}</span>
+                            {% endif %}
+                            <span class="current-price">Rs.{{ product.discounted_price }}</span>
+                        </div>
+                        
+                        <a href="{% url 'product_detail' product.id %}" class="product-view-btn">Login to view price</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Shop by Category Section -->
+<section class="category-section">
+    <div class="container">
+        <h2 class="section-title">Shop by Category</h2>
+        <p class="section-subtitle">Browse our fresh produce by type</p>
+        
+        <div class="categories-grid">
+            <div class="category-card">
+                <div class="category-badge">0</div>
+                <div class="category-bg vegetables-bg">
+                    <div class="category-overlay">
+                        <i class="fas fa-leaf"></i>
+                        <h3>Vegetables</h3>
+                        <p>120+ Items</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-badge">1</div>
+                <div class="category-bg fruits-bg">
+                    <div class="category-overlay">
+                        <i class="fas fa-apple-alt"></i>
+                        <h3>Fruits</h3>
+                        <p>80+ Items</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-badge">2</div>
+                <div class="category-bg seasonal-bg">
+                    <div class="category-overlay">
+                        <i class="fas fa-leaf"></i>
+                        <h3>Seasonal</h3>
+                        <p>45+ Items</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
