@@ -57,7 +57,7 @@
 
 <!-- Statistics Section -->
 <section class="stats-section">
-    <div class="container">
+    <div class="agri-container">
         <div class="stats-grid">
             <div class="stat-item">
                 <div class="stat-icon">
@@ -91,9 +91,128 @@
     </div>
 </section>
 
+<!-- Today's Fresh Picks Section -->
+<section class="picks-section">
+    <div class="agri-container">
+        <div class="picks-header">
+            <div>
+                <h2 class="section-title">Today's Fresh Picks</h2>
+                <p class="section-subtitle">Handpicked from verified Nepali farmers</p>
+            </div>
+            <a href="{% url 'search' %}" class="view-all-btn">View All <i class="fas fa-arrow-right"></i></a>
+        </div>
+        
+        <div class="products-scroll">
+            {% for product in fresh_products %}
+                <div class="product-card">
+                    <div class="product-badge">{{ forloop.counter0 }}</div>
+                    
+                    <div class="product-image-wrapper">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+                        {% else %}
+                            <div class="product-image-placeholder">No Image</div>
+                        {% endif %}
+                        
+                        {% if product.is_fresh %}
+                            <span class="badge-fresh">Fresh</span>
+                        {% endif %}
+                        
+                        {% if product.discount_percentage > 0 %}
+                            <span class="badge-discount">-{{ product.discount_percentage }}%</span>
+                        {% endif %}
+                        
+                        {% if product.is_seasonal %}
+                            <span class="badge-seasonal">Seasonal</span>
+                        {% endif %}
+                        
+                        {% if product.is_limited %}
+                            <span class="badge-limited">Limited</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="product-info">
+                        <h5 class="product-name">{{ product.name }}</h5>
+                        <p class="product-farmer">
+                            <i class="fas fa-user"></i> {{ product.farmer.get_full_name }}
+                        </p>
+                        <p class="product-location">
+                            <i class="fas fa-map-marker-alt"></i> {{ product.farmer.district }}
+                        </p>
+                        
+                        <div class="product-tags">
+                            <span class="tag">{{ product.category.name }}</span>
+                            {% if product.is_fresh %}
+                                <span class="tag tag-fresh">Fresh</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="product-rating">
+                            <span class="rating-stars">★★★★☆</span>
+                            <span class="rating-count">4.8</span>
+                        </div>
+                        
+                        <div class="product-price">
+                            {% if product.discount_percentage > 0 %}
+                                <span class="original-price">Rs.{{ product.price }}</span>
+                            {% endif %}
+                            <span class="current-price">Rs.{{ product.discounted_price }}</span>
+                        </div>
+                        
+                        <a href="{% url 'product_detail' product.id %}" class="product-view-btn">Login to view price</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Shop by Category Section -->
+<section class="category-section">
+    <div class="agri-container">
+        <h2 class="section-title">Shop by Category</h2>
+        <p class="section-subtitle">Browse our fresh produce by type</p>
+        
+        <div class="categories-grid">
+            <div class="category-card">
+                <div class="category-badge">0</div>
+                <div class="category-bg vegetables-bg">
+                    <div class="category-overlay">
+                        <i class="fas fa-leaf"></i>
+                        <h3>Vegetables</h3>
+                        <p>120+ Items</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-badge">1</div>
+                <div class="category-bg fruits-bg">
+                    <div class="category-overlay">
+                        <i class="fas fa-apple-alt"></i>
+                        <h3>Fruits</h3>
+                        <p>80+ Items</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="category-card">
+                <div class="category-badge">2</div>
+                <div class="category-bg seasonal-bg">
+                    <div class="category-overlay">
+                        <i class="fas fa-leaf"></i>
+                        <h3>Seasonal</h3>
+                        <p>45+ Items</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <!-- Why AgriLink Section -->
 <section class="why-section">
-    <div class="container">
+    <div class="agri-container">
         <h2 class="section-title">Why AgriLink?</h2>
         <p class="section-subtitle">Connecting Nepal's agriculture directly to conscious consumers.</p>
         
@@ -127,7 +246,7 @@
 
 <!-- Platform Features Section -->
 <section class="platform-section">
-    <div class="container">
+    <div class="agri-container">
         <h2 class="section-title">Platform Features</h2>
         <p class="section-subtitle">Everything you need, built for every user</p>
         
@@ -266,7 +385,7 @@
 
 <!-- Meet Our Farmers Section -->
 <section class="farmers-section">
-    <div class="container">
+    <div class="agri-container">
         <h2 class="section-title">Meet Our Farmers</h2>
         <p class="section-subtitle">Verified local farmers supplying fresh produce directly to you</p>
         
@@ -311,123 +430,6 @@
     </div>
 </section>
 
-<!-- Today's Fresh Picks Section -->
-<section class="picks-section">
-    <div class="container">
-        <div class="picks-header">
-            <div>
-                <h2 class="section-title">Today's Fresh Picks</h2>
-                <p class="section-subtitle">Handpicked from verified Nepali farmers</p>
-            </div>
-            <a href="{% url 'search' %}" class="view-all-btn">View All <i class="fas fa-arrow-right"></i></a>
-        </div>
-        
-        <div class="products-scroll">
-            {% for product in fresh_products %}
-                <div class="product-card">
-                    <div class="product-badge">{{ forloop.counter0 }}</div>
-                    
-                    <div class="product-image-wrapper">
-                        {% if product.image %}
-                            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
-                        {% else %}
-                            <div class="product-image-placeholder">No Image</div>
-                        {% endif %}
-                        
-                        {% if product.is_fresh %}
-                            <span class="badge-fresh">Fresh</span>
-                        {% endif %}
-                        
-                        {% if product.discount_percentage > 0 %}
-                            <span class="badge-discount">-{{ product.discount_percentage }}%</span>
-                        {% endif %}
-                        
-                        {% if product.is_seasonal %}
-                            <span class="badge-seasonal">Seasonal</span>
-                        {% endif %}
-                        
-                        {% if product.is_limited %}
-                            <span class="badge-limited">Limited</span>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="product-info">
-                        <h5 class="product-name">{{ product.name }}</h5>
-                        <p class="product-farmer">
-                            <i class="fas fa-user"></i> {{ product.farmer.get_full_name }}
-                        </p>
-                        <p class="product-location">
-                            <i class="fas fa-map-marker-alt"></i> {{ product.farmer.district }}
-                        </p>
-                        
-                        <div class="product-tags">
-                            <span class="tag">{{ product.category.name }}</span>
-                            {% if product.is_fresh %}
-                                <span class="tag tag-fresh">Fresh</span>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="product-rating">
-                            <span class="rating-stars">★★★★☆</span>
-                            <span class="rating-count">4.8</span>
-                        </div>
-                        
-                        <div class="product-price">
-                            {% if product.discount_percentage > 0 %}
-                                <span class="original-price">Rs.{{ product.price }}</span>
-                            {% endif %}
-                            <span class="current-price">Rs.{{ product.discounted_price }}</span>
-                        </div>
-                        
-                        <a href="{% url 'product_detail' product.id %}" class="product-view-btn">Login to view price</a>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-    </div>
-</section>
 
-<!-- Shop by Category Section -->
-<section class="category-section">
-    <div class="container">
-        <h2 class="section-title">Shop by Category</h2>
-        <p class="section-subtitle">Browse our fresh produce by type</p>
-        
-        <div class="categories-grid">
-            <div class="category-card">
-                <div class="category-badge">0</div>
-                <div class="category-bg vegetables-bg">
-                    <div class="category-overlay">
-                        <i class="fas fa-leaf"></i>
-                        <h3>Vegetables</h3>
-                        <p>120+ Items</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="category-card">
-                <div class="category-badge">1</div>
-                <div class="category-bg fruits-bg">
-                    <div class="category-overlay">
-                        <i class="fas fa-apple-alt"></i>
-                        <h3>Fruits</h3>
-                        <p>80+ Items</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="category-card">
-                <div class="category-badge">2</div>
-                <div class="category-bg seasonal-bg">
-                    <div class="category-overlay">
-                        <i class="fas fa-leaf"></i>
-                        <h3>Seasonal</h3>
-                        <p>45+ Items</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
 
 {% endblock %}

@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
+from decimal import Decimal
 
 # User Model with roles
 class User(AbstractUser):
@@ -61,7 +62,7 @@ class Product(models.Model):
     quantity = models.PositiveIntegerField()
     unit = models.CharField(max_length=50, default='kg')  # kg, liters, bunch, etc.
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
-    image = models.ImageField(upload_to='products/')
+    image = models.ImageField(upload_to='products/', blank=True, null=True)
     additional_images = models.ImageField(upload_to='products/', blank=True, null=True)
     is_fresh = models.BooleanField(default=True)
     freshness_date = models.DateField(null=True, blank=True)
@@ -80,7 +81,7 @@ class Product(models.Model):
     @property
     def discounted_price(self):
         if self.discount_percentage > 0:
-            return self.price * (1 - self.discount_percentage / 100)
+            return self.price * (Decimal(100) - Decimal(self.discount_percentage)) / Decimal(100)
         return self.price
     
     @property
