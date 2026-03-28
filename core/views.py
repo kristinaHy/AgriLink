@@ -11,7 +11,6 @@ from django.utils import timezone
 from .forms import UserRegistrationForm, UserLoginForm, ProductForm, ReviewForm, MessageForm
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 
-
 # Home Page View
 class HomeView(TemplateView):
     template_name = 'core/index.html'
@@ -57,37 +56,44 @@ class HomeView(TemplateView):
 
 
 # Category View
+from django.views.generic import ListView
+from django.shortcuts import get_object_or_404, redirect
+from .models import Category, Product, User
+
 class CategoryView(ListView):
     model = Product
     template_name = 'core/category.html'
     context_object_name = 'products'
     paginate_by = 12
-    
+
     def get_queryset(self):
         category_slug = self.kwargs.get('slug')
+
+        # If "all" → show all products
+        if category_slug == 'all':
+            return Product.objects.filter(status='available').order_by('-created_at')
+
+        # If specific category
         category = get_object_or_404(Category, name__iexact=category_slug)
+
         return Product.objects.filter(category=category, status='available').order_by('-created_at')
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         category_slug = self.kwargs.get('slug')
-        if category_slug == 'all':
-            context['category'] = None
-            context['products'] = self.object_list  # All products
-        else:
+
+        if category_slug and category_slug != 'all':
             category = get_object_or_404(Category, name__iexact=category_slug)
             context['category'] = category
-        
+        else:
+            context['category'] = None
+
         context['categories'] = Category.objects.all()
         context['locations'] = User.objects.filter(role='farmer').values_list('district', flat=True).distinct()
-        
-        # Filter options from GET params
-        context['price_min'] = self.request.GET.get('price_min', 0)
-        context['price_max'] = self.request.GET.get('price_max', 10000)
-        context['location'] = self.request.GET.get('location', '')
-        
         return context
 
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
 
 # Product Detail View
 class ProductDetailView(DetailView):
