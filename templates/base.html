@@ -104,31 +104,7 @@
                     </li>
                     {% endif %}
                 </ul>
-                <div class="ms-3">
-                    {% if user.is_authenticated %}
-                        <div class="dropdown">
-                            <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user"></i> {{ user.get_full_name|default:user.username }}
-                            </button>
-                            <ul class="dropdown-menu">
-                                {% if user.role == 'farmer' %}
-                                    <li><a class="dropdown-item" href="{% url 'farmer_dashboard' %}">Dashboard</a></li>
-                                {% elif user.role == 'customer' %}
-                                    <li><a class="dropdown-item" href="{% url 'customer_dashboard' %}">Dashboard</a></li>
-                                {% elif user.role == 'admin' %}
-                                    <li><a class="dropdown-item" href="{% url 'admin_dashboard' %}"><i class="fas fa-shield-alt text-danger me-2"></i>Admin Dashboard</a></li>
-                                {% endif %}
-                                <li><a class="dropdown-item" href="#">Profile</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
-                            </ul>
-                        </div>
-                    {% else %}
-                        <a href="{% url 'login' %}" class="btn btn-success">
-                            <i class="fas fa-sign-in-alt"></i> Login
-                        </a>
-                    {% endif %}
-                </div>
+                
             </div>
         </div>
     </nav>
