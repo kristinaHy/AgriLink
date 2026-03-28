@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Verify Farmer - AgriLink{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h4><i class="fas fa-check-circle"></i> Verify Farmer</h4>
+                </div>
+                <div class="card-body">
+                    <h5>{{ farmer.first_name }} {{ farmer.last_name }}</h5>
+                    <p><strong>Email:</strong> {{ farmer.email }}</p>
+                    <p><strong>Phone:</strong> {{ farmer.phone_number }}</p>
+                    <p><strong>District:</strong> {{ farmer.district }}</p>
+                    <a href="{% url 'admin_dashboard' %}" class="btn btn-success me-2">Verify & Return</a>
+                    <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

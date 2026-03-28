@@ -64,6 +64,14 @@
                     <a href="{% url 'register' %}" class="small link-green">Create account</a>
                 </div>
 
+                <div class="divider">OR</div>
+
+                <p class="text-center mt-3">Choose login type</p>
+                <div class="login-types">
+                    <a href="{% url 'login' %}?next={% url 'home' %}" class="btn btn-outline-success btn-sm w-100 mb-2">Customer</a>
+                    <a href="{% url 'login' %}?next={% url 'farmer_dashboard' %}" class="btn btn-outline-success btn-sm w-100 mb-2">Farmer</a>
+                    <a href="{% url 'login' %}?next={% url 'admin:index' %}" class="btn btn-outline-success btn-sm w-100">Admin</a>
+                </div>
             </div>
         </div>
     </div>
