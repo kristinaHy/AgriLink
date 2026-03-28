@@ -1,220 +1,207 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: "Segoe UI", sans-serif;
-}
-
-body {
-    background: #f5f7f6;
-}
-
-/* Ticker */
-.ticker {
-    background: #0c5f2c;
-    color: white;
-    padding: 8px;
-    font-size: 14px;
-}
-
-.ticker-content {
-    display: flex;
-    gap: 40px;
-    justify-content: center;
-}
-
-/* Navbar */
-.navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 40px;
-    background: white;
-    border-bottom: 1px solid #eee;
-}
-
-.navbar nav a {
-    margin: 0 15px;
-    text-decoration: none;
-    color: #333;
-}
-
-.navbar nav .active {
-    color: #16a34a;
-    font-weight: bold;
-}
-
-.nav-actions button {
-    margin-left: 10px;
-}
-
-/* Buttons */
-.btn-outline {
-    border: 1px solid #16a34a;
-    background: transparent;
-    color: #16a34a;
-    padding: 6px 14px;
-    border-radius: 20px;
-}
-
-.btn-danger {
-    border: 1px solid red;
-    background: transparent;
-    color: red;
-    padding: 6px 14px;
-    border-radius: 20px;
-}
-
 /* Layout */
 .layout {
-    display: flex;
-    padding: 30px;
-    gap: 25px;
+    display: flex !important;
+    gap: 30px !important;
+    margin: 30px auto !important;
+    max-width: 1200px !important;
 }
 
 /* Sidebar */
 .sidebar {
-    width: 260px;
+    width: 260px !important;
 }
 
-.card {
-    background: white;
-    padding: 18px;
-    border-radius: 12px;
-    margin-bottom: 20px;
+.sidebar .card {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    margin-bottom: 25px;
+    padding: 20px;
+    border-radius: 10px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.sidebar h3 {
+    margin-bottom: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #2e7d32;
 }
 
 .sidebar ul {
     list-style: none;
+    padding: 0;
 }
 
-.sidebar li {
-    padding: 10px;
-    border-radius: 8px;
-    cursor: pointer;
+.sidebar ul li {
+    margin: 10px 0;
 }
 
-.sidebar li.active {
-    background: #16a34a;
-    color: white;
+.sidebar ul li a {
+    text-decoration: none;
+    color: #444;
+    font-weight: 500;
+    transition: color 0.2s;
 }
 
+.sidebar ul li a.active,
+.sidebar ul li a:hover {
+    color: #2e7d32;
+}
+
+/* Login CTA */
 .price-login-cta {
     display: block;
     text-align: center;
-    padding: 20px;
-    background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-    border: 2px dashed #16a34a;
-    color: #16a34a;
-    text-decoration: none;
-    border-radius: 12px;
-    font-weight: 500;
-    transition: all 0.3s ease;
+    padding: 10px;
+    background: #f1f8e9;
+    border: 1px solid #c8e6c9;
+    border-radius: 8px;
+    color: #2e7d32;
+    font-weight: 600;
+    transition: background 0.2s;
 }
 
 .price-login-cta:hover {
-    background: #16a34a;
-    color: white;
-    transform: translateY(-2px);
+    background: #dcedc8;
 }
 
-/* Range */
-.range {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-}
-
-/* Content */
+/* Main Content */
 .content {
-    flex: 1;
+    flex: 1 !important;
 }
 
 .content-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
+}
+
+.content-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #333;
+}
+
+.content-header p {
+    color: #666;
+    margin-top: 5px;
 }
 
 .sort {
-    padding: 6px 10px;
-    border-radius: 8px;
-}
-
-/* Grid */
-.grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 25px;
-}
-
-/* Product Card */
-.product {
-    position: relative;
-    padding: 15px;
-    text-align: left;
-}
-
-.product img {
-    width: 100%;
-    height: 160px;
-    object-fit: cover;
-    border-radius: 10px;
-    margin-bottom: 10px;
-}
-
-.product h4 {
-    margin: 8px 0;
-}
-
-.tag {
-    font-size: 12px;
-    background: #eee;
-    padding: 3px 8px;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
     border-radius: 6px;
 }
 
-.farmer {
-    font-size: 12px;
-    color: gray;
-    margin: 6px 0;
+/* Product Grid */
+.grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
+    gap: 25px !important;
 }
 
-.price-label {
-    font-size: 11px;
+.card.product {
+    background: #ffffff !important;
+    border: 1px solid #e0e0e0 !important;
+    padding: 20px !important;
+    border-radius: 12px !important;
+    text-align: center !important;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.08) !important;
+    transition: transform 0.2s, box-shadow 0.2s !important;
+}
+
+.card.product:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+}
+
+.card.product img {
+    max-width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.image-placeholder {
+    background: #f5f5f5;
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #999;
-    margin: 10px 0;
-}
-
-/* Button */
-.btn {
-    display: block;
-    text-align: center;
-    border: 1px solid #16a34a;
-    color: #16a34a;
-    padding: 8px;
-    border-radius: 20px;
-    text-decoration: none;
-    margin-top: 10px;
+    border-radius: 8px;
+    margin-bottom: 12px;
 }
 
 /* Badges */
 .badge {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 11px;
-    color: white;
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    margin-bottom: 8px;
+    color: #fff;
+    font-weight: 600;
 }
 
-.badge.green {
-    background: #16a34a;
+.badge.green { background: #2e7d32; }
+.badge.blue { background: #1976d2; }
+
+/* Product Info */
+.card.product h4 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 8px 0;
+    color: #333;
 }
 
-.badge.blue {
-    background: #0ea5e9;
+.tag {
+    display: inline-block;
+    margin: 5px 0;
+    font-size: 13px;
+    color: #777;
+}
+
+.farmer {
+    font-size: 14px;
+    color: #555;
+    margin: 8px 0;
+}
+
+.price-label {
+    font-weight: 700;
+    margin: 10px 0;
+    color: #2e7d32;
+}
+
+.product-description {
+    font-size: 14px;
+    color: #666;
+    margin: 10px 0;
+}
+
+/* Buttons */
+.btn.btn-farmers {
+    display: inline-block;
+    padding: 10px 14px;
+    background: #2e7d32;
+    color: #fff;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.btn.btn-farmers:hover {
+    background: #1b5e20;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    color: #888;
+    font-size: 16px;
+    padding: 40px;
 }

@@ -65,7 +65,7 @@
 
         <div class="grid" id="productGrid">
             {% for product in products %}
-            <div class="card product" data-price="{{ product.price_min }}" data-district="{{ product.farmer.district }}">
+            <div class="card product" data-price="{% if user.is_authenticated and user.role == 'customer' %}{{ product.price_min }}{% else %}0{% endif %}" data-district="{{ product.farmer.district }}">
                 {% if product.is_best_seller %}
                 <span class="badge green">Best Seller</span>
                 {% elif product.is_seasonal %}
@@ -85,7 +85,12 @@
                     {{ product.farmer.get_full_name }} - {{ product.farmer.district }}
                 </p>
 
+                {% if user.is_authenticated and user.role == 'customer' %}
                 <p class="price-label">Rs. {{ product.price_min }} - {{ product.price_max }} / {{ product.unit }}</p>
+                {% else %}
+                <p class="price-teaser">Login to view prices</p>
+                {% endif %}
+
                 <p class="product-description">{{ product.description|truncatewords:15 }}</p>
 
                 <a href="{% url 'farmer_products' %}" class="btn btn-farmers">
@@ -107,22 +112,29 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Price filter
     const range = document.getElementById('priceRange');
-    const minPrice = document.getElementById('minPrice');
-    const maxPrice = document.getElementById('maxPrice');
-    
-    range.addEventListener('input', function() {
-        const val = this.value;
-        minPrice.textContent = `Rs. ${Math.round(val * 0.25)}`;
-        maxPrice.textContent = `Rs. ${val}`;
-        filterProducts();
-    });
+    if (range) {
+        const minPrice = document.getElementById('minPrice');
+        const maxPrice = document.getElementById('maxPrice');
+        
+        range.addEventListener('input', function() {
+            const val = this.value;
+            minPrice.textContent = `Rs. ${Math.round(val * 0.25)}`;
+            maxPrice.textContent = `Rs. ${val}`;
+            filterProducts();
+        });
+    }
 
     // Sort
-    document.getElementById('sortSelect').addEventListener('change', function() {
-        sortProducts();
-    });
+    const sortSelect = document.getElementById('sortSelect');
+    if (sortSelect) {
+        sortSelect.addEventListener('change', function() {
+            sortProducts();
+        });
+    }
 
     function filterProducts() {
+        const range = document.getElementById('priceRange');
+        if (!range) return;
         const min = parseInt(range.value) * 0.25;
         const max = parseInt(range.value);
         const products = document.querySelectorAll('.product');
@@ -135,14 +147,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function sortProducts() {
         const grid = document.getElementById('productGrid');
-        const sortValue = document.getElementById('sortSelect').value;
+        const sortSelect = document.getElementById('sortSelect');
+        if (!grid || !sortSelect) return;
+        const sortValue = sortSelect.value;
         const products = Array.from(grid.querySelectorAll('.product'));
         
         products.sort((a, b) => {
             if (sortValue === 'price-low') {
                 return parseInt(a.dataset.price) - parseInt(b.dataset.price);
             } else if (sortValue === 'price-high') {
-                return parseInt(b.dataset.price) - parseInt(b.dataset.price);
+                return parseInt(b.dataset.price) - parseInt(a.dataset.price);
             }
             return 0;
         });
