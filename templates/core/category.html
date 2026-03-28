@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AgriLink - {{ category.name }} Category{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/category.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Category Page Layout -->
+<div class="layout">
+    <!-- Sidebar Filters -->
+    <aside class="sidebar">
+        <div class="card">
+            <h3>Categories</h3>
+            <ul>
+                <li><a href="{% url 'category' 'all' %}" class="{% if not category %}active{% endif %}">All Products</a></li>
+                {% for cat in categories %}
+                <li><a href="{% url 'category' cat.name %}" class="{% if category.name == cat.name %}active{% endif %}">{{ cat.name }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        {% if user.is_authenticated %}
+        <div class="card">
+            <h3>Price Range</h3>
+            <input type="range" id="priceRange" min="0" max="1000" value="500">
+            <div class="range">
+                <span id="minPrice">Rs. 0</span>
+                <span id="maxPrice">Rs. 1000</span>
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <a href="{% url 'login' %}" class="price-login-cta">
+                <i class="fas fa-lock"></i> Login to view prices and filter
+            </a>
+        </div>
+        {% endif %}
+
+        <div class="card">
+            <h3>Districts</h3>
+            {% for loc in locations %}
+            <label class="checkbox-label">
+                <input type="checkbox" value="{{ loc }}"> {{ loc }}
+            </label>
+            {% endfor %}
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content">
+        <div class="content-header">
+            <div>
+                <h2>{% if category %}{{ category.name }}{% else %}All{% endif %} Produce</h2>
+                <p>{{ products|length }} products found</p>
+            </div>
+            <select class="sort" id="sortSelect">
+                <option value="latest">Latest</option>
+                <option value="price-low">Price: Low → High</option>
+                <option value="price-high">Price: High → Low</option>
+            </select>
+        </div>
+
+        <div class="grid" id="productGrid">
+            {% for product in products %}
+            <div class="card product" data-price="{{ product.price_min }}" data-district="{{ product.farmer.district }}">
+                {% if product.is_best_seller %}
+                <span class="badge green">Best Seller</span>
+                {% elif product.is_seasonal %}
+                <span class="badge blue">Seasonal</span>
+                {% endif %}
+
+                {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                {% else %}
+                <div class="image-placeholder">No Image</div>
+                {% endif %}
+
+                <h4>{{ product.name }}</h4>
+                <span class="tag">{{ product.category.name }}</span>
+
+                <p class="farmer">
+                    {{ product.farmer.get_full_name }} - {{ product.farmer.district }}
+                </p>
+
+                <p class="price-label">Rs. {{ product.price_min }} - {{ product.price_max }} / {{ product.unit }}</p>
+                <p class="product-description">{{ product.description|truncatewords:15 }}</p>
+
+                <a href="{% url 'farmer_products' %}" class="btn btn-farmers">
+                    See Farmers Selling This →
+                </a>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <p>No products found in this category.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Price filter
+    const range = document.getElementById('priceRange');
+    const minPrice = document.getElementById('minPrice');
+    const maxPrice = document.getElementById('maxPrice');
+    
+    range.addEventListener('input', function() {
+        const val = this.value;
+        minPrice.textContent = `Rs. ${Math.round(val * 0.25)}`;
+        maxPrice.textContent = `Rs. ${val}`;
+        filterProducts();
+    });
+
+    // Sort
+    document.getElementById('sortSelect').addEventListener('change', function() {
+        sortProducts();
+    });
+
+    function filterProducts() {
+        const min = parseInt(range.value) * 0.25;
+        const max = parseInt(range.value);
+        const products = document.querySelectorAll('.product');
+        
+        products.forEach(product => {
+            const price = parseInt(product.dataset.price);
+            product.style.display = (price >= min && price <= max) ? 'block' : 'none';
+        });
+    }
+
+    function sortProducts() {
+        const grid = document.getElementById('productGrid');
+        const sortValue = document.getElementById('sortSelect').value;
+        const products = Array.from(grid.querySelectorAll('.product'));
+        
+        products.sort((a, b) => {
+            if (sortValue === 'price-low') {
+                return parseInt(a.dataset.price) - parseInt(b.dataset.price);
+            } else if (sortValue === 'price-high') {
+                return parseInt(b.dataset.price) - parseInt(b.dataset.price);
+            }
+            return 0;
+        });
+        
+        grid.innerHTML = '';
+        products.forEach(p => grid.appendChild(p));
+    }
+});
+</script>
+{% endblock %}

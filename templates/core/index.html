@@ -154,19 +154,19 @@
                         
                         {% if user.is_authenticated %}
                             <div class="product-price">
-                                {% if product.discount_percentage > 0 %}
-                                    <span class="original-price">Rs.{{ product.price }}</span>
-                                {% endif %}
-                                <span class="current-price">Rs.{{ product.discounted_price }}</span>
+                                <span>Rs.{{ product.price_min }} - Rs.{{ product.price_max }}</span>
+                                <small class="text-muted">per {{ product.unit }}</small>
                             </div>
-                        {% endif %}
-                        
-                        {% if user.is_authenticated %}
-                            <a href="{% url 'product_detail' product.id %}" class="product-view-btn">View Details</a>
+                            <a href="{% url 'product_detail' product.pk %}" class="product-view-btn">View Details</a>
                         {% else %}
-                            <a href="{% url 'login' %}" class="product-view-btn">Login to view price</a>
+                            <a href="{% url 'login' %}" class="product-view-btn">Login to View Prices</a>
                         {% endif %}
+
                     </div>
+                </div>
+            {% empty %}
+                <div class="empty-state">
+                    <p>No fresh products available right now. Check back soon!</p>
                 </div>
             {% endfor %}
         </div>
@@ -180,38 +180,44 @@
         <p class="section-subtitle">Browse our fresh produce by type</p>
         
         <div class="categories-grid">
-            <div class="category-card">
-                <div class="category-badge">0</div>
-                <div class="category-bg vegetables-bg">
-                    <div class="category-overlay">
-                        <i class="fas fa-leaf"></i>
-                        <h3>Vegetables</h3>
-                        <p>120+ Items</p>
+            <a href="{% url 'category' 'Vegetables' %}" class="category-link">
+                <div class="category-card vegetables-card">
+                    <div class="category-badge">0</div>
+                    <div class="category-bg vegetables-bg">
+                        <div class="category-overlay">
+                            <i class="fas fa-leaf"></i>
+                            <h3>Vegetables</h3>
+                            <p>120+ Items</p>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </a>
             
-            <div class="category-card">
-                <div class="category-badge">1</div>
-                <div class="category-bg fruits-bg">
-                    <div class="category-overlay">
-                        <i class="fas fa-apple-alt"></i>
-                        <h3>Fruits</h3>
-                        <p>80+ Items</p>
+            <a href="{% url 'category' 'Fruits' %}" class="category-link">
+                <div class="category-card fruits-card">
+                    <div class="category-badge">1</div>
+                    <div class="category-bg fruits-bg">
+                        <div class="category-overlay">
+                            <i class="fas fa-apple-alt"></i>
+                            <h3>Fruits</h3>
+                            <p>80+ Items</p>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </a>
             
-            <div class="category-card">
-                <div class="category-badge">2</div>
-                <div class="category-bg seasonal-bg">
-                    <div class="category-overlay">
-                        <i class="fas fa-leaf"></i>
-                        <h3>Seasonal</h3>
-                        <p>45+ Items</p>
+            <a href="{% url 'category' 'Seasonal' %}" class="category-link">
+                <div class="category-card seasonal-card">
+                    <div class="category-badge">2</div>
+                    <div class="category-bg seasonal-bg">
+                        <div class="category-overlay">
+                            <i class="fas fa-leaf"></i>
+                            <h3>Seasonal</h3>
+                            <p>45+ Items</p>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </a>
         </div>
     </div>
 </section>

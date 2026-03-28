@@ -827,10 +827,16 @@ body {
 
 .product-price {
     display: flex;
-    align-items: center;
-    gap: 6px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
     margin: 10px 0;
     font-weight: 700;
+}
+
+.login-to-view {
+    color: var(--text-light);
+    font-style: italic;
 }
 
 .original-price {
@@ -957,6 +963,28 @@ body {
 
 .category-card:hover .category-overlay {
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.category-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+.vegetables-card, .fruits-card, .seasonal-card {
+    transition: all 0.3s ease;
+}
+
+.category-page-hero .hero-badge {
+    background-color: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.category-page-hero .hero-main-title .text-highlight {
+    background: linear-gradient(45deg, #27AE60, #52BE80);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .category-overlay i {

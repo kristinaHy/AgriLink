@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ product.name }} - AgriLink{% endblock %}
+
+{% block content %}
+<div class="agri-container">
+    <div class="product-detail">
+        <div class="product-images">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="main-image">
+            {% endif %}
+        </div>
+        <div class="product-info">
+            <h1>{{ product.name }}</h1>
+            <p class="product-farmer">by {{ product.farmer.get_full_name }} | {{ product.farmer.district }}</p>
+            <div class="product-price">
+                Rs. {{ product.discounted_price }}
+                {% if product.discount_percentage > 0 %}
+                    <span class="original-price">Rs. {{ product.price }}</span>
+                {% endif %}
+            </div>
+            <div class="product-meta">
+                <span>Stock: {{ product.quantity }} {{ product.unit }}</span>
+                <span>Category: {{ product.category.name }}</span>
+                <span>Status: {{ product.get_status_display }}</span>
+            </div>
+            <p>{{ product.description }}</p>
+            
+            {% if user.is_authenticated and user.role == 'customer' %}
+                <a href="#" class="btn btn-primary add-to-cart">Add to Cart</a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="product-reviews">
+        <h2>Reviews ({{ review_count }}) - Avg {{ average_rating|floatformat:1 }}/5</h2>
+        {% for review in reviews %}
+            <div class="review">
+                <h4>{{ review.customer.get_full_name }} - {{ review.rating }}/5</h4>
+                <p>{{ review.content }}</p>
+            </div>
+        {% endfor %}
+        
+        {% if can_review %}
+            <h3>Add Review</h3>
+            <!-- Review form -->
+        {% endif %}
+    </div>
+    
+    <div class="related-products">
+        <h2>Related Products</h2>
+        <!-- related products grid -->
+    </div>
+</div>
+{% endblock %}

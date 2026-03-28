@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Create{% endif %} Product - AgriLink{% endblock %}
+
+{% block content %}
+<div class="agri-container">
+    <h1>{% if form.instance.pk %}Edit Product{% else %}Create New Product{% endif %}</h1>
+    
+    <form method="post" enctype="multipart/form-data" class="product-form">
+        {% csrf_token %}
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.category.id_for_label }}">Category</label>
+                {{ form.category }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.name.id_for_label }}">Product Name</label>
+                {{ form.name }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.price.id_for_label }}">Price (Rs.)</label>
+                {{ form.price }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.quantity.id_for_label }}">Quantity</label>
+                {{ form.quantity }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.unit.id_for_label }}">Unit</label>
+                {{ form.unit }}
+            </div>
+            <div class="form-group full-width">
+                <label for="{{ form.description.id_for_label }}">Description</label>
+                {{ form.description }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.image.id_for_label }}">Main Image</label>
+                {{ form.image }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.additional_images.id_for_label }}">Additional Images</label>
+                {{ form.additional_images }}
+            </div>
+            <div class="form-group">
+                <label>Freshness</label>
+                {{ form.is_fresh }}
+                {{ form.freshness_date }}
+            </div>
+            <div class="form-group">
+                <div class="checkbox-group">
+                    {{ form.is_seasonal }}
+                    <label for="{{ form.is_seasonal.id_for_label }}">Seasonal</label>
+                </div>
+                <div class="checkbox-group">
+                    {{ form.is_limited }}
+                    <label for="{{ form.is_limited.id_for_label }}">Limited Stock</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="{{ form.discount_percentage.id_for_label }}">Discount (%)</label>
+                {{ form.discount_percentage }}
+            </div>
+            <div class="form-group">
+                {{ form.status }}
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Product</button>
+            <a href="{% url 'farmer_products' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<style>
+.form-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.full-width { grid-column: 1 / -1; }
+.checkbox-group { display: flex; align-items: center; gap: 0.5rem; }
+.product-form img { max-width: 100px; }
+</style>
+{% endblock %}

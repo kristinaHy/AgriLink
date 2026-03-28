@@ -1,12 +1,15 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import TemplateView, ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.db.models import Q, Avg
-from .models import Product, Category, User, Order, Review, Cart, CartItem, Message
-from .forms import UserRegistrationForm, UserLoginForm, ProductForm, ReviewForm
+from .models import Product, Category, User, Order, Review, Cart, CartItem, Message, Notification
+from django.utils import timezone
+from .forms import UserRegistrationForm, UserLoginForm, ProductForm, ReviewForm, MessageForm
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
 
 
 # Home Page View
@@ -68,10 +71,17 @@ class CategoryView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         category_slug = self.kwargs.get('slug')
-        context['category'] = get_object_or_404(Category, name__iexact=category_slug)
-        context['categories'] = Category.objects.all()
+        if category_slug == 'all':
+            context['category'] = None
+            context['products'] = self.object_list  # All products
+        else:
+            category = get_object_or_404(Category, name__iexact=category_slug)
+            context['category'] = category
         
-        # Filter options
+        context['categories'] = Category.objects.all()
+        context['locations'] = User.objects.filter(role='farmer').values_list('district', flat=True).distinct()
+        
+        # Filter options from GET params
         context['price_min'] = self.request.GET.get('price_min', 0)
         context['price_max'] = self.request.GET.get('price_max', 10000)
         context['location'] = self.request.GET.get('location', '')
@@ -235,6 +245,7 @@ class FarmerDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
             receiver=user,
             is_read=False
         ).count()
+        context['products_url'] = '/farmer/products/'
         
         return context
 
@@ -285,3 +296,242 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         )
         
         return context
+
+
+# Product List for customers/public
+class ProductListView(ListView):
+    model = Product
+    template_name = 'core/product_list.html'
+    context_object_name = 'products'
+    paginate_by = 12
+
+    def get_queryset(self):
+        return Product.objects.filter(status='available').order_by('-created_at')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = Category.objects.all()
+        return context
+
+
+# Farmer's own products
+class FarmerProductListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = Product
+    template_name = 'core/farmer_products.html'
+    context_object_name = 'products'
+    paginate_by = 12
+
+    def test_func(self):
+        return self.request.user.role == 'farmer'
+
+    def get_queryset(self):
+        return Product.objects.filter(farmer=self.request.user)
+
+
+# Product Create
+class ProductCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = Product
+    form_class = ProductForm
+    template_name = 'core/product_form.html'
+    success_url = '/farmer/products/'
+
+    def test_func(self):
+        return self.request.user.role == 'farmer'
+
+    def form_valid(self, form):
+        form.instance.farmer = self.request.user
+        return super().form_valid(form)
+
+
+# Product Update
+class ProductUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Product
+    form_class = ProductForm
+    template_name = 'core/product_form.html'
+    success_url = '/farmer/products/'
+
+    def test_func(self):
+        obj = self.get_object()
+        return self.request.user.role == 'farmer' and obj.farmer == self.request.user
+
+
+# Product Delete
+class ProductDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Product
+    template_name = 'core/product_confirm_delete.html'
+    success_url = reverse_lazy('farmer_products')
+
+    def test_func(self):
+        obj = self.get_object()
+        return self.request.user.role == 'farmer' and obj.farmer == self.request.user
+
+
+# Cart Views
+class CartView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'core/cart.html'
+
+    def test_func(self):
+        return self.request.user.role == 'customer'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        cart, created = Cart.objects.get_or_create(customer=self.request.user)
+        context['cart'] = cart
+        context['cart_items'] = cart.items.all()
+        return context
+
+
+class AddToCartView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.role == 'customer'
+
+    def post(self, request, pk):
+        cart, created = Cart.objects.get_or_create(customer=request.user)
+        product = get_object_or_404(Product, pk=pk, status='available')
+        quantity = int(request.POST.get('quantity', 1))
+        
+        cart_item, created = CartItem.objects.get_or_create(
+            cart=cart, product=product, defaults={'quantity': quantity}
+        )
+        if not created:
+            cart_item.quantity += quantity
+            cart_item.save()
+        
+        messages.success(request, f'{product.name} added to cart!')
+        return redirect('cart')
+
+
+class UpdateCartItemView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.role == 'customer'
+
+    def post(self, request, pk):
+        cart_item = get_object_or_404(CartItem, pk=pk, cart__customer=request.user)
+        quantity = int(request.POST['quantity'])
+        if quantity > 0:
+            cart_item.quantity = quantity
+            cart_item.save()
+            messages.success(request, 'Cart updated.')
+        else:
+            cart_item.delete()
+            messages.success(request, 'Item removed from cart.')
+        return redirect('cart')
+
+
+class RemoveFromCartView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.role == 'customer'
+
+    def post(self, request, pk):
+        cart_item = get_object_or_404(CartItem, pk=pk, cart__customer=request.user)
+        cart_item.delete()
+        messages.success(request, 'Item removed from cart.')
+        return redirect('cart')
+
+
+# Order Views
+class CustomerOrderListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = Order
+    template_name = 'core/my_orders.html'
+    context_object_name = 'orders'
+    paginate_by = 10
+
+    def test_func(self):
+        return self.request.user.role == 'customer'
+
+    def get_queryset(self):
+        return Order.objects.filter(customer=self.request.user).order_by('-created_at')
+
+
+class FarmerOrderListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = Order
+    template_name = 'core/farmer_orders.html'
+    context_object_name = 'orders'
+    paginate_by = 10
+
+    def test_func(self):
+        return self.request.user.role == 'farmer'
+
+    def get_queryset(self):
+        return Order.objects.filter(
+            items__product__farmer=self.request.user
+        ).distinct().order_by('-created_at')
+
+
+class OrderDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    model = Order
+    template_name = 'core/order_detail.html'
+    context_object_name = 'order'
+
+    def test_func(self):
+        order = self.get_object()
+        return (self.request.user.role == 'customer' and order.customer == self.request.user) or \
+               (self.request.user.role == 'farmer' and Order.objects.filter(items__product__farmer=self.request.user, pk=order.pk).exists())
+
+
+class CheckoutView(LoginRequiredMixin, UserPassesTestMixin, View):
+    template_name = 'core/checkout.html'
+
+    def test_func(self):
+        return self.request.user.role == 'customer'
+
+    def get(self, request):
+        cart = Cart.objects.get(customer=request.user)
+        if not cart.items.exists():
+            messages.warning(request, 'Your cart is empty.')
+            return redirect('cart')
+        return render(request, self.template_name, {'cart': cart})
+
+    def post(self, request):
+        cart = Cart.objects.get(customer=request.user)
+        order = Order.objects.create(
+            customer=request.user,
+            order_number=f'AGRI{timezone.now().strftime("%Y%m%d%H%M%S%f")[:10]}',
+            total_amount=cart.total_price,
+            shipping_address=request.POST['shipping_address'],
+            shipping_city=request.POST['shipping_city'],
+            shipping_district=request.POST['shipping_district'],
+            payment_method=request.POST['payment_method']
+        )
+        for item in cart.items.all():
+            OrderItem.objects.create(
+                order=order,
+                product=item.product,
+                quantity=item.quantity,
+                price_at_purchase=item.product.price
+            )
+        cart.items.all().delete()
+        # Create notification
+        Notification.objects.create(
+            user=request.user,
+            notification_type='order_placed',
+            title='New Order Placed',
+            content=f'Order #{order.order_number} created successfully.'
+        )
+        messages.success(request, 'Order placed successfully!')
+        return redirect('order_detail', pk=order.pk)
+
+
+class OrderUpdateStatusView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.role == 'farmer'
+
+    def post(self, request, pk):
+        order = get_object_or_404(Order, items__product__farmer=request.user, pk=pk)
+        new_status = request.POST['status']
+        order.status = new_status
+        order.save()
+        # Update payment status if confirmed
+        if new_status == 'confirmed':
+            order.payment_status = 'paid'
+            order.save()
+            Notification.objects.create(
+                user=order.customer,
+                notification_type='order_confirmed',
+                title='Order Confirmed',
+                content=f'Your order #{order.order_number} has been confirmed by the farmer.'
+            )
+        messages.success(request, f'Order status updated to {new_status}.')
+        return redirect('farmer_orders')
+
+

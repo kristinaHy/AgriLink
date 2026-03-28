@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Checkout - AgriLink{% endblock %}
+
+{% block content %}
+<div class="agri-container">
+    <h1>Checkout</h1>
+    
+    <div class="checkout-content">
+        <div class="order-summary">
+            <h3>Order Summary</h3>
+            <ul>
+                {% for item in cart.items.all %}
+                    <li>{{ item.product.name }} x {{ item.quantity }} - Rs. {{ item.subtotal }}</li>
+                {% endfor %}
+            </ul>
+            <div class="total">Total: Rs. {{ cart.total_price }}</div>
+        </div>
+        
+        <form method="post" class="checkout-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Shipping Address</label>
+                <textarea name="shipping_address" required rows="3"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>City</label>
+                    <input type="text" name="shipping_city" required>
+                </div>
+                <div class="form-group">
+                    <label>District</label>
+                    <input type="text" name="shipping_district" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Payment Method</label>
+                <select name="payment_method" required>
+                    <option value="esewa">eSewa</option>
+                    <option value="khalti">Khalti</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-success btn-lg">Place Order</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
