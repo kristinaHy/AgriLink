@@ -58,7 +58,9 @@ class Product(models.Model):
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name='products')
     name = models.CharField(max_length=200)
     description = models.TextField()
-    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    price_min = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    price_max = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     quantity = models.PositiveIntegerField()
     unit = models.CharField(max_length=50, default='kg')  # kg, liters, bunch, etc.
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')

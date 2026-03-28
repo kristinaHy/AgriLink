@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Products - Farmer Dashboard{% endblock %}
+
+{% block content %}
+<div class="agri-container">
+    <div class="dashboard-header">
+        <h1>My Products</h1>
+        <a href="{% url 'product_create' %}" class="btn btn-success">Add New Product</a>
+    </div>
+
+    {% if products %}
+        <div class="products-grid">
+            {% for product in products %}
+                <div class="product-card">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+                    {% endif %}
+                    <div class="product-actions">
+                        <a href="{% url 'product_update' product.pk %}" class="btn btn-warning">Edit</a>
+                        <a href="{% url 'product_delete' product.pk %}" class="btn btn-danger">Delete</a>
+                    </div>
+                    <h3>{{ product.name }}</h3>
+                    <p>Price: Rs. {{ product.price }} | Stock: {{ product.quantity }}</p>
+                    <p>Status: {{ product.get_status_display }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No products yet. <a href="{% url 'product_create' %}">Create your first product</a>.</p>
+    {% endif %}
+
+    {% if is_paginated %}
+        <div class="pagination">
+            <!-- pagination code same as product_list -->
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

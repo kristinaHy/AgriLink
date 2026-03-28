@@ -1,0 +1,220 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", sans-serif;
+}
+
+body {
+    background: #f5f7f6;
+}
+
+/* Ticker */
+.ticker {
+    background: #0c5f2c;
+    color: white;
+    padding: 8px;
+    font-size: 14px;
+}
+
+.ticker-content {
+    display: flex;
+    gap: 40px;
+    justify-content: center;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+    background: white;
+    border-bottom: 1px solid #eee;
+}
+
+.navbar nav a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: #333;
+}
+
+.navbar nav .active {
+    color: #16a34a;
+    font-weight: bold;
+}
+
+.nav-actions button {
+    margin-left: 10px;
+}
+
+/* Buttons */
+.btn-outline {
+    border: 1px solid #16a34a;
+    background: transparent;
+    color: #16a34a;
+    padding: 6px 14px;
+    border-radius: 20px;
+}
+
+.btn-danger {
+    border: 1px solid red;
+    background: transparent;
+    color: red;
+    padding: 6px 14px;
+    border-radius: 20px;
+}
+
+/* Layout */
+.layout {
+    display: flex;
+    padding: 30px;
+    gap: 25px;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 260px;
+}
+
+.card {
+    background: white;
+    padding: 18px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.sidebar ul {
+    list-style: none;
+}
+
+.sidebar li {
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.sidebar li.active {
+    background: #16a34a;
+    color: white;
+}
+
+.price-login-cta {
+    display: block;
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+    border: 2px dashed #16a34a;
+    color: #16a34a;
+    text-decoration: none;
+    border-radius: 12px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.price-login-cta:hover {
+    background: #16a34a;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Range */
+.range {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+/* Content */
+.content {
+    flex: 1;
+}
+
+.content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.sort {
+    padding: 6px 10px;
+    border-radius: 8px;
+}
+
+/* Grid */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 25px;
+}
+
+/* Product Card */
+.product {
+    position: relative;
+    padding: 15px;
+    text-align: left;
+}
+
+.product img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.product h4 {
+    margin: 8px 0;
+}
+
+.tag {
+    font-size: 12px;
+    background: #eee;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+.farmer {
+    font-size: 12px;
+    color: gray;
+    margin: 6px 0;
+}
+
+.price-label {
+    font-size: 11px;
+    color: #999;
+    margin: 10px 0;
+}
+
+/* Button */
+.btn {
+    display: block;
+    text-align: center;
+    border: 1px solid #16a34a;
+    color: #16a34a;
+    padding: 8px;
+    border-radius: 20px;
+    text-decoration: none;
+    margin-top: 10px;
+}
+
+/* Badges */
+.badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    color: white;
+}
+
+.badge.green {
+    background: #16a34a;
+}
+
+.badge.blue {
+    background: #0ea5e9;
+}

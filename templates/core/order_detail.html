@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Order #{{ order.order_number }} - AgriLink{% endblock %}
+
+{% block content %}
+<div class="agri-container">
+    <h1>Order #{{ order.order_number }}</h1>
+    <p>Date: {{ order.created_at|date }}</p>
+    <p>Total: Rs. {{ order.total_amount }}</p>
+    <p>Status: {{ order.get_status_display }}</p>
+    <p>Payment: {{ order.get_payment_status_display }}</p>
+    
+    <h3>Shipping</h3>
+    <p>{{ order.shipping_address }}</p>
+    <p>{{ order.shipping_city }}, {{ order.shipping_district }}</p>
+    
+    <h3>Items</h3>
+    <ul>
+        {% for item in order.items.all %}
+            <li>{{ item.product.name }} x {{ item.quantity }} @ Rs. {{ item.price_at_purchase }} = Rs. {{ item.quantity|floatformat:0|mul:item.price_at_purchase }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

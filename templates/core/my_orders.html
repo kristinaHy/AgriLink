@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}My Orders - AgriLink{% endblock %}
+
+{% block content %}
+<div class="agri-container">
+    <h1>My Orders</h1>
+    
+    {% if orders %}
+        <div class="orders-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Date</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Payment</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                        <tr>
+                            <td>{{ order.order_number }}</td>
+                            <td>{{ order.created_at|date }}</td>
+                            <td>Rs. {{ order.total_amount }}</td>
+                            <td><span class="badge">{{ order.get_status_display }}</span></td>
+                            <td><span class="badge">{{ order.get_payment_status_display }}</span></td>
+                            <td><a href="{% url 'order_detail' order.pk %}" class="btn btn-primary">View</a></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No orders yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
