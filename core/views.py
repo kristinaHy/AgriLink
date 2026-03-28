@@ -5,7 +5,7 @@ from django.views.generic import TemplateView, ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
-from django.db.models import Q, Avg
+from django.db.models import Q, Avg, Sum
 from .models import Product, Category, User, Order, Review, Cart, CartItem, Message, Notification
 from django.utils import timezone
 from .forms import UserRegistrationForm, UserLoginForm, ProductForm, ReviewForm, MessageForm
@@ -179,6 +179,8 @@ class RegisterView(View):
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
+            user.role = form.cleaned_data['role']
+            user.save()
             messages.success(request, 'Registration successful! Please log in.')
             return redirect('login')
         return render(request, self.template_name, {'form': form})
@@ -284,6 +286,7 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         
         context['total_users'] = User.objects.count()
         context['total_farmers'] = User.objects.filter(role='farmer').count()
+        context['total_customers'] = User.objects.filter(role='customer').count()
         context['unverified_farmers'] = User.objects.filter(
             role='farmer',
             is_verified=False
@@ -294,6 +297,17 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             role='farmer',
             is_verified=False
         )
+        context['recent_farmers'] = User.objects.filter(role='farmer').order_by('-created_at')[:10]
+        context['recent_customers'] = User.objects.filter(role='customer').order_by('-created_at')[:10]
+        context['recent_products'] = Product.objects.order_by('-created_at')[:10]
+        context['recent_transactions'] = Order.objects.select_related('customer').prefetch_related('items__product__farmer').order_by('-created_at')[:10]
+        
+        # Pre-calculate for template
+        for farmer in context['recent_farmers']:
+            farmer.orders_count = Order.objects.filter(items__product__farmer=farmer).distinct().count()
+        for customer in context['recent_customers']:
+            customer.orders_count = customer.orders.count()
+            customer.orders_spent = customer.orders.aggregate(total=Sum('total_amount'))['total'] or 0
         
         return context
 
