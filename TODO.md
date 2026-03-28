@@ -18,5 +18,5 @@
 ## Progress
 - [x] Step 1: Edit views.py
 - [x] Step 2: Edit category.html
-- [x] Step 3: Test complete - Category now shows without login redirect, prices hidden until logged in as customer
+- [x] Step 3: Test complete - Category matches exact requirements: anon redirect, customer full view, farmer/admin prices no button
 

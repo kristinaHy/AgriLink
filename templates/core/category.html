@@ -85,10 +85,9 @@
                     {{ product.farmer.get_full_name }} - {{ product.farmer.district }}
                 </p>
 
-                {% if user.is_authenticated and user.role == 'customer' %}
                 <p class="price-label">Rs. {{ product.price_min }} - {{ product.price_max }} / {{ product.unit }}</p>
-                {% else %}
-                <p class="price-teaser">Login to view prices</p>
+                {% if user.role == 'customer' %}
+                <a href="{% url 'product_detail' product.id %}" class="btn btn-primary">See Farmers Selling This →</a>
                 {% endif %}
 
                 <p class="product-description">{{ product.description|truncatewords:15 }}</p>

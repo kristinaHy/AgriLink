@@ -93,6 +93,10 @@ class CategoryView(ListView):
         return context
 
     def dispatch(self, request, *args, **kwargs):
+        category_slug = kwargs.get('slug')
+        if category_slug and category_slug != 'all':
+            if not request.user.is_authenticated:
+                return redirect('login')
         return super().dispatch(request, *args, **kwargs)
 
 # Product Detail View
