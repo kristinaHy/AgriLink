@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="admin-container">
+    <aside class="admin-sidebar">
+        <div class="sidebar-logo">
+            <h5><i class="fas fa-shield-alt"></i> AGRILINK ADMIN</h5>
+            <p>System Administrator</p>
+        </div>
+        <div class="sidebar-alert">
+            <i class="fas fa-exclamation-triangle"></i> {{ pending_count }} farmer{% if pending_count != 1 %}s{% endif %} pending verification
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{% url 'admin_dashboard' %}" class="nav-item"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a href="{% url 'admin_verifications' %}" class="nav-item"><i class="fas fa-user-check"></i> Verifications <span class="nav-badge">{{ pending_count }}</span></a>
+            <a href="{% url 'admin_farmers' %}" class="nav-item"><i class="fas fa-tractor"></i> Farmers</a>
+            <a href="{% url 'admin_customers' %}" class="nav-item"><i class="fas fa-users"></i> Customers</a>
+            <a href="{% url 'admin_products' %}" class="nav-item active"><i class="fas fa-box"></i> Products</a>
+            <a href="{% url 'admin_transactions' %}" class="nav-item"><i class="fas fa-money-bill"></i> Transactions</a>
+            <a href="{% url 'admin_communication' %}" class="nav-item"><i class="fas fa-comments"></i> Communication</a>
+            <a href="{% url 'logout' %}" class="nav-item danger"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </nav>
+    </aside>
+
+    <main class="admin-content">
+        <div class="content-header">
+            <h1>Products</h1>
+            <p class="content-header-sub">System control panel</p>
+        </div>
+
+        <div class="toolbar" style="margin-bottom: 25px;">
+            <div class="search-admin">
+                <i class="fas fa-search"></i>
+                <input type="text" id="productSearch" placeholder="Search products...">
+            </div>
+            <button class="btn-primary-admin" id="addProductBtn"><i class="fas fa-plus"></i> Add New Product</button>
+        </div>
+
+        <div style="background-color: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 15px; color: #3b82f6; display: flex; align-items: start; gap: 12px; margin-bottom: 25px;">
+            <i class="fas fa-info-circle" style="font-size: 1.2rem; margin-top: 2px; flex-shrink: 0;"></i>
+            <span>Each product has its own price range. Farmers listing that product must price within the min-max range. Multiple farmers can list the same product at different prices as long as they stay within range.</span>
+        </div>
+
+        <div class="grid-admin">
+            {% for product in products %}
+            <div class="card-admin">
+                <div style="position: relative; height: 180px; background-color: #0d0d0d; overflow: hidden;">
+                    <span style="position: absolute; top: 10px; left: 10px; background-color: {% if product.status == 'available' %}#22c55e{% elif product.status == 'out_of_stock' %}#ef4444{% else %}#f39c12{% endif %}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; z-index: 10;">● {{ product.get_status_display }}</span>
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #444; font-size: 2rem;"><i class="fas fa-image"></i></div>
+                    {% endif %}
+                </div>
+                <div style="padding: 15px;">
+                    <h5 style="color: #fff; margin: 0 0 5px 0; font-size: 1rem; font-weight: 600;">{{ product.name }}</h5>
+                    <small style="color: #777;">{{ product.farmer.get_full_name|default:product.farmer.username }} - {{ product.farmer.district|default:"N/A" }}</small>
+                </div>
+                <div style="padding: 0 15px;">
+                    <h6 style="color: #22c55e; margin: 0 0 5px 0; font-size: 1rem; font-weight: 600;">Rs. {{ product.price_min }}/{{ product.unit }}</h6>
+                    <small style="color: #777;">Stock: {{ product.quantity }} - {{ product.category.name|default:"Uncategorized" }}</small>
+                </div>
+                <div style="display: flex; gap: 8px; padding: 15px; border-top: 1px solid #222;">
+                    <button class="btn-view" data-id="{{ product.id }}" style="flex: 1; padding: 8px 12px; background-color: #0d0d0d; border: 1px solid #333; color: #999; border-radius: 6px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;"><i class="fas fa-eye"></i> View</button>
+                    <button class="btn-edit" data-id="{{ product.id }}" style="flex: 1; padding: 8px 12px; background-color: #0d0d0d; border: 1px solid #333; color: #999; border-radius: 6px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;"><i class="fas fa-edit"></i> Edit</button>
+                    <button class="btn-delete" data-id="{{ product.id }}" style="flex: 1; padding: 8px 12px; background-color: #0d0d0d; border: 1px solid #333; color: #ef4444; border-radius: 6px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;"><i class="fas fa-trash"></i> Delete</button>
+                </div>
+            </div>
+            {% empty %}
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;"><i class="fas fa-box" style="font-size: 3rem; margin-bottom: 20px; display: block;"></i>No products found</div>
+            {% endfor %}
+        </div>
+    </main>
+</div>
+
+<!-- PRODUCT MODAL FORM -->
+<div id="productModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 1000; overflow-y: auto;">
+    <div style="background-color: #0d0d0d; border: 1px solid #222; border-radius: 12px; max-width: 500px; margin: 20px auto; padding: 0; max-height: 95vh; overflow-y: auto;">
+        <!-- Modal Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #222;">
+            <h4 id="modalTitle" style="color: #fff; margin: 0; font-weight: 700;">Add New Product</h4>
+            <button id="closeModal" style="background: none; border: none; color: #999; font-size: 1.5rem; cursor: pointer;"><i class="fas fa-times"></i></button>
+        </div>
+
+        <!-- Modal Form -->
+        <form id="productForm" style="padding: 20px;">
+            {% csrf_token %}
+            <input type="hidden" id="productId" name="product_id">
+
+            <!-- Product Name -->
+            <div style="margin-bottom: 18px;">
+                <label style="display: block; color: #fff; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Product Name <span style="color: #ef4444;">*</span></label>
+                <input type="text" id="productName" name="name" placeholder="e.g. Red Tomato" style="width: 100%; padding: 10px 12px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: 0.9rem; box-sizing: border-box;" required>
+            </div>
+
+            <!-- Category -->
+            <div style="margin-bottom: 18px;">
+                <label style="display: block; color: #fff; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Category <span style="color: #ef4444;">*</span></label>
+                <select id="productCategory" name="category" style="width: 100%; padding: 10px 12px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: 0.9rem; box-sizing: border-box;" required>
+                    <option value="">Select category</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Description -->
+            <div style="margin-bottom: 18px;">
+                <label style="display: block; color: #fff; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Description <span style="color: #ef4444;">*</span></label>
+                <textarea id="productDesc" name="description" placeholder="Describe the product, origin, quality..." style="width: 100%; padding: 10px 12px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: 0.9rem; min-height: 80px; box-sizing: border-box; resize: vertical;" required></textarea>
+            </div>
+
+            <!-- Product Photo Upload -->
+            <div style="margin-bottom: 18px;">
+                <label style="display: block; color: #fff; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Product Photo <span style="color: #999;">(optional)</span></label>
+                <div style="display: flex; gap: 10px; align-items: flex-start;">
+                    <input type="file" id="productImage" name="image" accept="image/*" style="flex: 1; padding: 10px 12px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #ccc; font-size: 0.9rem; box-sizing: border-box;" onchange="previewImage(this)">
+                    <img id="imagePreview" src="" alt="Preview" style="display: none; width: 60px; height: 60px; border-radius: 6px; object-fit: cover; border: 1px solid #333;">
+                </div>
+                <small style="color: #777; margin-top: 5px; display: block;">Supported formats: JPG, PNG, GIF (Max 5MB)</small>
+            </div>
+
+            <!-- Unit Selection -->
+            <div style="margin-bottom: 18px;">
+                <label style="display: block; color: #fff; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Unit <span style="color: #ef4444;">*</span></label>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="unit-btn" data-unit="kg" style="flex: 1; padding: 10px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #999; font-weight: 600; cursor: pointer;">kg</button>
+                    <button type="button" class="unit-btn" data-unit="litre" style="flex: 1; padding: 10px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #999; font-weight: 600; cursor: pointer;">litre</button>
+                    <button type="button" class="unit-btn" data-unit="piece" style="flex: 1; padding: 10px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #999; font-weight: 600; cursor: pointer;">piece</button>
+                    <button type="button" class="unit-btn" data-unit="bundle" style="flex: 1; padding: 10px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #999; font-weight: 600; cursor: pointer;">bundle</button>
+                </div>
+                <input type="hidden" id="productUnit" name="unit" value="kg">
+            </div>
+
+            <!-- Min/Max Price -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px;">
+                <div>
+                    <label style="display: block; color: #fff; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Minimum Price Rs. <span style="color: #ef4444;">*</span></label>
+                    <input type="number" id="productPriceMin" name="price_min" placeholder="e.g. 50" min="0" step="0.01" style="width: 100%; padding: 10px 12px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: 0.9rem; box-sizing: border-box;" required>
+                </div>
+                <div>
+                    <label style="display: block; color: #fff; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Maximum Price Rs. <span style="color: #ef4444;">*</span></label>
+                    <input type="number" id="productPriceMax" name="price_max" placeholder="e.g. 100" min="0" step="0.01" style="width: 100%; padding: 10px 12px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: 0.9rem; box-sizing: border-box;" required>
+                </div>
+            </div>
+
+            <!-- Quantity -->
+            <div style="margin-bottom: 18px;">
+                <label style="display: block; color: #fff; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Quantity <span style="color: #ef4444;">*</span></label>
+                <input type="number" id="productQuantity" name="quantity" placeholder="e.g. 100" min="1" style="width: 100%; padding: 10px 12px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: 0.9rem; box-sizing: border-box;" required>
+            </div>
+
+            <!-- Status -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; color: #fff; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Status <span style="color: #ef4444;">*</span></label>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="status-btn" data-status="available" style="flex: 1; padding: 10px; background-color: #22c55e; border: 1px solid #22c55e; border-radius: 6px; color: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;"><i class="fas fa-check-circle"></i> Active</button>
+                    <button type="button" class="status-btn" data-status="out_of_stock" style="flex: 1; padding: 10px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #999; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;"><i class="fas fa-times-circle"></i> Inactive</button>
+                </div>
+                <input type="hidden" id="productStatus" name="status" value="available">
+            </div>
+
+            <!-- Buttons -->
+            <div style="display: flex; gap: 10px; padding-top: 15px; border-top: 1px solid #222;">
+                <button type="button" id="cancelBtn" style="flex: 1; padding: 12px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #fff; font-weight: 600; font-size: 0.9rem; cursor: pointer;">Cancel</button>
+                <button type="submit" style="flex: 1; padding: 12px; background-color: #22c55e; border: none; border-radius: 6px; color: white; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;"><i class="fas fa-plus-circle"></i> Add Product</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Image Preview Function
+function previewImage(input) {
+    const preview = document.getElementById('imagePreview');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+// Modal Controls
+const productModal = document.getElementById('productModal');
+const addProductBtn = document.getElementById('addProductBtn');
+const closeModal = document.getElementById('closeModal');
+const cancelBtn = document.getElementById('cancelBtn');
+const productForm = document.getElementById('productForm');
+
+// Open Add Modal
+addProductBtn.addEventListener('click', () => {
+    productForm.reset();
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('productId').value = '';
+    document.getElementById('modalTitle').textContent = 'Add New Product';
+    document.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-plus-circle"></i> Add Product';
+    document.querySelectorAll('.unit-btn').forEach(btn => btn.style.backgroundColor = '#1a1a1a');
+    document.querySelector('[data-unit="kg"]').style.backgroundColor = '#22c55e';
+    document.querySelectorAll('.status-btn').forEach(btn => {
+        btn.style.backgroundColor = '#1a1a1a';
+        btn.style.borderColor = '#333';
+        btn.style.color = '#999';
+    });
+    document.querySelector('[data-status="available"]').style.backgroundColor = '#22c55e';
+    document.querySelector('[data-status="available"]').style.borderColor = '#22c55e';
+    document.querySelector('[data-status="available"]').style.color = 'white';
+    productModal.style.display = 'flex';
+    productModal.style.alignItems = 'center';
+    productModal.style.justifyContent = 'center';
+});
+
+// Close Modal
+function closeProductModal() {
+    productModal.style.display = 'none';
+}
+
+closeModal.addEventListener('click', closeProductModal);
+cancelBtn.addEventListener('click', closeProductModal);
+
+productModal.addEventListener('click', (e) => {
+    if (e.target === productModal) closeProductModal();
+});
+
+// Unit Selection
+document.querySelectorAll('.unit-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.unit-btn').forEach(b => b.style.backgroundColor = '#1a1a1a');
+        btn.style.backgroundColor = '#22c55e';
+        document.getElementById('productUnit').value = btn.dataset.unit;
+    });
+});
+
+// Status Selection
+document.querySelectorAll('.status-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.status-btn').forEach(b => {
+            b.style.backgroundColor = '#1a1a1a';
+            b.style.borderColor = '#333';
+            b.style.color = '#999';
+        });
+        btn.style.backgroundColor = '#22c55e';
+        btn.style.borderColor = '#22c55e';
+        btn.style.color = 'white';
+        document.getElementById('productStatus').value = btn.dataset.status;
+    });
+});
+
+// Form Submission
+productForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(productForm);
+    const productId = document.getElementById('productId').value;
+    const url = productId ? `/api/admin/products/${productId}/update/` : '/api/admin/products/create/';
+    const method = productId ? 'PUT' : 'POST';
+    
+    try {
+        const response = await fetch(url, {
+            method: method,
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]').value
+            }
+        });
+        
+        if (response.ok) {
+            alert(productId ? 'Product updated successfully!' : 'Product added successfully!');
+            closeProductModal();
+            location.reload();
+        } else {
+            const error = await response.json();
+            alert('Error: ' + (error.message || error.error || 'Something went wrong'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error: ' + error.message);
+    }
+});
+
+// Edit Product
+document.querySelectorAll('.btn-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const productId = btn.dataset.id;
+        fetch(`/api/admin/products/${productId}/`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('productId').value = data.id;
+                document.getElementById('productName').value = data.name;
+                document.getElementById('productCategory').value = data.category;
+                document.getElementById('productDesc').value = data.description;
+                document.getElementById('productPriceMin').value = data.price_min;
+                document.getElementById('productPriceMax').value = data.price_max;
+                document.getElementById('productQuantity').value = data.quantity;
+                document.getElementById('productUnit').value = data.unit;
+                document.getElementById('productStatus').value = data.status;
+                
+                // Display existing image if available
+                const imagePreview = document.getElementById('imagePreview');
+                if (data.image) {
+                    imagePreview.src = data.image;
+                    imagePreview.style.display = 'block';
+                } else {
+                    imagePreview.style.display = 'none';
+                    document.getElementById('productImage').value = '';
+                }
+                
+                document.querySelectorAll('.unit-btn').forEach(b => b.style.backgroundColor = '#1a1a1a');
+                document.querySelector(`[data-unit="${data.unit}"]`).style.backgroundColor = '#22c55e';
+                
+                document.querySelectorAll('.status-btn').forEach(b => {
+                    b.style.backgroundColor = '#1a1a1a';
+                    b.style.color = '#999';
+                });
+                document.querySelector(`[data-status="${data.status}"]`).style.backgroundColor = '#22c55e';
+                document.querySelector(`[data-status="${data.status}"]`).style.color = 'white';
+                
+                document.getElementById('modalTitle').textContent = 'Edit Product';
+                document.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save"></i> Update Product';
+                productModal.style.display = 'flex';
+                productModal.style.alignItems = 'center';
+                productModal.style.justifyContent = 'center';
+            });
+    });
+});
+
+// Delete Product
+document.querySelectorAll('.btn-delete').forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to delete this product?')) {
+            const productId = btn.dataset.id;
+            fetch(`/api/admin/products/${productId}/delete/`, { method: 'DELETE' })
+                .then(res => {
+                    if (res.ok) {
+                        alert('Product deleted successfully!');
+                        location.reload();
+                    }
+                })
+                .catch(err => alert('Error deleting product: ' + err));
+        }
+    });
+});
+</script>
+
+{% endblock %}

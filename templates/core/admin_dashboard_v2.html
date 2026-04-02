@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="admin-container">
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar">
+        <div class="sidebar-logo">
+            <h5><i class="fas fa-shield-alt"></i> AGRILINK ADMIN</h5>
+            <p>System Administrator</p>
+        </div>
+
+        <div class="sidebar-alert">
+            <i class="fas fa-exclamation-triangle"></i> {{ pending_farmers_count }} farmer{% if pending_farmers_count != 1 %}s{% endif %} pending verification
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="{% url 'admin_dashboard' %}" class="nav-item active">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </a>
+            <a href="{% url 'admin_verifications' %}" class="nav-item">
+                <i class="fas fa-user-check"></i> Verifications <span class="nav-badge">{{ pending_farmers_count }}</span>
+            </a>
+            <a href="{% url 'admin_farmers' %}" class="nav-item">
+                <i class="fas fa-tractor"></i> Farmers
+            </a>
+            <a href="{% url 'admin_customers' %}" class="nav-item">
+                <i class="fas fa-users"></i> Customers
+            </a>
+            <a href="{% url 'admin_products' %}" class="nav-item">
+                <i class="fas fa-box"></i> Products
+            </a>
+            <a href="{% url 'admin_transactions' %}" class="nav-item">
+                <i class="fas fa-money-bill"></i> Transactions
+            </a>
+            <a href="{% url 'admin_communication' %}" class="nav-item">
+                <i class="fas fa-comments"></i> Communication
+            </a>
+
+            <a href="{% url 'logout' %}" class="nav-item danger">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="admin-content">
+        <div class="content-header">
+            <h1>Dashboard</h1>
+            <p class="content-header-sub">System control panel</p>
+        </div>
+
+        <!-- STATS GRID -->
+        <div class="grid-admin" style="margin-bottom: 30px;">
+            <div class="stat-card-admin">
+                <i class="fas fa-user text-success"></i>
+                <h3>{{ active_farmers }}</h3>
+                <p>Active Farmers</p>
+                <small style="color: #777;">+2 this month</small>
+            </div>
+            <div class="stat-card-admin">
+                <i class="fas fa-chart-line text-success"></i>
+                <h3>Rs. {{ platform_gmv|floatformat:"0" }}</h3>
+                <p>Platform GMV</p>
+                <small style="color: #777;">↑ 5.2% WoW</small>
+            </div>
+            <div class="stat-card-admin">
+                <i class="fas fa-exclamation-circle text-warning"></i>
+                <h3>{{ pending_actions }}</h3>
+                <p>Pending Actions</p>
+                <small style="color: #F39C12;">Needs attention</small>
+            </div>
+            <div class="stat-card-admin">
+                <i class="fas fa-users text-info"></i>
+                <h3>{{ total_active_users }}</h3>
+                <p>Active Users</p>
+                <small style="color: #777;">↑ 8% WoW</small>
+            </div>
+        </div>
+
+        <!-- CHART BOX -->
+        <div style="background-color: #1a1a1a; border: 1px solid #222; border-radius: 12px; padding: 25px; margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                <div>
+                    <h6 style="color: #fff; font-weight: 700; margin: 0 0 5px 0;">Monthly GMV Trend</h6>
+                    <p style="color: #777; font-size: 0.9rem; margin: 0;">Platform-wide transaction volume</p>
+                </div>
+                <span style="background-color: #27AE60; color: white; padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.8rem;">Rs. {{ platform_gmv|floatformat:"0" }} Total</span>
+            </div>
+            <canvas id="chart" style="max-height: 250px;"></canvas>
+        </div>
+
+        <!-- VERIFICATIONS BOX -->
+        <div style="background-color: #1a1a1a; border: 1px solid #222; border-radius: 12px; padding: 25px; margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h6 style="color: #fff; font-weight: 700; margin: 0;">Pending Farmer Verifications ({{ pending_farmers|length }})</h6>
+                <a href="{% url 'admin_verifications' %}" style="color: #27AE60; text-decoration: none; font-weight: 600;">View All →</a>
+            </div>
+
+            {% if pending_farmers %}
+                {% for farmer in pending_farmers %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #222;">
+                        <div>
+                            <strong style="color: #fff;">{{ farmer.first_name }} {{ farmer.last_name }}</strong><br>
+                            <small style="color: #777;">{{ farmer.district }} · Docs: <span style="color: #F39C12;">Pending</span></small>
+                        </div>
+                        <div>
+                            <button style="padding: 8px 16px; background-color: #27AE60; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-right: 8px;">Approve</button>
+                            <button style="padding: 8px 16px; background-color: #E74C3C; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">Reject</button>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div style="padding: 20px; text-align: center; color: #777;">
+                    <p><i class="fas fa-check-circle" style="color: #27AE60;"></i> No pending verifications</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- BOTTOM STATS -->
+        <div class="grid-admin">
+            <div class="stat-card-admin">
+                <h3 style="margin: 0;">{{ total_products }}</h3>
+                <p>Total Products</p>
+            </div>
+            <div class="stat-card-admin">
+                <h3 style="margin: 0;">{{ out_of_stock_products }}</h3>
+                <p>Out of Stock</p>
+            </div>
+            <div class="stat-card-admin">
+                <h3 style="margin: 0;">Rs. {{ total_revenue|floatformat:"0" }}</h3>
+                <p>Total Revenue</p>
+            </div>
+            <div class="stat-card-admin">
+                <h3 style="margin: 0;">Rs. {{ avg_order_value|floatformat:"0" }}</h3>
+                <p>Avg. Order</p>
+            </div>
+        </div>
+
+        <!-- TODAY'S FRESH PICKS -->
+        <div style="background-color: #1a1a1a; border: 1px solid #222; border-radius: 12px; padding: 25px; margin-top: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div>
+                    <h6 style="color: #fff; font-weight: 700; margin: 0 0 5px 0;"><i class="fas fa-star" style="color: #F39C12;"></i> Today's Fresh Picks</h6>
+                    <p style="color: #777; font-size: 0.9rem; margin: 0;">Recently added products</p>
+                </div>
+                <a href="{% url 'admin_products' %}" style="color: #27AE60; text-decoration: none; font-weight: 600;">View All →</a>
+            </div>
+
+            {% if fresh_picks %}
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
+                    {% for product in fresh_picks %}
+                        <div style="background-color: #0d0d0d; border: 1px solid #222; border-radius: 8px; overflow: hidden; transition: all 0.3s;">
+                            {% if product.image %}
+                                <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width: 100%; height: 100px; object-fit: cover;">
+                            {% else %}
+                                <div style="width: 100%; height: 100px; background-color: #222; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-image" style="color: #555; font-size: 2rem;"></i>
+                                </div>
+                            {% endif %}
+                            <div style="padding: 12px;">
+                                <p style="color: #fff; font-weight: 600; font-size: 0.9rem; margin: 0 0 5px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ product.name }}</p>
+                                <p style="color: #777; font-size: 0.85rem; margin: 0 0 8px 0;">{{ product.farmer.get_full_name|default:product.farmer.username }} - {{ product.category.name|default:"N/A" }}</p>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #27AE60; font-weight: 700;">Rs. {{ product.price_min|floatformat:"0" }}</span>
+                                    <small style="color: #F39C12; background-color: rgba(243, 156, 18, 0.2); padding: 2px 8px; border-radius: 4px;">Fresh</small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="padding: 40px; text-align: center; color: #777;">
+                    <p><i class="fas fa-inbox"></i> No fresh products added today</p>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+new Chart(document.getElementById("chart"), {
+    type: "bar",
+    data: {
+        labels: {{ chart_labels|safe }},
+        datasets: [{
+            data: {{ weekly_revenue|safe }},
+            backgroundColor: "#22c55e",
+            borderRadius: 6
+        }]
+    },
+    options: {
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { grid: { display: false } },
+            y: { grid: { color: "#1f2937" } }
+        }
+    }
+});
+</script>
+
+{% endblock %}

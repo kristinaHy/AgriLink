@@ -38,4 +38,18 @@ urlpatterns = [
     path('farmer/dashboard/', views.FarmerDashboardView.as_view(), name='farmer_dashboard'),
     path('customer/dashboard/', views.CustomerDashboardView.as_view(), name='customer_dashboard'),
     path('superadmin/dashboard/', views.AdminDashboardView.as_view(), name='admin_dashboard'),
+    
+    # Admin Pages
+    path('superadmin/products/', views.AdminProductsView.as_view(), name='admin_products'),
+    path('superadmin/customers/', views.AdminCustomersView.as_view(), name='admin_customers'),
+    path('superadmin/farmers/', views.AdminFarmersView.as_view(), name='admin_farmers'),
+    path('superadmin/verifications/', views.AdminVerificationsView.as_view(), name='admin_verifications'),
+    path('superadmin/transactions/', views.AdminTransactionsView.as_view(), name='admin_transactions'),
+    path('superadmin/communication/', views.AdminCommunicationView.as_view(), name='admin_communication'),
+    
+    # API Endpoints for Admin Product CRUD
+    path('api/admin/products/create/', views.ProductCreateAPI.as_view(), name='api_product_create'),
+    path('api/admin/products/<int:product_id>/', views.ProductDetailAPI.as_view(), name='api_product_detail'),
+    path('api/admin/products/<int:product_id>/update/', views.ProductUpdateAPI.as_view(), name='api_product_update'),
+    path('api/admin/products/<int:product_id>/delete/', views.ProductDeleteAPI.as_view(), name='api_product_delete'),
 ]

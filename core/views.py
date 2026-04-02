@@ -6,10 +6,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.db.models import Q, Avg, Sum
-from .models import Product, Category, User, Order, Review, Cart, CartItem, Message, Notification
+from .models import Product, Category, User, Order, Review, Cart, CartItem, Message, Notification, OrderItem
 from django.utils import timezone
 from .forms import UserRegistrationForm, UserLoginForm, ProductForm, ReviewForm, MessageForm
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.http import JsonResponse
+from django.middleware.csrf import get_token
 
 # Home Page View
 class HomeView(TemplateView):
@@ -23,11 +25,18 @@ class HomeView(TemplateView):
             status='available'
         ).order_by('-created_at')[:5]
         
-        # Today's Fresh Picks
-        context['fresh_products'] = Product.objects.filter(
-            status='available',
-            is_fresh=True
-        ).order_by('-created_at')[:5]
+        # Category-based Fresh Picks (fresh products from each category)
+        categories = Category.objects.all()
+        fresh_picks = []
+        for category in categories[:3]:  # Get fresh picks from first 3 categories
+            category_fresh = Product.objects.filter(
+                is_fresh=True,
+                status='available',
+                category=category
+            ).select_related('farmer', 'category')[:2]
+            fresh_picks.extend(category_fresh)
+        
+        context['fresh_products'] = fresh_picks[:5]
         
         # Seasonal products
         context['seasonal_products'] = Product.objects.filter(
@@ -56,9 +65,6 @@ class HomeView(TemplateView):
 
 
 # Category View
-from django.views.generic import ListView
-from django.shortcuts import get_object_or_404, redirect
-from .models import Category, Product, User
 
 class CategoryView(ListView):
     model = Product
@@ -76,6 +82,15 @@ class CategoryView(ListView):
         # If specific category
         category = get_object_or_404(Category, name__iexact=category_slug)
 
+        # Guests → no products
+        if not self.request.user.is_authenticated:
+            return Product.objects.none()
+
+        # Customers → products in category
+        if self.request.user.role == 'customer':
+            return Product.objects.filter(category=category, status='available').order_by('-created_at')
+
+        # Farmers/Admins → products in category (but template hides button)
         return Product.objects.filter(category=category, status='available').order_by('-created_at')
 
     def get_context_data(self, **kwargs):
@@ -94,9 +109,12 @@ class CategoryView(ListView):
 
     def dispatch(self, request, *args, **kwargs):
         category_slug = kwargs.get('slug')
+
+        # Guests trying to access a category → redirect to login
         if category_slug and category_slug != 'all':
             if not request.user.is_authenticated:
                 return redirect('login')
+
         return super().dispatch(request, *args, **kwargs)
 
 # Product Detail View
@@ -285,41 +303,6 @@ class CustomerDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
 
 
 # Admin Dashboard View
-class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
-    template_name = 'core/admin_dashboard.html'
-    
-    def test_func(self):
-        return self.request.user.role == 'admin'
-    
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        
-        context['total_users'] = User.objects.count()
-        context['total_farmers'] = User.objects.filter(role='farmer').count()
-        context['total_customers'] = User.objects.filter(role='customer').count()
-        context['unverified_farmers'] = User.objects.filter(
-            role='farmer',
-            is_verified=False
-        ).count()
-        context['total_products'] = Product.objects.count()
-        context['total_orders'] = Order.objects.count()
-        context['pending_verification'] = User.objects.filter(
-            role='farmer',
-            is_verified=False
-        )
-        context['recent_farmers'] = User.objects.filter(role='farmer').order_by('-created_at')[:10]
-        context['recent_customers'] = User.objects.filter(role='customer').order_by('-created_at')[:10]
-        context['recent_products'] = Product.objects.order_by('-created_at')[:10]
-        context['recent_transactions'] = Order.objects.select_related('customer').prefetch_related('items__product__farmer').order_by('-created_at')[:10]
-        
-        # Pre-calculate for template
-        for farmer in context['recent_farmers']:
-            farmer.orders_count = Order.objects.filter(items__product__farmer=farmer).distinct().count()
-        for customer in context['recent_customers']:
-            customer.orders_count = customer.orders.count()
-            customer.orders_spent = customer.orders.aggregate(total=Sum('total_amount'))['total'] or 0
-        
-        return context
 
 
 # Product List for customers/public
@@ -558,4 +541,370 @@ class OrderUpdateStatusView(LoginRequiredMixin, UserPassesTestMixin, View):
         messages.success(request, f'Order status updated to {new_status}.')
         return redirect('farmer_orders')
 
+
+# Admin Views
+class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "core/admin_dashboard_v2.html"
+    
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.role == "admin"
+    
+    def get_context_data(self, **kwargs):
+        from django.db.models import Sum, Count, Q
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        context = super().get_context_data(**kwargs)
+        
+        # Active Farmers & Customers
+        context['active_farmers'] = User.objects.filter(role='farmer', is_verified=True).count()
+        context['active_customers'] = User.objects.filter(role='customer').count()
+        context['total_active_users'] = context['active_farmers'] + context['active_customers']
+        
+        # Products Data
+        context['total_products'] = Product.objects.filter(status='available').count()
+        context['out_of_stock_products'] = Product.objects.filter(status='out_of_stock').count()
+        
+        # Platform GMV & Revenue
+        orders = Order.objects.all()
+        total_revenue = orders.aggregate(total=Sum('total_amount'))['total'] or 0
+        context['platform_gmv'] = total_revenue
+        context['total_revenue'] = total_revenue
+        
+        # Average Order Value
+        order_count = orders.count()
+        context['avg_order_value'] = (total_revenue / order_count) if order_count > 0 else 0
+        
+        # Pending Actions (unverified farmers)
+        context['pending_farmers_count'] = User.objects.filter(role='farmer', is_verified=False).count()
+        context['pending_actions'] = context['pending_farmers_count']
+        
+        # Pending Farmers for Verification (first 3)
+        context['pending_farmers'] = User.objects.filter(
+            role='farmer', 
+            is_verified=False
+        )[:3]
+        
+        # Weekly Revenue Data (last 4 weeks)
+        today = timezone.now()
+        week_data = []
+        labels = []
+        
+        for i in range(3, -1, -1):
+            week_start = today - timedelta(weeks=i+1)
+            week_end = today - timedelta(weeks=i)
+            week_revenue = Order.objects.filter(
+                created_at__gte=week_start,
+                created_at__lt=week_end
+            ).aggregate(total=Sum('total_amount'))['total'] or 0
+            week_data.append(int(week_revenue))
+            labels.append(f"Week {4-i}")
+        
+        context['weekly_revenue'] = week_data
+        context['chart_labels'] = labels
+        
+        # Categories
+        categories = Category.objects.all()
+        context['categories'] = categories[:8]
+        context['total_categories'] = categories.count()
+        
+        # Category-based Fresh Picks (fresh products from each category)
+        fresh_picks = []
+        for category in categories[:3]:  # Get fresh picks from first 3 categories
+            category_fresh = Product.objects.filter(
+                is_fresh=True,
+                status='available',
+                category=category
+            ).select_related('farmer', 'category')[:2]
+            fresh_picks.extend(category_fresh)
+        
+        context['fresh_picks'] = fresh_picks[:6]
+        
+        # All Products for Admin (paginated view)
+        context['products'] = Product.objects.all().select_related('farmer', 'category')[:12]
+        
+        return context
+
+
+class AdminProductsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "core/admin_products_v2.html"
+    
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.role == "admin"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['products'] = Product.objects.all().select_related('farmer', 'category')
+        context['categories'] = Category.objects.all()
+        context['pending_count'] = User.objects.filter(role='farmer', is_verified=False).count()
+        return context
+
+
+class AdminCustomersView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "core/admin_customers_v2.html"
+    
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.role == "admin"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        customers = User.objects.filter(role='customer')
+        
+        # Add computed fields to each customer
+        customer_list = []
+        for customer in customers:
+            customer.total_orders = Order.objects.filter(customer=customer).count()
+            customer.total_spent = Order.objects.filter(customer=customer).aggregate(
+                total=Sum('total_amount')
+            )['total'] or 0
+            customer_list.append(customer)
+        
+        context['customers'] = customer_list[:10]
+        context['pending_count'] = User.objects.filter(role='farmer', is_verified=False).count()
+        return context
+
+
+class AdminFarmersView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "core/admin_farmers_v2.html"
+    
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.role == "admin"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        farmers = User.objects.filter(role='farmer', is_verified=True)
+        
+        # Add computed fields to each farmer
+        farmer_list = []
+        for farmer in farmers:
+            farmer.total_products = Product.objects.filter(farmer=farmer).count()
+            farmer.total_sales = Order.objects.filter(
+                items__product__farmer=farmer
+            ).aggregate(total=Sum('total_amount'))['total'] or 0
+            farmer.rating = 4.6  # Mock rating - update based on reviews
+            farmer_list.append(farmer)
+        
+        context['farmers'] = farmer_list[:10]
+        context['pending_count'] = User.objects.filter(role='farmer', is_verified=False).count()
+        return context
+
+
+class AdminVerificationsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "core/admin_verifications_v2.html"
+    
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.role == "admin"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Get pending farmer verifications
+        pending_farmers = User.objects.filter(role='farmer', is_verified=False)
+        
+        farmer_list = []
+        for farmer in pending_farmers:
+            farmer.total_products = 3  # Mock - update based on actual pending products
+            farmer_list.append(farmer)
+        
+        context['pending_farmers'] = farmer_list[:5]
+        context['pending_count'] = pending_farmers.count()
+        return context
+
+
+class AdminTransactionsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "core/admin_transactions_v2.html"
+    
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.role == "admin"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Create mock transaction data
+        orders = Order.objects.all().select_related('customer').prefetch_related('items__product__farmer')[:10]
+        
+        transactions = []
+        for i, order in enumerate(orders):
+            farmer_name = order.items.first().product.farmer.name if order.items.exists() else "N/A"
+            transactions.append({
+                'order_id': f'#ORD-{1042-i}',
+                'farmer': farmer_name,
+                'customer': order.customer.name,
+                'method': 'Khalti',
+                'amount': order.total_amount,
+                'date': order.created_at,
+                'status': 'COMPLETED' if order.payment_status == 'completed' else 'PENDING'
+            })
+        
+        context['transactions'] = transactions
+        context['pending_count'] = User.objects.filter(role='farmer', is_verified=False).count()
+        return context
+
+
+class AdminCommunicationView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "core/admin_communication_v2.html"
+    
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.role == "admin"
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Get messages/communications
+        context['messages'] = Message.objects.all().order_by('-created_at')[:20]
+        context['pending_count'] = User.objects.filter(role='farmer', is_verified=False).count()
+        return context
+
+
+# API Views for Product CRUD
+
+class ProductCreateAPI(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.role == "admin"
+    
+    def post(self, request):
+        try:
+            # Get first farmer or admin as fallback
+            farmer = request.user if request.user.role == 'farmer' else User.objects.filter(role='farmer').first()
+            if not farmer:
+                return JsonResponse({'success': False, 'message': 'No farmer found for product'}, status=400)
+            
+            category_id = request.POST.get('category')
+            if not category_id:
+                return JsonResponse({'success': False, 'message': 'Category is required'}, status=400)
+            
+            price_min = float(request.POST.get('price_min', 0))
+            price_max = float(request.POST.get('price_max', 0))
+            
+            if price_min < 0 or price_max < 0:
+                return JsonResponse({'success': False, 'message': 'Prices must be positive'}, status=400)
+            
+            # Handle image file upload
+            image = None
+            if 'image' in request.FILES:
+                image = request.FILES['image']
+            
+            product = Product.objects.create(
+                farmer=farmer,
+                category_id=category_id,
+                name=request.POST.get('name'),
+                description=request.POST.get('description'),
+                price_min=price_min,
+                price_max=price_max,
+                price=price_min,
+                quantity=int(request.POST.get('quantity', 0)),
+                unit=request.POST.get('unit', 'kg'),
+                status=request.POST.get('status', 'available'),
+                is_fresh=request.POST.get('is_fresh', 'on') in ['on', 'true', '1', True],
+                image=image
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'id': product.id,
+                'message': 'Product created successfully'
+            })
+        except ValueError as e:
+            return JsonResponse({'success': False, 'message': f'Invalid input: {str(e)}'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)}, status=400)
+
+
+class ProductDetailAPI(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.role == "admin"
+    
+    def get(self, request, product_id):
+        try:
+            product = Product.objects.get(id=product_id)
+            return JsonResponse({
+                'id': product.id,
+                'name': product.name,
+                'category': product.category_id,
+                'description': product.description,
+                'price_min': float(product.price_min),
+                'price_max': float(product.price_max),
+                'quantity': product.quantity,
+                'unit': product.unit,
+                'status': product.status,
+                'image': product.image.url if product.image else '',
+                'is_fresh': product.is_fresh,
+                'farmer': {
+                    'id': product.farmer.id,
+                    'name': product.farmer.get_full_name() or product.farmer.username
+                }
+            })
+        except Product.DoesNotExist:
+            return JsonResponse({'error': 'Product not found'}, status=404)
+
+
+class ProductUpdateAPI(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.role == "admin"
+    
+    def put(self, request, product_id):
+        try:
+            product = Product.objects.get(id=product_id)
+            
+            # Update fields only if provided
+            if 'name' in request.POST:
+                product.name = request.POST.get('name')
+            if 'category' in request.POST:
+                product.category_id = request.POST.get('category')
+            if 'description' in request.POST:
+                product.description = request.POST.get('description')
+            
+            if 'price_min' in request.POST:
+                price_min = float(request.POST.get('price_min'))
+                product.price_min = price_min
+                product.price = price_min
+            
+            if 'price_max' in request.POST:
+                product.price_max = float(request.POST.get('price_max'))
+            
+            if 'quantity' in request.POST:
+                product.quantity = int(request.POST.get('quantity'))
+            if 'unit' in request.POST:
+                product.unit = request.POST.get('unit')
+            if 'status' in request.POST:
+                product.status = request.POST.get('status')
+            if 'is_fresh' in request.POST:
+                product.is_fresh = request.POST.get('is_fresh') in ['on', 'true', '1', True]
+            
+            # Handle image file upload
+            if 'image' in request.FILES:
+                # Delete old image if exists
+                if product.image:
+                    product.image.delete()
+                product.image = request.FILES['image']
+            
+            product.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Product updated successfully'
+            })
+        except Product.DoesNotExist:
+            return JsonResponse({'error': 'Product not found'}, status=404)
+        except ValueError as e:
+            return JsonResponse({'error': f'Invalid input: {str(e)}'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+
+class ProductDeleteAPI(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.role == "admin"
+    
+    def delete(self, request, product_id):
+        try:
+            product = Product.objects.get(id=product_id)
+            product_name = product.name
+            product.delete()
+            return JsonResponse({
+                'success': True,
+                'message': f'Product "{product_name}" deleted successfully'
+            })
+        except Product.DoesNotExist:
+            return JsonResponse({'error': 'Product not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
 
