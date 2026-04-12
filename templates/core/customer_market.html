@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Farmers Market - AgriLink{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/customer_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<header class="header">
+    <div class="header-left">
+        <div class="logo">
+            <img src="https://www.bing.com/th/id/OIP.Ra1raSNjJix62zGEonbLSwHaHa?w=195&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2" alt="AS">
+            <span id="dashboardUsername">{{ user.get_full_name|default:user.username }}</span>
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="user-info">
+            <div class="profile-pic">{{ user.get_full_name|default:user.username|slice:":2"|upper }}</div>
+            <div class="username">{{ user.get_full_name|default:user.username }}</div>
+            <div class="user-status">Customer account - {{ user.district|default:"Nepal" }}</div>
+        </div>
+        <div class="header-actions">
+            <div class="role-chip">Customer</div>
+            <button class="logout-btn" onclick="location.href='{% url 'logout' %}'">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </div>
+</header>
+
+<div class="main-container">
+    <aside class="sidebar">
+        <nav class="sidebar-nav">
+            <div class="sidebar-user-card">
+                <div class="sidebar-user-avatar">{{ user.get_full_name|default:user.username|slice:":2"|upper }}</div>
+                <div class="sidebar-user-meta">
+                    <div class="sidebar-user-name">{{ user.get_full_name|default:user.username }}</div>
+                    <div class="sidebar-user-sub">Customer - {{ user.district|default:"Nepal" }}</div>
+                </div>
+            </div>
+            <a href="{% url 'customer_dashboard' %}" class="nav-item">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'customer_market' %}" class="nav-item active">
+                <i class="fas fa-shopping-bag"></i>
+                <span>Farmers Market</span>
+            </a>
+            <a href="{% url 'customer_orders' %}" class="nav-item">
+                <i class="fas fa-box-open"></i>
+                <span>My Orders</span>
+                <div class="notification-badge">{{ total_orders|default:0 }}</div>
+            </a>
+            <a href="{% url 'customer_cart' %}" class="nav-item">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Cart</span>
+                <div class="notification-badge" id="cartBadge">{{ cart.items.all|length }}</div>
+            </a>
+            <a href="{% url 'customer_messages' %}" class="nav-item">
+                <i class="fas fa-envelope"></i>
+                <span>Messages</span>
+                <div class="notification-badge">{{ unread_messages|default:0 }}</div>
+            </a>
+            <a href="{% url 'customer_wishlist' %}" class="nav-item">
+                <i class="fas fa-heart"></i>
+                <span>Wishlist</span>
+                <div class="notification-badge" id="wishlistBadge">{{ wishlist_count|default:0 }}</div>
+            </a>
+            <a href="{% url 'customer_profile' %}" class="nav-item">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="page-title">
+                <h1>Farmers Market</h1>
+                <p id="dashboardPageSubtitle">Fresh produce from verified local farmers</p>
+            </div>
+            <div class="top-actions">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="marketSearchInput" placeholder="Search products...">
+                </div>
+            </div>
+        </div>
+
+        <section class="content-card" style="margin-bottom: 1rem;">
+            <div class="products-grid">
+                {% for product in products %}
+                <div class="market-card" data-id="{{ product.id }}" data-name="{{ product.name }}" data-category="{{ product.category.name|default:'uncategorized' }}">
+                    {% if product.status == 'available' %}
+                    <span class="pill">Available</span>
+                    {% elif product.status == 'out_of_stock' %}
+                    <span class="pill out-of-stock">Out of Stock</span>
+                    {% endif %}
+                    {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy">
+                    {% else %}
+                    <div style="width: 100%; height: 200px; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #666;">
+                        <i class="fas fa-image" style="font-size: 3rem;"></i>
+                    </div>
+                    {% endif %}
+                    <div class="product-info">
+                        <h3>{{ product.name }}</h3>
+                        <div class="meta-row">
+                            <i class="fas fa-star"></i> {{ product.average_rating|floatformat:1 }}
+                            | {{ product.farmer.get_full_name|default:product.farmer.username }}
+                        </div>
+                        <div class="price">Rs. {{ product.price_min }}/{{ product.unit }}</div>
+                        <div class="market-actions">
+                            <button class="add-cart-btn" onclick="addToCart({{ product.id }}, '{{ product.name }}', {{ product.price_min }}, '{{ product.unit }}')">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <button class="wishlist-icon-btn" onclick="addToWishlist({{ product.id }}, '{{ product.name }}', {{ product.price_min }}, '{{ product.unit }}')">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666;">
+                    <i class="fas fa-box" style="font-size: 3rem; margin-bottom: 20px; display: block;"></i>
+                    <p>No products available</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <div class="two-col">
+            <article class="content-card">
+                <div class="card-header">
+                    <h2>Product Categories</h2>
+                    <a href="{% url 'category_all' %}" class="view-all">View All →</a>
+                </div>
+                <div class="category-grid">
+                    {% for category in categories %}
+                    <div class="category-card" onclick="location.href='{% url 'category' category.name %}'">
+                        <h3>{{ category.name }}</h3>
+                        <small>{{ category.description|truncatewords:10 }}</small>
+                        <div class="pill">{{ category.products.count }} products</div>
+                    </div>
+                    {% empty %}
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <i class="fas fa-tags" style="font-size: 3rem; margin-bottom: 20px; display: block;"></i>
+                        <p>No categories available</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </article>
+
+            <article class="content-card">
+                <div class="card-header">
+                    <h2>Live Prices</h2>
+                </div>
+                <div class="info-card">
+                    <p class="small-text">
+                        <i class="fas fa-leaf"></i> Tomato (Local): Rs 45/kg
+                        <span style="color: #22c55e; font-weight: 600;">▲ 2%</span>
+                    </p>
+                    <p class="small-text">
+                        <i class="fas fa-carrot"></i> Carrot: Rs 60/kg
+                        <span style="color: #22c55e; font-weight: 600;">▲ 5%</span>
+                    </p>
+                    <p class="small-text">
+                        <i class="fas fa-apple"></i> Apple (Fuji): Rs 220/kg
+                        <span style="color: #ef4444; font-weight: 600;">▼ 3%</span>
+                    </p>
+                    <p class="small-text">
+                        <i class="fas fa-potato"></i> Potato: Rs 32/kg
+                        <span style="color: #22c55e; font-weight: 600;">▲ 1%</span>
+                    </p>
+                </div>
+            </article>
+        </div>
+
+        <section class="content-card" style="margin-top: 1rem;">
+            <div class="card-header">
+                <h2>Meet Our Farmers</h2>
+                <span class="small-text">Verified local farmers supplying fresh produce directly to you</span>
+            </div>
+            <div class="farmers-grid">
+                {% for farmer in featured_farmers %}
+                <div class="farmer-card">
+                    <div class="farmer-avatar">{{ farmer.get_full_name|default:farmer.username|slice:":2"|upper }}</div>
+                    <h3>{{ farmer.get_full_name|default:farmer.username }}</h3>
+                    <small>{{ farmer.district|default:"Nepal" }}</small>
+                    <div class="pill">{{ farmer.products.count }} products</div>
+                </div>
+                {% empty %}
+                <div style="text-align: center; padding: 40px; color: #666;">
+                    <i class="fas fa-tractor" style="font-size: 3rem; margin-bottom: 20px; display: block;"></i>
+                    <p>No farmers available</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+</div>
+
+<div class="toast" id="dashboardToast" aria-live="polite"></div>
+
+<script src="{% static 'js/customer_market.js' %}"></script>
+{% endblock %}

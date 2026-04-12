@@ -3,156 +3,243 @@
 
 {% block title %}Customer Dashboard - AgriLink{% endblock %}
 
-{% block content %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/customer_dashboard.css' %}">
+{% endblock %}
 
-<div class="container-fluid my-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h1 class="mb-0">
-                <i class="fas fa-shopping-bag text-success"></i> Customer Dashboard
-            </h1>
-            <p class="text-muted">Welcome, {{ user.get_full_name|default:user.username }}!</p>
+{% block content %}
+<header class="header">
+    <div class="header-left">
+        <div class="logo">
+            <img src="https://www.bing.com/th/id/OIP.Ra1raSNjJix62zGEonbLSwHaHa?w=195&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2" alt="AS">
+            <span id="dashboardUsername">{{ user.get_full_name|default:user.username }}</span>
         </div>
     </div>
-    
-    <!-- Statistics -->
-    <div class="row mb-4">
-        <div class="col-md-4 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <i class="fas fa-shopping-cart text-success fa-2x mb-3"></i>
-                    <h5 class="card-title">{{ total_orders }}</h5>
-                    <p class="card-text text-muted">Total Orders</p>
-                </div>
-            </div>
+    <div class="header-right">
+        <div class="user-info">
+            <div class="profile-pic">{{ user.get_full_name|default:user.username|slice:":2"|upper }}</div>
+            <div class="username">{{ user.get_full_name|default:user.username }}</div>
+            <div class="user-status">Customer account - {{ user.district|default:"Nepal" }}</div>
         </div>
-        <div class="col-md-4 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <i class="fas fa-shopping-basket text-info fa-2x mb-3"></i>
-                    <h5 class="card-title">{{ cart.items.all|length }}</h5>
-                    <p class="card-text text-muted">Items in Cart</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 mb-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center">
-                    <i class="fas fa-envelope text-warning fa-2x mb-3"></i>
-                    <h5 class="card-title">{{ unread_messages }}</h5>
-                    <p class="card-text text-muted">Unread Messages</p>
-                </div>
-            </div>
+        <div class="header-actions">
+            <div class="role-chip">Customer</div>
+            <button class="logout-btn" onclick="location.href='{% url 'logout' %}'">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
         </div>
     </div>
-    
-    <div class="row">
-        <!-- Recent Orders -->
-        <div class="col-lg-8 mb-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-list"></i> Your Orders
-                    </h5>
+</header>
+
+<div class="main-container">
+    <aside class="sidebar">
+        <nav class="sidebar-nav">
+            <div class="sidebar-user-card">
+                <div class="sidebar-user-avatar">{{ user.get_full_name|default:user.username|slice:":2"|upper }}</div>
+                <div class="sidebar-user-meta">
+                    <div class="sidebar-user-name">{{ user.get_full_name|default:user.username }}</div>
+                    <div class="sidebar-user-sub">Customer - {{ user.district|default:"Nepal" }}</div>
                 </div>
-                <div class="card-body">
-                    {% if orders %}
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Order #</th>
-                                        <th>Date</th>
-                                        <th>Amount</th>
-                                        <th>Status</th>
-                                        <th>Payment</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for order in orders %}
-                                        <tr>
-                                            <td>{{ order.order_number }}</td>
-                                            <td>{{ order.created_at|date:"M d, Y" }}</td>
-                                            <td>Rs.{{ order.total_amount }}</td>
-                                            <td>
-                                                {% if order.status == 'delivered' %}
-                                                    <span class="badge bg-success">{{ order.get_status_display }}</span>
-                                                {% elif order.status == 'pending' %}
-                                                    <span class="badge bg-warning">{{ order.get_status_display }}</span>
-                                                {% elif order.status == 'cancelled' %}
-                                                    <span class="badge bg-danger">{{ order.get_status_display }}</span>
-                                                {% else %}
-                                                    <span class="badge bg-info">{{ order.get_status_display }}</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                {% if order.payment_status == 'paid' %}
-                                                    <span class="badge bg-success">Paid</span>
-                                                {% else %}
-                                                    <span class="badge bg-warning">{{ order.get_payment_status_display }}</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <a href="#" class="btn btn-sm btn-outline-primary">View</a>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+            </div>
+            <a href="{% url 'customer_dashboard' %}" class="nav-item active">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'customer_market' %}" class="nav-item">
+                <i class="fas fa-shopping-bag"></i>
+                <span>Farmers Market</span>
+            </a>
+            <a href="{% url 'customer_orders' %}" class="nav-item">
+                <i class="fas fa-box-open"></i>
+                <span>My Orders</span>
+                <div class="notification-badge">{{ total_orders|default:0 }}</div>
+            </a>
+            <a href="{% url 'customer_cart' %}" class="nav-item">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Cart</span>
+                <div class="notification-badge" id="cartBadge">{{ cart.items.all|length }}</div>
+            </a>
+            <a href="{% url 'customer_messages' %}" class="nav-item">
+                <i class="fas fa-envelope"></i>
+                <span>Messages</span>
+                <div class="notification-badge">{{ unread_messages|default:0 }}</div>
+            </a>
+            <a href="{% url 'customer_wishlist' %}" class="nav-item">
+                <i class="fas fa-heart"></i>
+                <span>Wishlist</span>
+                <div class="notification-badge" id="wishlistBadge">{{ wishlist_count|default:0 }}</div>
+            </a>
+            <a href="{% url 'customer_profile' %}" class="nav-item">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="page-title">
+                <h1>Dashboard</h1>
+                <p id="dashboardPageSubtitle">Welcome {{ user.get_full_name|default:user.username }}</p>
+            </div>
+            <div class="top-actions">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="{{ user.get_full_name|default:user.username|slice:':1' }}, search farmers products...">
+                </div>
+            </div>
+        </div>
+
+        <section class="hero-card">
+            <div class="hero-content">
+                <span class="hero-tag">🌱 Fresh from Farm</span>
+                <h2>Welcome to AgriLink</h2>
+                <p>Discover fresh, locally grown produce directly from verified farmers in your region.</p>
+                <button class="hero-btn btn-green" onclick="location.href='{% url 'customer_market' %}'">
+                    <i class="fas fa-shopping-bag"></i> Explore Market
+                </button>
+            </div>
+            <div class="hero-icon">
+                <i class="fas fa-leaf"></i>
+            </div>
+        </section>
+
+        <div class="stats-grid">
+            <div class="stat-card green">
+                <div class="stat-number">{{ total_orders|default:0 }}</div>
+                <div class="stat-label">Total Orders</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-number">{{ cart.items.all|length }}</div>
+                <div class="stat-label">Items in Cart</div>
+            </div>
+            <div class="stat-card blue">
+                <div class="stat-number">{{ wishlist_count|default:0 }}</div>
+                <div class="stat-label">Wishlist Items</div>
+            </div>
+            <div class="stat-card purple">
+                <div class="stat-number">{{ unread_messages|default:0 }}</div>
+                <div class="stat-label">Unread Messages</div>
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>Featured Products</h2>
+                    <a href="{% url 'customer_market' %}" class="view-all">View All →</a>
+                </div>
+                <div class="products-grid">
+                    {% for product in featured_products %}
+                    <div class="product-card" data-id="{{ product.id }}">
+                        {% if product.status == 'available' %}
+                        <span class="pill">Available</span>
+                        {% elif product.status == 'out_of_stock' %}
+                        <span class="pill out-of-stock">Out of Stock</span>
+                        {% endif %}
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy">
+                        {% else %}
+                        <div style="width: 100%; height: 150px; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #666;">
+                            <i class="fas fa-image" style="font-size: 2rem;"></i>
                         </div>
-                    {% else %}
-                        <p class="text-muted">You haven't placed any orders yet.</p>
-                    {% endif %}
-                    <a href="{% url 'home' %}" class="btn btn-success mt-3">
-                        <i class="fas fa-shopping-bag"></i> Start Shopping
-                    </a>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Cart Summary -->
-        <div class="col-lg-4 mb-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-shopping-basket"></i> Your Shopping Cart
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if cart and cart.items.all %}
-                        <ul class="list-group list-group-flush">
-                            {% for item in cart.items.all %}
-                                <li class="list-group-item">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <h6 class="mb-1">{{ item.product.name }}</h6>
-                                            <small class="text-muted">Qty: {{ item.quantity }}</small>
-                                        </div>
-                                        <span class="badge bg-success">Rs.{{ item.subtotal }}</span>
-                                    </div>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                        <div class="mt-3">
-                            <div class="d-flex justify-content-between mb-3">
-                                <strong>Total:</strong>
-                                <strong>Rs.{{ cart.total_price }}</strong>
+                        {% endif %}
+                        <div class="product-info">
+                            <h3>{{ product.name }}</h3>
+                            <div class="meta-row">
+                                <i class="fas fa-star"></i> {{ product.average_rating|floatformat:1 }}
+                                | {{ product.farmer.get_full_name|default:product.farmer.username }}
                             </div>
-                            <a href="#" class="btn btn-success w-100">
-                                <i class="fas fa-credit-card"></i> Proceed to Checkout
-                            </a>
+                            <div class="price">Rs. {{ product.price_min }}/{{ product.unit }}</div>
+                            <div class="product-action">
+                                <button class="add-cart-btn" onclick="addToCart({{ product.id }}, '{{ product.name }}', {{ product.price_min }}, '{{ product.unit }}')">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <button class="wishlist-btn" onclick="addToWishlist({{ product.id }}, '{{ product.name }}', {{ product.price_min }}, '{{ product.unit }}')">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            </div>
                         </div>
-                    {% else %}
-                        <p class="text-muted">Your cart is empty.</p>
-                        <a href="{% url 'home' %}" class="btn btn-success w-100 mt-3">
-                            <i class="fas fa-shopping-bag"></i> Continue Shopping
-                        </a>
-                    {% endif %}
+                    </div>
+                    {% empty %}
+                    <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666;">
+                        <i class="fas fa-box" style="font-size: 3rem; margin-bottom: 20px; display: block;"></i>
+                        <p>No featured products available</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>Product Categories</h2>
+                    <a href="{% url 'category_all' %}" class="view-all">View All →</a>
+                </div>
+                <div class="category-grid">
+                    {% for category in categories %}
+                    <div class="category-card">
+                        <h3>{{ category.name }}</h3>
+                        <small>{{ category.description|truncatewords:10 }}</small>
+                        <div class="pill">{{ category.products.count }} products</div>
+                    </div>
+                    {% empty %}
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <i class="fas fa-tags" style="font-size: 3rem; margin-bottom: 20px; display: block;"></i>
+                        <p>No categories available</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>Verified Farmers</h2>
+                    <a href="#" class="view-all">View All →</a>
+                </div>
+                <div class="farmers-grid">
+                    {% for farmer in featured_farmers %}
+                    <div class="farmer-card">
+                        <div class="farmer-avatar">{{ farmer.get_full_name|default:farmer.username|slice:":2"|upper }}</div>
+                        <h3>{{ farmer.get_full_name|default:farmer.username }}</h3>
+                        <small>{{ farmer.district|default:"Nepal" }}</small>
+                        <div class="pill">{{ farmer.products.count }} products</div>
+                    </div>
+                    {% empty %}
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <i class="fas fa-tractor" style="font-size: 3rem; margin-bottom: 20px; display: block;"></i>
+                        <p>No farmers available</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="content-card">
+                <div class="card-header">
+                    <h2>Live Market Prices</h2>
+                </div>
+                <div class="info-card">
+                    <p class="small-text">
+                        <i class="fas fa-leaf"></i> Tomato (Local): Rs 45/kg
+                        <span style="color: #22c55e; font-weight: 600;">▲ 2%</span>
+                    </p>
+                    <p class="small-text">
+                        <i class="fas fa-carrot"></i> Carrot: Rs 60/kg
+                        <span style="color: #22c55e; font-weight: 600;">▲ 5%</span>
+                    </p>
+                    <p class="small-text">
+                        <i class="fas fa-apple"></i> Apple (Fuji): Rs 220/kg
+                        <span style="color: #ef4444; font-weight: 600;">▼ 3%</span>
+                    </p>
+                    <p class="small-text">
+                        <i class="fas fa-potato"></i> Potato: Rs 32/kg
+                        <span style="color: #22c55e; font-weight: 600;">▲ 1%</span>
+                    </p>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 </div>
 
+<div class="toast" id="dashboardToast" aria-live="polite"></div>
+
+<script src="{% static 'js/customer_dashboard.js' %}"></script>
 {% endblock %}

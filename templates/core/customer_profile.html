@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile - AgriLink{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/customer_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<header class="header">
+    <div class="header-left">
+        <div class="logo">
+            <img src="https://www.bing.com/th/id/OIP.Ra1raSNjJix62zGEonbLSwHaHa?w=195&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2" alt="AS">
+            <span id="dashboardUsername">{{ user.get_full_name|default:user.username }}</span>
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="user-info">
+            <div class="profile-pic">{{ user.get_full_name|default:user.username|slice:":2"|upper }}</div>
+            <div class="username">{{ user.get_full_name|default:user.username }}</div>
+            <div class="user-status">Customer account - {{ user.district|default:"Nepal" }}</div>
+        </div>
+        <div class="header-actions">
+            <div class="role-chip">Customer</div>
+            <button class="logout-btn" onclick="location.href='{% url 'logout' %}'">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </div>
+</header>
+
+<div class="main-container">
+    <aside class="sidebar">
+        <nav class="sidebar-nav">
+            <div class="sidebar-user-card">
+                <div class="sidebar-user-avatar">{{ user.get_full_name|default:user.username|slice:":2"|upper }}</div>
+                <div class="sidebar-user-meta">
+                    <div class="sidebar-user-name">{{ user.get_full_name|default:user.username }}</div>
+                    <div class="sidebar-user-sub">Customer - {{ user.district|default:"Nepal" }}</div>
+                </div>
+            </div>
+            <a href="{% url 'customer_dashboard' %}" class="nav-item">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'customer_market' %}" class="nav-item">
+                <i class="fas fa-shopping-bag"></i>
+                <span>Farmers Market</span>
+            </a>
+            <a href="{% url 'customer_orders' %}" class="nav-item">
+                <i class="fas fa-shopping-cart"></i>
+                <span>My Orders</span>
+                {% if orders %}
+                <span class="nav-badge">{{ orders|length }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'customer_cart' %}" class="nav-item">
+                <i class="fas fa-cart-plus"></i>
+                <span>Cart</span>
+                {% if cart_count %}
+                <span class="nav-badge">{{ cart_count }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'customer_wishlist' %}" class="nav-item">
+                <i class="fas fa-heart"></i>
+                <span>Wishlist</span>
+                {% if wishlist_count %}
+                <span class="nav-badge">{{ wishlist_count }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'customer_messages' %}" class="nav-item">
+                <i class="fas fa-envelope"></i>
+                <span>Messages</span>
+                {% if unread_messages %}
+                <span class="nav-badge">{{ unread_messages }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'customer_profile' %}" class="nav-item active">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="content-header">
+            <h1>My Profile</h1>
+            <p>Manage your account information</p>
+        </div>
+
+        <div class="profile-container">
+            <div class="profile-sections">
+                <div class="profile-section">
+                    <div class="section-header">
+                        <h3>Personal Information</h3>
+                        <button class="btn-secondary" onclick="editProfile()">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </div>
+                    <div class="profile-info">
+                        <div class="info-row">
+                            <label>Full Name:</label>
+                            <span>{{ user.get_full_name|default:"Not provided" }}</span>
+                        </div>
+                        <div class="info-row">
+                            <label>Username:</label>
+                            <span>{{ user.username }}</span>
+                        </div>
+                        <div class="info-row">
+                            <label>Email:</label>
+                            <span>{{ user.email|default:"Not provided" }}</span>
+                        </div>
+                        <div class="info-row">
+                            <label>Phone:</label>
+                            <span>{{ user.phone|default:"Not provided" }}</span>
+                        </div>
+                        <div class="info-row">
+                            <label>District:</label>
+                            <span>{{ user.district|default:"Not provided" }}</span>
+                        </div>
+                        <div class="info-row">
+                            <label>Role:</label>
+                            <span>{{ user.role|title }}</span>
+                        </div>
+                        <div class="info-row">
+                            <label>Member Since:</label>
+                            <span>{{ user.date_joined|date:"M d, Y" }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <div class="section-header">
+                        <h3>Account Statistics</h3>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-number">{{ total_orders }}</div>
+                                <div class="stat-label">Total Orders</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-number">{{ wishlist_count }}</div>
+                                <div class="stat-label">Wishlist Items</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-number">{{ total_messages }}</div>
+                                <div class="stat-label">Messages</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div class="stat-info">
+                                <div class="stat-number">{{ total_reviews }}</div>
+                                <div class="stat-label">Reviews Given</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <div class="section-header">
+                        <h3>Security Settings</h3>
+                    </div>
+                    <div class="security-options">
+                        <button class="btn-secondary" onclick="changePassword()">
+                            <i class="fas fa-lock"></i> Change Password
+                        </button>
+                        <button class="btn-secondary" onclick="enable2FA()">
+                            <i class="fas fa-shield-alt"></i> Two-Factor Authentication
+                        </button>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <div class="section-header">
+                        <h3>Preferences</h3>
+                    </div>
+                    <div class="preferences">
+                        <div class="preference-item">
+                            <label>
+                                <input type="checkbox" id="emailNotifications" checked>
+                                Email notifications for orders
+                            </label>
+                        </div>
+                        <div class="preference-item">
+                            <label>
+                                <input type="checkbox" id="smsNotifications">
+                                SMS notifications for deliveries
+                            </label>
+                        </div>
+                        <div class="preference-item">
+                            <label>
+                                <input type="checkbox" id="marketingEmails" checked>
+                                Marketing emails and promotions
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+{% block extra_js %}
+<script src="{% static 'js/customer_profile.js' %}"></script>
+{% endblock %}
+{% endblock %}

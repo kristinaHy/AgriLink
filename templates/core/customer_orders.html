@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Orders - AgriLink{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/customer_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<header class="header">
+    <div class="header-left">
+        <div class="logo">
+            <img src="https://www.bing.com/th/id/OIP.Ra1raSNjJix62zGEonbLSwHaHa?w=195&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2" alt="AS">
+            <span id="dashboardUsername">{{ user.get_full_name|default:user.username }}</span>
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="user-info">
+            <div class="profile-pic">{{ user.get_full_name|default:user.username|slice:":2"|upper }}</div>
+            <div class="username">{{ user.get_full_name|default:user.username }}</div>
+            <div class="user-status">Customer account - {{ user.district|default:"Nepal" }}</div>
+        </div>
+        <div class="header-actions">
+            <div class="role-chip">Customer</div>
+            <button class="logout-btn" onclick="location.href='{% url 'logout' %}'">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </div>
+</header>
+
+<div class="main-container">
+    <aside class="sidebar">
+        <nav class="sidebar-nav">
+            <div class="sidebar-user-card">
+                <div class="sidebar-user-avatar">{{ user.get_full_name|default:user.username|slice:":2"|upper }}</div>
+                <div class="sidebar-user-meta">
+                    <div class="sidebar-user-name">{{ user.get_full_name|default:user.username }}</div>
+                    <div class="sidebar-user-sub">Customer - {{ user.district|default:"Nepal" }}</div>
+                </div>
+            </div>
+            <a href="{% url 'customer_dashboard' %}" class="nav-item">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'customer_market' %}" class="nav-item">
+                <i class="fas fa-shopping-bag"></i>
+                <span>Farmers Market</span>
+            </a>
+            <a href="{% url 'customer_orders' %}" class="nav-item active">
+                <i class="fas fa-shopping-cart"></i>
+                <span>My Orders</span>
+                {% if orders %}
+                <span class="nav-badge">{{ orders|length }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'customer_cart' %}" class="nav-item">
+                <i class="fas fa-cart-plus"></i>
+                <span>Cart</span>
+                {% if cart_count %}
+                <span class="nav-badge">{{ cart_count }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'customer_wishlist' %}" class="nav-item">
+                <i class="fas fa-heart"></i>
+                <span>Wishlist</span>
+                {% if wishlist_count %}
+                <span class="nav-badge">{{ wishlist_count }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'customer_messages' %}" class="nav-item">
+                <i class="fas fa-envelope"></i>
+                <span>Messages</span>
+                {% if unread_messages %}
+                <span class="nav-badge">{{ unread_messages }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'customer_profile' %}" class="nav-item">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="content-header">
+            <h1>My Orders</h1>
+            <p>Track and manage your purchases</p>
+        </div>
+
+        <div class="orders-container">
+            {% if orders %}
+                {% for order in orders %}
+                <div class="order-card">
+                    <div class="order-header">
+                        <div class="order-info">
+                            <h3>Order #{{ order.id }}</h3>
+                            <p class="order-date">{{ order.created_at|date:"M d, Y" }}</p>
+                        </div>
+                        <div class="order-status">
+                            <span class="status-badge status-{{ order.status|lower }}">{{ order.status|title }}</span>
+                        </div>
+                    </div>
+
+                    <div class="order-items">
+                        {% for item in order.items.all %}
+                        <div class="order-item">
+                            <div class="item-image">
+                                {% if item.product.image %}
+                                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                                {% else %}
+                                    <div class="fallback-image">📦</div>
+                                {% endif %}
+                            </div>
+                            <div class="item-details">
+                                <h4>{{ item.product.name }}</h4>
+                                <p class="item-farmer">by {{ item.product.farmer.get_full_name|default:item.product.farmer.username }}</p>
+                                <p class="item-quantity">Quantity: {{ item.quantity }}</p>
+                                <p class="item-price">₹{{ item.price }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="order-footer">
+                        <div class="order-total">
+                            <strong>Total: ₹{{ order.total_amount }}</strong>
+                        </div>
+                        <div class="order-actions">
+                            <button class="btn-secondary" onclick="viewOrderDetails({{ order.id }})">
+                                <i class="fas fa-eye"></i> View Details
+                            </button>
+                            {% if order.status == 'delivered' %}
+                            <button class="btn-primary" onclick="writeReview({{ order.id }})">
+                                <i class="fas fa-star"></i> Write Review
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <h3>No orders yet</h3>
+                    <p>You haven't placed any orders yet. Start shopping to see your orders here.</p>
+                    <a href="{% url 'customer_market' %}" class="btn-primary">
+                        <i class="fas fa-shopping-bag"></i> Browse Market
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+
+{% block extra_js %}
+<script src="{% static 'js/customer_orders.js' %}"></script>
+{% endblock %}
+{% endblock %}

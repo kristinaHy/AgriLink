@@ -37,6 +37,12 @@ urlpatterns = [
     # Dashboards
     path('farmer/dashboard/', views.FarmerDashboardView.as_view(), name='farmer_dashboard'),
     path('customer/dashboard/', views.CustomerDashboardView.as_view(), name='customer_dashboard'),
+    path('customer/market/', views.CustomerMarketView.as_view(), name='customer_market'),
+    path('customer/orders/', views.CustomerOrdersView.as_view(), name='customer_orders'),
+    path('customer/cart/', views.CustomerCartView.as_view(), name='customer_cart'),
+    path('customer/wishlist/', views.CustomerWishlistView.as_view(), name='customer_wishlist'),
+    path('customer/messages/', views.CustomerMessagesView.as_view(), name='customer_messages'),
+    path('customer/profile/', views.CustomerProfileView.as_view(), name='customer_profile'),
     path('superadmin/dashboard/', views.AdminDashboardView.as_view(), name='admin_dashboard'),
     
     # Admin Pages

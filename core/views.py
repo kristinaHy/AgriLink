@@ -5,7 +5,7 @@ from django.views.generic import TemplateView, ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
-from django.db.models import Q, Avg, Sum
+from django.db.models import Q, Avg, Sum, Count
 from .models import Product, Category, User, Order, Review, Cart, CartItem, Message, Notification, OrderItem
 from django.utils import timezone
 import json
@@ -292,9 +292,269 @@ class CustomerDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         context = super().get_context_data(**kwargs)
         user = self.request.user
         
-        context['orders'] = Order.objects.filter(customer=user).order_by('-created_at')
-        context['total_orders'] = context['orders'].count()
-        context['cart'] = user.cart if hasattr(user, 'cart') else None
+        # Orders data
+        orders = Order.objects.filter(customer=user).order_by('-created_at')
+        context['orders'] = orders
+        context['total_orders'] = orders.count()
+        
+        # Cart data
+        cart, created = Cart.objects.get_or_create(customer=user)
+        context['cart'] = cart
+        
+        # Wishlist count (we'll implement this later)
+        context['wishlist_count'] = 0
+        
+        # Unread messages
+        context['unread_messages'] = Message.objects.filter(
+            receiver=user,
+            is_read=False
+        ).count()
+        
+        # Featured products
+        context['featured_products'] = Product.objects.filter(
+            status='available'
+        ).select_related('farmer', 'category').order_by('-created_at')[:8]
+        
+        # Categories
+        context['categories'] = Category.objects.all()[:6]
+        
+        # Featured farmers
+        context['featured_farmers'] = User.objects.filter(
+            role='farmer',
+            is_verified=True
+        ).annotate(
+            product_count=Count('products')
+        ).order_by('-product_count')[:4]
+        
+        return context
+
+
+# Customer Market View
+class CustomerMarketView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'core/customer_market.html'
+    
+    def test_func(self):
+        return self.request.user.role == 'customer'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        
+        # All available products
+        products = Product.objects.filter(
+            status='available'
+        ).select_related('farmer', 'category').order_by('-created_at')
+        
+        context['products'] = products
+        
+        # Categories for filtering
+        context['categories'] = Category.objects.all()
+        
+        # Featured farmers
+        context['featured_farmers'] = User.objects.filter(
+            role='farmer',
+            is_verified=True
+        ).annotate(
+            product_count=Count('products')
+        ).order_by('-product_count')[:6]
+        
+        # Cart count
+        cart, created = Cart.objects.get_or_create(customer=user)
+        context['cart_count'] = cart.items.count()
+        
+        # Wishlist count (we'll implement this later)
+        context['wishlist_count'] = 0
+        
+        return context
+
+
+# Customer Orders View
+class CustomerOrdersView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'core/customer_orders.html'
+    
+    def test_func(self):
+        return self.request.user.role == 'customer'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        
+        # Orders data
+        orders = Order.objects.filter(customer=user).order_by('-created_at')
+        context['orders'] = orders
+        
+        # Cart count
+        cart, created = Cart.objects.get_or_create(customer=user)
+        context['cart_count'] = cart.items.count()
+        
+        # Wishlist count (we'll implement this later)
+        context['wishlist_count'] = 0
+        
+        # Unread messages
+        context['unread_messages'] = Message.objects.filter(
+            receiver=user,
+            is_read=False
+        ).count()
+        
+        return context
+
+
+# Customer Cart View
+class CustomerCartView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'core/customer_cart.html'
+    
+    def test_func(self):
+        return self.request.user.role == 'customer'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        
+        # Cart data
+        cart, created = Cart.objects.get_or_create(customer=user)
+        context['cart'] = cart
+        context['cart_count'] = cart.items.count()
+        
+        # Orders count for sidebar
+        context['orders'] = Order.objects.filter(customer=user)
+        
+        # Wishlist count (we'll implement this later)
+        context['wishlist_count'] = 0
+        
+        # Unread messages
+        context['unread_messages'] = Message.objects.filter(
+            receiver=user,
+            is_read=False
+        ).count()
+        
+        return context
+
+
+# Customer Wishlist View
+class CustomerWishlistView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'core/customer_wishlist.html'
+    
+    def test_func(self):
+        return self.request.user.role == 'customer'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        
+        # For now, we'll use a placeholder - in a real implementation,
+        # you'd have a Wishlist model with WishlistItem model
+        # For demonstration, we'll show some featured products as "wishlist items"
+        context['wishlist_items'] = Product.objects.filter(
+            status='available'
+        ).select_related('farmer', 'category').order_by('?')[:6]  # Random 6 products
+        
+        context['wishlist_count'] = 6  # Placeholder count
+        
+        # Cart count
+        cart, created = Cart.objects.get_or_create(customer=user)
+        context['cart_count'] = cart.items.count()
+        
+        # Orders count for sidebar
+        context['orders'] = Order.objects.filter(customer=user)
+        
+        # Unread messages
+        context['unread_messages'] = Message.objects.filter(
+            receiver=user,
+            is_read=False
+        ).count()
+        
+        return context
+
+
+# Customer Messages View
+class CustomerMessagesView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'core/customer_messages.html'
+    
+    def test_func(self):
+        return self.request.user.role == 'customer'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        
+        # Recent messages for sidebar
+        context['recent_messages'] = Message.objects.filter(
+            receiver=user
+        ).select_related('sender').order_by('-created_at')[:10]
+        
+        # For demo purposes, we'll show a selected conversation if there are messages
+        # In a real implementation, this would be based on URL parameters or AJAX
+        latest_message = Message.objects.filter(
+            Q(sender=user) | Q(receiver=user)
+        ).order_by('-created_at').first()
+        
+        if latest_message:
+            # Get the other user in the conversation
+            other_user = latest_message.sender if latest_message.receiver == user else latest_message.receiver
+            
+            # Get all messages in this conversation
+            conversation_messages = Message.objects.filter(
+                (Q(sender=user) & Q(receiver=other_user)) |
+                (Q(sender=other_user) & Q(receiver=user))
+            ).order_by('created_at')
+            
+            context['selected_conversation'] = {
+                'other_user': other_user,
+                'messages': conversation_messages
+            }
+        
+        # Cart count
+        cart, created = Cart.objects.get_or_create(customer=user)
+        context['cart_count'] = cart.items.count()
+        
+        # Orders count for sidebar
+        context['orders'] = Order.objects.filter(customer=user)
+        
+        # Wishlist count
+        context['wishlist_count'] = 6  # Placeholder
+        
+        # Unread messages
+        context['unread_messages'] = Message.objects.filter(
+            receiver=user,
+            is_read=False
+        ).count()
+        
+        return context
+
+
+# Customer Profile View
+class CustomerProfileView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'core/customer_profile.html'
+    
+    def test_func(self):
+        return self.request.user.role == 'customer'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        
+        # Orders statistics
+        context['total_orders'] = Order.objects.filter(customer=user).count()
+        
+        # Reviews statistics
+        context['total_reviews'] = Review.objects.filter(customer=user).count()
+        
+        # Messages statistics
+        context['total_messages'] = Message.objects.filter(
+            Q(sender=user) | Q(receiver=user)
+        ).count()
+        
+        # Wishlist count
+        context['wishlist_count'] = 6  # Placeholder
+        
+        # Cart count
+        cart, created = Cart.objects.get_or_create(customer=user)
+        context['cart_count'] = cart.items.count()
+        
+        # Orders count for sidebar
+        context['orders'] = Order.objects.filter(customer=user)
+        
+        # Unread messages
         context['unread_messages'] = Message.objects.filter(
             receiver=user,
             is_read=False

@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Wishlist - AgriLink{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/customer_dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<header class="header">
+    <div class="header-left">
+        <div class="logo">
+            <img src="https://www.bing.com/th/id/OIP.Ra1raSNjJix62zGEonbLSwHaHa?w=195&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2" alt="AS">
+            <span id="dashboardUsername">{{ user.get_full_name|default:user.username }}</span>
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="user-info">
+            <div class="profile-pic">{{ user.get_full_name|default:user.username|slice:":2"|upper }}</div>
+            <div class="username">{{ user.get_full_name|default:user.username }}</div>
+            <div class="user-status">Customer account - {{ user.district|default:"Nepal" }}</div>
+        </div>
+        <div class="header-actions">
+            <div class="role-chip">Customer</div>
+            <button class="logout-btn" onclick="location.href='{% url 'logout' %}'">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </div>
+</header>
+
+<div class="main-container">
+    <aside class="sidebar">
+        <nav class="sidebar-nav">
+            <div class="sidebar-user-card">
+                <div class="sidebar-user-avatar">{{ user.get_full_name|default:user.username|slice:":2"|upper }}</div>
+                <div class="sidebar-user-meta">
+                    <div class="sidebar-user-name">{{ user.get_full_name|default:user.username }}</div>
+                    <div class="sidebar-user-sub">Customer - {{ user.district|default:"Nepal" }}</div>
+                </div>
+            </div>
+            <a href="{% url 'customer_dashboard' %}" class="nav-item">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'customer_market' %}" class="nav-item">
+                <i class="fas fa-shopping-bag"></i>
+                <span>Farmers Market</span>
+            </a>
+            <a href="{% url 'customer_orders' %}" class="nav-item">
+                <i class="fas fa-shopping-cart"></i>
+                <span>My Orders</span>
+                {% if orders %}
+                <span class="nav-badge">{{ orders|length }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'customer_cart' %}" class="nav-item">
+                <i class="fas fa-cart-plus"></i>
+                <span>Cart</span>
+                {% if cart_count %}
+                <span class="nav-badge">{{ cart_count }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'customer_wishlist' %}" class="nav-item active">
+                <i class="fas fa-heart"></i>
+                <span>Wishlist</span>
+                {% if wishlist_count %}
+                <span class="nav-badge">{{ wishlist_count }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'customer_messages' %}" class="nav-item">
+                <i class="fas fa-envelope"></i>
+                <span>Messages</span>
+                {% if unread_messages %}
+                <span class="nav-badge">{{ unread_messages }}</span>
+                {% endif %}
+            </a>
+            <a href="{% url 'customer_profile' %}" class="nav-item">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="content-header">
+            <h1>My Wishlist</h1>
+            <p>Your saved items for later</p>
+        </div>
+
+        <div class="wishlist-container">
+            {% if wishlist_items %}
+                <div class="wishlist-grid">
+                    {% for item in wishlist_items %}
+                    <div class="wishlist-card" data-id="{{ item.id }}">
+                        <div class="wishlist-image">
+                            {% if item.product.image %}
+                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                            {% else %}
+                                <div class="fallback-image">📦</div>
+                            {% endif %}
+                        </div>
+                        <div class="wishlist-details">
+                            <h4>{{ item.product.name }}</h4>
+                            <p class="wishlist-farmer">by {{ item.product.farmer.get_full_name|default:item.product.farmer.username }}</p>
+                            <p class="wishlist-price">₹{{ item.product.price }} per {{ item.product.unit }}</p>
+                            <div class="wishlist-rating">
+                                {% for i in "12345" %}
+                                    <i class="fas fa-star{% if forloop.counter > item.product.average_rating %} empty{% endif %}"></i>
+                                {% endfor %}
+                                <span>({{ item.product.reviews.count }})</span>
+                            </div>
+                        </div>
+                        <div class="wishlist-actions">
+                            <button class="btn-primary add-cart-btn" onclick="addToCartFromWishlist({{ item.id }})">
+                                <i class="fas fa-cart-plus"></i> Add to Cart
+                            </button>
+                            <button class="btn-secondary remove-btn" onclick="removeFromWishlist({{ item.id }})">
+                                <i class="fas fa-trash"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <h3>Your wishlist is empty</h3>
+                    <p>Save items you like for easy access later.</p>
+                    <a href="{% url 'customer_market' %}" class="btn-primary">
+                        <i class="fas fa-shopping-bag"></i> Browse Market
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+</div>
+
+{% block extra_js %}
+<script src="{% static 'js/customer_wishlist.js' %}"></script>
+{% endblock %}
+{% endblock %}
