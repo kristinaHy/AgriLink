@@ -54,11 +54,11 @@
                         <td>
                             <div style="display: flex; align-items: center; gap: 15px;">
                                 <div style="width: 45px; height: 45px; border-radius: 50%; background-color: #FF6B6B; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700;">
-                                    {{ farmer.name|truncatewords:1 }}
+                                    {{ farmer.get_full_name|truncatewords:1|default:farmer.username|first }}
                                 </div>
                                 <div>
-                                    <strong style="color: #fff;">{{ farmer.name }}</strong><br>
-                                    <small style="color: #777;">Joined {{ farmer.date_joined|date:"M Y" }}</small>
+                                    <strong style="color: #fff;">{{ farmer.get_full_name|default:farmer.username }}</strong><br>
+                                    <small style="color: #777;">Joined {{ farmer.created_at|date:"M Y" }}</small>
                                 </div>
                             </div>
                         </td>

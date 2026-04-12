@@ -44,6 +44,7 @@ urlpatterns = [
     path('superadmin/customers/', views.AdminCustomersView.as_view(), name='admin_customers'),
     path('superadmin/farmers/', views.AdminFarmersView.as_view(), name='admin_farmers'),
     path('superadmin/verifications/', views.AdminVerificationsView.as_view(), name='admin_verifications'),
+    path('superadmin/farmer/<int:pk>/verify/', views.FarmerVerifyView.as_view(), name='farmer_verify'),
     path('superadmin/transactions/', views.AdminTransactionsView.as_view(), name='admin_transactions'),
     path('superadmin/communication/', views.AdminCommunicationView.as_view(), name='admin_communication'),
     

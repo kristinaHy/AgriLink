@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.db.models import Q, Avg, Sum
 from .models import Product, Category, User, Order, Review, Cart, CartItem, Message, Notification, OrderItem
 from django.utils import timezone
+import json
 from .forms import UserRegistrationForm, UserLoginForm, ProductForm, ReviewForm, MessageForm
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.http import JsonResponse
@@ -600,8 +601,8 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             week_data.append(int(week_revenue))
             labels.append(f"Week {4-i}")
         
-        context['weekly_revenue'] = week_data
-        context['chart_labels'] = labels
+        context['weekly_revenue'] = json.dumps(week_data)
+        context['chart_labels'] = json.dumps(labels)
         
         # Categories
         categories = Category.objects.all()
@@ -708,6 +709,32 @@ class AdminVerificationsView(LoginRequiredMixin, UserPassesTestMixin, TemplateVi
         context['pending_farmers'] = farmer_list[:5]
         context['pending_count'] = pending_farmers.count()
         return context
+
+
+class FarmerVerifyView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.is_staff or self.request.user.role == "admin"
+    
+    def post(self, request, pk):
+        farmer = get_object_or_404(User, pk=pk, role='farmer')
+        action = request.POST.get('action')
+        
+        if action == 'approve':
+            farmer.is_verified = True
+            farmer.save()
+            messages.success(request, f'Farmer {farmer.get_full_name()} has been verified.')
+            # Create notification for farmer
+            Notification.objects.create(
+                user=farmer,
+                notification_type='new_message',
+                title='Account Verified',
+                content='Congratulations! Your farmer account has been verified. You can now start selling products.'
+            )
+        elif action == 'reject':
+            farmer.delete()  # Or mark as rejected
+            messages.success(request, f'Farmer {farmer.get_full_name()} application has been rejected.')
+        
+        return redirect('admin_verifications')
 
 
 class AdminTransactionsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):

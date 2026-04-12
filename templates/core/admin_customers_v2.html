@@ -51,8 +51,8 @@
                     {% for customer in customers %}
                     <tr>
                         <td>
-                            <strong style="color: #fff;">{{ customer.name }}</strong><br>
-                            <small style="color: #777;">Joined {{ customer.date_joined|date:"M Y" }}</small>
+                            <strong style="color: #fff;">{{ customer.get_full_name|default:customer.username }}</strong><br>
+                            <small style="color: #777;">Joined {{ customer.created_at|date:"M Y" }}</small>
                         </td>
                         <td>{{ customer.email }}</td>
                         <td>{{ customer.total_orders }}</td>
