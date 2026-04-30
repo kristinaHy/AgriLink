@@ -142,6 +142,7 @@
 
                         <div class="message-compose">
                             <form id="messageForm" onsubmit="sendMessage(event)">
+                                {% csrf_token %}
                                 <input type="hidden" name="receiver_id" value="{{ selected_conversation.other_user.id }}">
                                 <div class="compose-input">
                                     <textarea name="content" placeholder="Type your message..." required></textarea>
