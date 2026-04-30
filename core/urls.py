@@ -62,4 +62,9 @@ urlpatterns = [
     path('api/admin/products/<int:product_id>/', views.ProductDetailAPI.as_view(), name='api_product_detail'),
     path('api/admin/products/<int:product_id>/update/', views.ProductUpdateAPI.as_view(), name='api_product_update'),
     path('api/admin/products/<int:product_id>/delete/', views.ProductDeleteAPI.as_view(), name='api_product_delete'),
+
+    # API Messaging (Customer/Farmer)
+    path('api/messages/send/', views.MessageSendAPI.as_view(), name='api_message_send'),
+    path('api/messages/conversation/<int:other_user_id>/', views.MessageConversationAPI.as_view(), name='api_message_conversation'),
+    path('api/messages/conversations/', views.MessageConversationsAPI.as_view(), name='api_message_conversations'),
 ]

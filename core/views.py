@@ -1283,6 +1283,153 @@ class ProductUpdateAPI(LoginRequiredMixin, UserPassesTestMixin, View):
             return JsonResponse({'error': str(e)}, status=400)
 
 
+# API Views for Messaging (Customer/Farmer/Admin communication)
+class MessageSendAPI(LoginRequiredMixin, View):
+    """
+    POST payload (form-encoded or JSON):
+      - receiver_id: int
+      - subject: optional string
+      - content: string (required)
+    """
+
+    def post(self, request):
+        try:
+            if request.content_type == 'application/json':
+                payload = json.loads(request.body.decode('utf-8') or '{}')
+            else:
+                payload = request.POST
+
+            receiver_id = payload.get('receiver_id')
+            subject = payload.get('subject') or ''
+            content = (payload.get('content') or '').strip()
+
+            if not receiver_id:
+                return JsonResponse({'success': False, 'message': 'receiver_id is required'}, status=400)
+
+            if not content:
+                return JsonResponse({'success': False, 'message': 'content is required'}, status=400)
+
+            receiver = get_object_or_404(User, id=receiver_id)
+            if receiver.id == request.user.id:
+                return JsonResponse({'success': False, 'message': 'Cannot message yourself'}, status=400)
+
+            msg = Message.objects.create(
+                sender=request.user,
+                receiver=receiver,
+                subject=subject[:200],
+                content=content,
+            )
+
+            # Notification to receiver
+            Notification.objects.create(
+                user=receiver,
+                notification_type='new_message',
+                title=f'New message from {request.user.get_full_name() or request.user.username}',
+                content=content[:500],
+            )
+
+            return JsonResponse({
+                'success': True,
+                'message': {
+                    'id': msg.id,
+                    'sender_id': msg.sender_id,
+                    'receiver_id': msg.receiver_id,
+                    'subject': msg.subject,
+                    'content': msg.content,
+                    'created_at': msg.created_at.isoformat(),
+                }
+            })
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid JSON payload'}, status=400)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)}, status=400)
+
+
+class MessageConversationAPI(LoginRequiredMixin, View):
+    """
+    GET conversation messages between logged-in user and other_user_id
+    """
+
+    def get(self, request, other_user_id: int):
+        other_user = get_object_or_404(User, id=other_user_id)
+
+        messages_qs = Message.objects.filter(
+            (Q(sender=request.user, receiver=other_user) | Q(sender=other_user, receiver=request.user))
+        ).order_by('created_at')
+
+        # Mark as read for messages received by current user in this conversation
+        Message.objects.filter(sender=other_user, receiver=request.user, is_read=False).update(is_read=True)
+
+        data = []
+        for m in messages_qs:
+            data.append({
+                'id': m.id,
+                'sender_id': m.sender_id,
+                'receiver_id': m.receiver_id,
+                'subject': m.subject,
+                'content': m.content,
+                'created_at': m.created_at.isoformat(),
+                'is_read': m.is_read,
+            })
+
+        return JsonResponse({
+            'success': True,
+            'conversation': {
+                'other_user': {
+                    'id': other_user.id,
+                    'name': other_user.get_full_name() or other_user.username,
+                    'role': other_user.role,
+                    'district': other_user.district,
+                },
+                'messages': data,
+            }
+        })
+
+
+class MessageConversationsAPI(LoginRequiredMixin, View):
+    """
+    GET list of unique conversation partners for logged-in user
+    Includes last message preview and timestamp.
+    """
+
+    def get(self, request):
+        user = request.user
+
+        qs = Message.objects.filter(Q(sender=user) | Q(receiver=user)).select_related('sender', 'receiver').order_by('-created_at')[:500]
+
+        by_partner = {}
+        for m in qs:
+            other = m.receiver if m.sender_id == user.id else m.sender
+            if other.id not in by_partner:
+                by_partner[other.id] = {
+                    'other_user': {
+                        'id': other.id,
+                        'name': other.get_full_name() or other.username,
+                        'role': other.role,
+                        'district': other.district,
+                    },
+                    'last_message': {
+                        'id': m.id,
+                        'sender_id': m.sender_id,
+                        'receiver_id': m.receiver_id,
+                        'subject': m.subject,
+                        'content_preview': (m.content[:60] + '…') if len(m.content) > 60 else m.content,
+                        'created_at': m.created_at.isoformat(),
+                    },
+                    'unread_count': Message.objects.filter(sender=other, receiver=user, is_read=False).count(),
+                }
+
+        conversations = list(by_partner.values())
+
+        # Sort by last_message.created_at desc
+        conversations.sort(key=lambda c: c['last_message']['created_at'], reverse=True)
+
+        return JsonResponse({
+            'success': True,
+            'conversations': conversations
+        })
+
+
 class ProductDeleteAPI(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
         return self.request.user.is_staff or self.request.user.role == "admin"
@@ -1300,4 +1447,3 @@ class ProductDeleteAPI(LoginRequiredMixin, UserPassesTestMixin, View):
             return JsonResponse({'error': 'Product not found'}, status=404)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
-
