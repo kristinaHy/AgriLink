@@ -822,14 +822,35 @@ class CheckoutView(LoginRequiredMixin, UserPassesTestMixin, View):
         return self.request.user.role == 'customer'
 
     def get(self, request):
-        cart = Cart.objects.get(customer=request.user)
+        try:
+            cart = Cart.objects.get(customer=request.user)
+        except Cart.DoesNotExist:
+            messages.warning(request, 'Your cart is empty.')
+            return redirect('cart')
+        
         if not cart.items.exists():
             messages.warning(request, 'Your cart is empty.')
             return redirect('cart')
         return render(request, self.template_name, {'cart': cart})
 
     def post(self, request):
-        cart = Cart.objects.get(customer=request.user)
+        try:
+            cart = Cart.objects.get(customer=request.user)
+        except Cart.DoesNotExist:
+            messages.error(request, 'Your cart is empty.')
+            return redirect('cart')
+        
+        if not cart.items.exists():
+            messages.error(request, 'Your cart is empty.')
+            return redirect('cart')
+        
+        # Validate required fields
+        required_fields = ['shipping_address', 'shipping_city', 'shipping_district', 'payment_method']
+        missing_fields = [field for field in required_fields if not request.POST.get(field)]
+        if missing_fields:
+            messages.error(request, f'Missing required fields: {", ".join(missing_fields)}')
+            return redirect('checkout')
+        
         order = Order.objects.create(
             customer=request.user,
             order_number=f'AGRI{timezone.now().strftime("%Y%m%d%H%M%S%f")[:10]}',
@@ -864,7 +885,11 @@ class OrderUpdateStatusView(LoginRequiredMixin, UserPassesTestMixin, View):
 
     def post(self, request, pk):
         order = get_object_or_404(Order, items__product__farmer=request.user, pk=pk)
-        new_status = request.POST['status']
+        new_status = request.POST.get('status')
+        if not new_status:
+            messages.error(request, 'Invalid status update.')
+            return redirect('farmer_orders')
+        
         order.status = new_status
         order.save()
         # Update payment status if confirmed
