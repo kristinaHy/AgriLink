@@ -278,6 +278,71 @@ class FarmerDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         ).count()
         context['products_url'] = '/farmer/products/'
         
+        # Calculate total sales
+        total_sales = 0
+        for order in Order.objects.filter(items__product__farmer=user, status='delivered'):
+            for item in order.items.filter(product__farmer=user):
+                total_sales += item.price * item.quantity
+        context['total_sales'] = total_sales
+        
+        return context
+
+
+# Farmer Payments View
+class FarmerPaymentsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'core/farmer_payments.html'
+    
+    def test_func(self):
+        return self.request.user.role == 'farmer'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        
+        # Calculate earnings
+        completed_orders = Order.objects.filter(
+            items__product__farmer=user,
+            status='delivered'
+        )
+        total_earnings = 0
+        for order in completed_orders:
+            for item in order.items.filter(product__farmer=user):
+                total_earnings += item.price * item.quantity
+        
+        context['total_earnings'] = total_earnings
+        context['monthly_earnings'] = total_earnings  # Placeholder
+        context['pending_payments'] = 0  # Placeholder
+        context['payments'] = []  # Placeholder for payment history
+        
+        return context
+
+
+# Farmer Messages View
+class FarmerMessagesView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'core/farmer_messages.html'
+    
+    def test_func(self):
+        return self.request.user.role == 'farmer'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        
+        # Get conversations (placeholder)
+        context['conversations'] = []
+        
+        return context
+
+
+# Farmer Profile View
+class FarmerProfileView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'core/farmer_profile.html'
+    
+    def test_func(self):
+        return self.request.user.role == 'farmer'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
         return context
 
 

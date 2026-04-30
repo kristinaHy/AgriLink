@@ -36,6 +36,9 @@ urlpatterns = [
     
     # Dashboards
     path('farmer/dashboard/', views.FarmerDashboardView.as_view(), name='farmer_dashboard'),
+    path('farmer/payments/', views.FarmerPaymentsView.as_view(), name='farmer_payments'),
+    path('farmer/messages/', views.FarmerMessagesView.as_view(), name='farmer_messages'),
+    path('farmer/profile/', views.FarmerProfileView.as_view(), name='farmer_profile'),
     path('customer/dashboard/', views.CustomerDashboardView.as_view(), name='customer_dashboard'),
     path('customer/market/', views.CustomerMarketView.as_view(), name='customer_market'),
     path('customer/orders/', views.CustomerOrdersView.as_view(), name='customer_orders'),

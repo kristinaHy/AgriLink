@@ -1,53 +1,268 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Farmer Orders - AgriLink{% endblock %}
+{% block title %}Orders - Farmer Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --primary: #4CAF50;
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --text: #333;
+    --gray: #888;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--bg);
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background: #111;
+    color: white;
+    position: fixed;
+    padding: 20px;
+    z-index: 1000;
+}
+
+.sidebar h2 {
+    margin-bottom: 30px;
+    color: var(--primary);
+    font-size: 24px;
+}
+
+.sidebar a {
+    display: block;
+    color: #ccc;
+    text-decoration: none;
+    margin: 15px 0;
+    padding: 10px;
+    border-radius: 8px;
+    transition: 0.2s;
+}
+
+.sidebar a:hover,
+.sidebar a.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* Main */
+.main-content {
+    margin-left: 250px;
+    width: calc(100% - 250px);
+    padding: 20px;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.menu-btn {
+    display: none;
+    font-size: 22px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: #333;
+}
+
+.profile {
+    background: var(--card);
+    padding: 8px 15px;
+    border-radius: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+.header h3 {
+    color: var(--text);
+}
+
+select {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    background: var(--card);
+    cursor: pointer;
+}
+
+/* Table */
+.table-container {
+    background: var(--card);
+    padding: 15px;
+    border-radius: 12px;
+    overflow-x: auto;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    color: var(--gray);
+    font-weight: 500;
+}
+
+tr {
+    border-bottom: 1px solid #eee;
+}
+
+tr:hover {
+    background: #f9f9f9;
+}
+
+/* Status badges */
+.badge {
+    padding: 5px 10px;
+    border-radius: 12px;
+    color: white;
+    font-size: 12px;
+}
+
+.pending { background: orange; }
+.delivered { background: green; }
+.cancelled { background: red; }
+.confirmed { background: #2196F3; }
+.shipped { background: #9C27B0; }
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    background: var(--card);
+    border-radius: 15px;
+}
+
+.empty-state p {
+    color: var(--gray);
+}
+
+/* Responsive */
+@media(max-width: 768px) {
+    .sidebar {
+        left: -250px;
+    }
+
+    .sidebar.active {
+        left: 0;
+    }
+
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .menu-btn {
+        display: block;
+    }
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="agri-container">
-    <h1>My Orders (Farmer)</h1>
-    
-    {% if orders %}
-        <div class="orders-table">
+<div class="sidebar" id="sidebar">
+    <h2>🌾 AgriLink Farmer</h2>
+    <a href="{% url 'farmer_dashboard' %}">Overview</a>
+    <a href="{% url 'farmer_products' %}">My Listings</a>
+    <a href="{% url 'farmer_orders' %}" class="active">Orders</a>
+    <a href="#">Payments</a>
+    <a href="#">Messages</a>
+    <a href="#">Profile</a>
+    <a href="{% url 'logout' %}">Logout</a>
+</div>
+
+<div class="main-content">
+    <div class="navbar">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <h2>Orders</h2>
+        <div class="profile">👤 {{ user.get_full_name|default:user.username }}</div>
+    </div>
+
+    <div class="header">
+        <h3>Order History</h3>
+        <select onchange="filterOrders(this.value)">
+            <option value="all">All</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="cancelled">Cancelled</option>
+        </select>
+    </div>
+
+    <div class="table-container">
+        {% if orders %}
             <table>
                 <thead>
                     <tr>
-                        <th>Order #</th>
+                        <th>ID</th>
+                        <th>Product</th>
                         <th>Customer</th>
-                        <th>Total</th>
+                        <th>Date</th>
+                        <th>Amount</th>
                         <th>Status</th>
-                        <th>Payment</th>
-                        <th>Action</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="orderTable">
                     {% for order in orders %}
                         <tr>
-                            <td>{{ order.order_number }}</td>
-                            <td>{{ order.customer.get_full_name }}</td>
+                            <td>#{{ order.id }}</td>
+                            <td>{{ order.product.name }}</td>
+                            <td>{{ order.customer.get_full_name|default:order.customer.username }}</td>
+                            <td>{{ order.created_at|date:"Y-m-d" }}</td>
                             <td>Rs. {{ order.total_amount }}</td>
-                            <td>{{ order.get_status_display }}</td>
-                            <td>{{ order.get_payment_status_display }}</td>
-                            <td>
-                                <a href="{% url 'order_detail' order.pk %}" class="btn btn-primary btn-sm">View</a>
-                                {% if order.status == 'pending' %}
-                                    <form method="post" action="{% url 'order_update_status' order.pk %}" style="display: inline;">
-                                        {% csrf_token %}
-                                        <select name="status" class="form-select form-select-sm">
-                                            <option value="pending">Pending</option>
-                                            <option value="confirmed">Confirm</option>
-                                            <option value="shipped">Ship</option>
-                                        </select>
-                                        <button type="submit" class="btn btn-success btn-sm">Update</button>
-                                    </form>
-                                {% endif %}
-                            </td>
+                            <td><span class="badge {{ order.status }}">{{ order.get_status_display }}</span></td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
-    {% else %}
-        <p>No orders yet.</p>
-    {% endif %}
+        {% else %}
+            <div class="empty-state">
+                <p>No orders yet.</p>
+            </div>
+        {% endif %}
+    </div>
 </div>
+
+<script>
+function toggleSidebar() {
+    document.getElementById("sidebar").classList.toggle("active");
+}
+
+function filterOrders(status) {
+    if(status === "all") {
+        window.location.href = "?status=all";
+    } else {
+        window.location.href = "?status=" + status;
+    }
+}
+</script>
 {% endblock %}

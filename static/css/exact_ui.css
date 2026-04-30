@@ -1214,4 +1214,357 @@ footer a.text-light:hover {
 footer hr {
     border-color: rgba(255,255,255,0.2);
 }
+
+/* =============================================
+   ADMIN DASHBOARD - DARK THEME
+   ============================================= */
+
+/* Page Background */
+.d-flex {
+    background-color: #111111;
+    min-height: 100vh;
+}
+
+/* =============================================
+   SIDEBAR
+   ============================================= */
+
+.sidebar {
+    width: 250px;
+    background-color: #0d0d0d;
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    color: #e0e0e0;
+    border-right: 1px solid #222;
+    min-height: 100vh;
+}
+
+.sidebar-title {
+    color: #27AE60;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 5px;
+}
+
+.sidebar-sub {
+    color: #999;
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    background-color: transparent;
+    color: #ccc;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    font-size: 0.95rem;
+    gap: 12px;
+}
+
+.menu-item i {
+    font-size: 1.1rem;
+}
+
+.menu-item:hover {
+    background-color: rgba(39, 174, 96, 0.1);
+    color: #27AE60;
+}
+
+.menu-item.active {
+    background-color: rgba(39, 174, 96, 0.15);
+    color: #27AE60;
+    font-weight: 600;
+}
+
+.menu-item .badge {
+    background-color: #F39C12;
+    color: #fff;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    margin-left: auto;
+}
+
+/* =============================================
+   MAIN CONTENT AREA
+   ============================================= */
+
+.flex-grow-1 {
+    background-color: #111111;
+    color: #e0e0e0;
+    padding: 30px 40px;
+}
+
+.flex-grow-1 h4 {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin-bottom: 5px;
+}
+
+.flex-grow-1 > small {
+    color: #777;
+}
+
+/* Notification icons */
+.fa-bell {
+    color: #999;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.fa-bell:hover {
+    color: #e0e0e0;
+}
+
+/* Profile circle */
+.bg-secondary {
+    background-color: #666 !important;
+}
+
+/* =============================================
+   DASHBOARD CARDS
+   ============================================= */
+
+.dashboard-card {
+    background-color: #1a1a1a;
+    border: 1px solid #222;
+    border-radius: 12px;
+    padding: 25px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+    background-color: #222;
+    border-color: #333;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.dashboard-card i {
+    font-size: 2.2rem;
+    margin-bottom: 15px;
+}
+
+.dashboard-card h3 {
+    color: #fff;
+    font-weight: 700;
+    font-size: 2rem;
+    margin: 15px 0 10px 0;
+}
+
+.dashboard-card p {
+    color: #999;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.dashboard-card small {
+    color: #777;
+    font-size: 0.8rem;
+    display: block;
+    margin-top: 8px;
+}
+
+/* =============================================
+   CHART BOX
+   ============================================= */
+
+.chart-box {
+    background-color: #1a1a1a;
+    border: 1px solid #222;
+    border-radius: 12px;
+    padding: 25px;
+}
+
+.chart-box h6 {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+}
+
+.chart-box > div:first-child small {
+    color: #777;
+}
+
+.chart-box .badge {
+    background-color: #27AE60 !important;
+    color: #fff;
+    padding: 6px 12px;
+}
+
+canvas {
+    max-height: 250px;
+}
+
+/* =============================================
+   VERIFICATION BOX
+   ============================================= */
+
+.verification-box {
+    background-color: #1a1a1a;
+    border: 1px solid #222;
+    border-radius: 12px;
+    padding: 25px;
+}
+
+.verification-box h6 {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.verification-box a {
+    color: #27AE60;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.verification-box a:hover {
+    color: #52BE80;
+}
+
+.verification-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #222;
+}
+
+.verification-row:last-child {
+    border-bottom: none;
+}
+
+.verification-row strong {
+    color: #fff;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.verification-row small {
+    color: #777;
+}
+
+.verification-row .text-success {
+    color: #27AE60 !important;
+}
+
+.verification-row .text-warning {
+    color: #F39C12 !important;
+}
+
+/* =============================================
+   BUTTONS
+   ============================================= */
+
+.btn-approve,
+.btn-reject {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-right: 8px;
+}
+
+.btn-approve {
+    background-color: #27AE60;
+    color: white;
+}
+
+.btn-approve:hover {
+    background-color: #52BE80;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
+
+.btn-reject {
+    background-color: #E74C3C;
+    color: white;
+}
+
+.btn-reject:hover {
+    background-color: #C0392B;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+/* =============================================
+   STAT CARDS (BOTTOM)
+   ============================================= */
+
+.stat-card {
+    background-color: #1a1a1a;
+    border: 1px solid #222;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    background-color: #222;
+    border-color: #333;
+}
+
+.stat-card h4 {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+}
+
+.stat-card p {
+    color: #999;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* =============================================
+   ALERTS
+   ============================================= */
+
+.alert-warning {
+    background-color: rgba(243, 156, 18, 0.15) !important;
+    border: 1px solid rgba(243, 156, 18, 0.3) !important;
+    color: #F39C12 !important;
+}
+
+/* =============================================
+   RESPONSIVE
+   ============================================= */
+
+@media (max-width: 768px) {
+    .d-flex {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        min-height: auto;
+        flex-direction: row;
+        padding: 15px;
+        overflow-x: auto;
+    }
+
+    .flex-grow-1 {
+        padding: 20px;
+    }
+
+    .dashboard-card h3 {
+        font-size: 1.5rem;
+    }
 }

@@ -1,40 +1,306 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}My Products - Farmer Dashboard{% endblock %}
+{% block title %}My Listings - Farmer Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --primary: #4CAF50;
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --text: #333;
+    --gray: #888;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--bg);
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background: #111;
+    color: white;
+    position: fixed;
+    padding: 20px;
+    z-index: 1000;
+}
+
+.sidebar h2 {
+    margin-bottom: 30px;
+    color: var(--primary);
+    font-size: 24px;
+}
+
+.sidebar a {
+    display: block;
+    color: #ccc;
+    text-decoration: none;
+    margin: 15px 0;
+    padding: 10px;
+    border-radius: 8px;
+    transition: 0.2s;
+}
+
+.sidebar a:hover,
+.sidebar a.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* Main */
+.main-content {
+    margin-left: 250px;
+    width: calc(100% - 250px);
+    padding: 20px;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.menu-btn {
+    display: none;
+    font-size: 22px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: #333;
+}
+
+.profile {
+    background: var(--card);
+    padding: 8px 15px;
+    border-radius: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* Header Actions */
+.header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.add-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.add-btn:hover {
+    background: #45a049;
+    color: white;
+}
+
+/* Listings Grid */
+.listings {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+/* Card */
+.listing-card {
+    background: var(--card);
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.listing-card img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.card-body {
+    padding: 15px;
+}
+
+.card-body h3 {
+    margin-bottom: 5px;
+    color: var(--text);
+}
+
+.price {
+    color: var(--primary);
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.stock {
+    color: var(--gray);
+    font-size: 14px;
+    margin: 5px 0;
+}
+
+.actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+.btn-action {
+    flex: 1;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    font-size: 14px;
+}
+
+.edit {
+    background: #2196F3;
+    color: white;
+}
+
+.delete {
+    background: #f44336;
+    color: white;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 300px;
+}
+
+.modal input {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    background: var(--card);
+    border-radius: 15px;
+}
+
+.empty-state p {
+    color: var(--gray);
+    margin-bottom: 15px;
+}
+
+/* Responsive */
+@media(max-width: 768px) {
+    .sidebar {
+        left: -250px;
+    }
+
+    .sidebar.active {
+        left: 0;
+    }
+
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .menu-btn {
+        display: block;
+    }
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="agri-container">
-    <div class="dashboard-header">
-        <h1>My Products</h1>
-        <a href="{% url 'product_create' %}" class="btn btn-success">Add New Product</a>
+<div class="sidebar" id="sidebar">
+    <h2>🌾 AgriLink Farmer</h2>
+    <a href="{% url 'farmer_dashboard' %}">Overview</a>
+    <a href="{% url 'farmer_products' %}" class="active">My Listings</a>
+    <a href="{% url 'farmer_orders' %}">Orders</a>
+    <a href="#">Payments</a>
+    <a href="#">Messages</a>
+    <a href="#">Profile</a>
+    <a href="{% url 'logout' %}">Logout</a>
+</div>
+
+<div class="main-content">
+    <div class="navbar">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <h2>My Listings</h2>
+        <div class="profile">👤 {{ user.get_full_name|default:user.username }}</div>
     </div>
 
+    <div class="header-actions">
+        <h3>Your Products</h3>
+        <a href="{% url 'product_create' %}" class="add-btn">+ Add Product</a>
+    </div>
+
+    <!-- Listings -->
     {% if products %}
-        <div class="products-grid">
+        <div class="listings">
             {% for product in products %}
-                <div class="product-card">
+                <div class="listing-card">
                     {% if product.image %}
-                        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}">
+                    {% else %}
+                        <img src="https://via.placeholder.com/300x150" alt="{{ product.name }}">
                     {% endif %}
-                    <div class="product-actions">
-                        <a href="{% url 'product_update' product.pk %}" class="btn btn-warning">Edit</a>
-                        <a href="{% url 'product_delete' product.pk %}" class="btn btn-danger">Delete</a>
+                    <div class="card-body">
+                        <h3>{{ product.name }}</h3>
+                        <div class="price">Rs. {{ product.price }}</div>
+                        <div class="stock">Stock: {{ product.quantity }} {{ product.unit }}</div>
+                        <div class="stock">Category: {{ product.category.name }}</div>
+                        <div class="actions">
+                            <a href="{% url 'product_update' product.pk %}" class="btn-action edit">Edit</a>
+                            <a href="{% url 'product_delete' product.pk %}" class="btn-action delete">Delete</a>
+                        </div>
                     </div>
-                    <h3>{{ product.name }}</h3>
-                    <p>Price: Rs. {{ product.price }} | Stock: {{ product.quantity }}</p>
-                    <p>Status: {{ product.get_status_display }}</p>
                 </div>
             {% endfor %}
         </div>
     {% else %}
-        <p>No products yet. <a href="{% url 'product_create' %}">Create your first product</a>.</p>
-    {% endif %}
-
-    {% if is_paginated %}
-        <div class="pagination">
-            <!-- pagination code same as product_list -->
+        <div class="empty-state">
+            <p>No products listed yet.</p>
+            <a href="{% url 'product_create' %}" class="add-btn">+ Add Your First Product</a>
         </div>
     {% endif %}
 </div>
+
+<script>
+function toggleSidebar() {
+    document.getElementById("sidebar").classList.toggle("active");
+}
+</script>
 {% endblock %}

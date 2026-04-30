@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Farmer Dashboard - AgriLink{% endblock %}
+{% block title %}Payments - Farmer Dashboard{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -90,73 +90,72 @@ body {
 /* Cards */
 .cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
     margin-bottom: 20px;
 }
 
-.card {
+.stat-card {
     background: var(--card);
-    padding: 20px;
-    border-radius: 15px;
+    padding: 15px;
+    border-radius: 12px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
 
-.card h3 {
+.stat-card h3 {
     color: var(--gray);
-    margin-bottom: 10px;
     font-size: 14px;
-    font-weight: 500;
+    margin-bottom: 5px;
 }
 
-.card h2 {
+.stat-card h2 {
     color: var(--primary);
-    font-size: 28px;
+    font-size: 24px;
     margin: 0;
 }
 
-/* Chart */
-.chart-container {
+/* Table */
+.table-box {
     background: var(--card);
-    padding: 20px;
-    border-radius: 15px;
-    margin-bottom: 20px;
+    padding: 15px;
+    border-radius: 12px;
+    overflow-x: auto;
     box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
 
-.chart-container h3 {
-    margin-bottom: 15px;
+.table-box h3 {
+    margin-bottom: 10px;
     color: var(--text);
 }
 
-/* Activity */
-.activity {
-    background: var(--card);
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+table {
+    width: 100%;
+    border-collapse: collapse;
 }
 
-.activity h3 {
-    margin-bottom: 15px;
-    color: var(--text);
+th, td {
+    padding: 10px;
+    text-align: left;
 }
 
-.activity ul {
-    list-style: none;
+th {
+    color: var(--gray);
 }
 
-.activity li {
-    padding: 10px 0;
+tr {
     border-bottom: 1px solid #eee;
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
 
-.activity li:last-child {
-    border-bottom: none;
+/* Status */
+.status {
+    padding: 4px 10px;
+    border-radius: 10px;
+    color: white;
+    font-size: 12px;
 }
+
+.success { background: green; }
+.pending { background: orange; }
 
 /* Responsive */
 @media(max-width: 768px) {
@@ -183,10 +182,10 @@ body {
 {% block content %}
 <div class="sidebar" id="sidebar">
     <h2>🌾 AgriLink Farmer</h2>
-    <a href="{% url 'farmer_dashboard' %}" class="active">Overview</a>
+    <a href="{% url 'farmer_dashboard' %}">Overview</a>
     <a href="{% url 'farmer_products' %}">My Listings</a>
     <a href="{% url 'farmer_orders' %}">Orders</a>
-    <a href="#">Payments</a>
+    <a href="#" class="active">Payments</a>
     <a href="#">Messages</a>
     <a href="#">Profile</a>
     <a href="{% url 'logout' %}">Logout</a>
@@ -195,74 +194,61 @@ body {
 <div class="main-content">
     <div class="navbar">
         <button class="menu-btn" onclick="toggleSidebar()">☰</button>
-        <h2>Dashboard Overview</h2>
+        <h2>Payments</h2>
         <div class="profile">👤 {{ user.get_full_name|default:user.username }}</div>
     </div>
 
     <!-- Cards -->
     <div class="cards">
-        <div class="card">
-            <h3>Total Sales</h3>
-            <h2>Rs. {{ total_sales|default:"0" }}</h2>
+        <div class="stat-card">
+            <h3>Total Earnings</h3>
+            <h2>Rs. {{ total_earnings|default:"0" }}</h2>
         </div>
-        <div class="card">
-            <h3>Products</h3>
-            <h2>{{ total_products|default:"0" }}</h2>
+        <div class="stat-card">
+            <h3>This Month</h3>
+            <h2>Rs. {{ monthly_earnings|default:"0" }}</h2>
         </div>
-        <div class="card">
-            <h3>Orders</h3>
-            <h2>{{ total_orders|default:"0" }}</h2>
-        </div>
-        <div class="card">
+        <div class="stat-card">
             <h3>Pending</h3>
-            <h2>{{ pending_orders|length|default:"0" }}</h2>
+            <h2>Rs. {{ pending_payments|default:"0" }}</h2>
         </div>
     </div>
 
-    <!-- Chart -->
-    <div class="chart-container">
-        <h3>Sales Overview</h3>
-        <canvas id="salesChart"></canvas>
-    </div>
-
-    <!-- Activity -->
-    <div class="activity">
-        <h3>Recent Activity</h3>
-        <ul>
-            <li>✅ New order received</li>
-            <li>📦 Product listed</li>
-            <li>💰 Payment received</li>
-            <li>🚚 Order delivered</li>
-        </ul>
+    <!-- Table -->
+    <div class="table-box">
+        <h3>Transaction History</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Order</th>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                    <tr>
+                        <td>#{{ payment.id }}</td>
+                        <td>#{{ payment.order.id }}</td>
+                        <td>{{ payment.created_at|date:"Y-m-d" }}</td>
+                        <td>Rs. {{ payment.amount }}</td>
+                        <td><span class="status {% if payment.status == 'completed' %}success{% else %}pending{% endif %}">{{ payment.get_status_display }}</span></td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--gray);">No transactions yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 function toggleSidebar() {
     document.getElementById("sidebar").classList.toggle("active");
 }
-
-// Chart
-const ctx = document.getElementById('salesChart').getContext('2d');
-
-new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-        datasets: [{
-            label: 'Sales',
-            data: [5000, 7000, 4000, 8000, 9000, 6000, 10000],
-            borderWidth: 2,
-            tension: 0.4,
-            borderColor: '#4CAF50',
-            backgroundColor: 'rgba(76, 175, 80, 0.1)',
-            fill: true
-        }]
-    },
-    options: {
-        responsive: true,
-    }
-});
 </script>
 {% endblock %}

@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Messages - Farmer Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --primary: #4CAF50;
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --text: #333;
+    --gray: #888;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--bg);
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background: #111;
+    color: white;
+    position: fixed;
+    padding: 20px;
+    z-index: 1000;
+}
+
+.sidebar h2 {
+    margin-bottom: 30px;
+    color: var(--primary);
+    font-size: 24px;
+}
+
+.sidebar a {
+    display: block;
+    color: #ccc;
+    text-decoration: none;
+    margin: 15px 0;
+    padding: 10px;
+    border-radius: 8px;
+    transition: 0.2s;
+}
+
+.sidebar a:hover,
+.sidebar a.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* Main */
+.main-content {
+    margin-left: 250px;
+    width: calc(100% - 250px);
+    padding: 20px;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.menu-btn {
+    display: none;
+    font-size: 22px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: #333;
+}
+
+.profile {
+    background: var(--card);
+    padding: 8px 15px;
+    border-radius: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* Chat Layout */
+.chat-container {
+    display: flex;
+    height: 70vh;
+    background: var(--card);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+/* User List */
+.users {
+    width: 30%;
+    border-right: 1px solid #eee;
+    overflow-y: auto;
+}
+
+.user {
+    padding: 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    transition: 0.2s;
+}
+
+.user:hover,
+.user.active {
+    background: var(--primary);
+    color: white;
+}
+
+.user-name {
+    font-weight: 500;
+}
+
+.user-preview {
+    font-size: 12px;
+    color: var(--gray);
+}
+
+.user.active .user-preview {
+    color: rgba(255,255,255,0.8);
+}
+
+/* Chat Area */
+.chat-box {
+    width: 70%;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-header {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+    font-weight: 500;
+}
+
+.messages {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.msg {
+    margin-bottom: 10px;
+    max-width: 60%;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+.sent {
+    background: var(--primary);
+    color: white;
+    margin-left: auto;
+}
+
+.received {
+    background: #eee;
+}
+
+/* Input */
+.input-box {
+    display: flex;
+    border-top: 1px solid #eee;
+}
+
+.input-box input {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    outline: none;
+}
+
+.input-box input::placeholder {
+    color: var(--gray);
+}
+
+.input-box button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    background: var(--card);
+    border-radius: 15px;
+}
+
+.empty-state p {
+    color: var(--gray);
+}
+
+/* Responsive */
+@media(max-width: 768px) {
+    .sidebar {
+        left: -250px;
+    }
+
+    .sidebar.active {
+        left: 0;
+    }
+
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .menu-btn {
+        display: block;
+    }
+
+    .chat-container {
+        flex-direction: column;
+    }
+
+    .users {
+        width: 100%;
+        height: 120px;
+    }
+
+    .chat-box {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sidebar" id="sidebar">
+    <h2>🌾 AgriLink Farmer</h2>
+    <a href="{% url 'farmer_dashboard' %}">Overview</a>
+    <a href="{% url 'farmer_products' %}">My Listings</a>
+    <a href="{% url 'farmer_orders' %}">Orders</a>
+    <a href="#">Payments</a>
+    <a href="#" class="active">Messages</a>
+    <a href="#">Profile</a>
+    <a href="{% url 'logout' %}">Logout</a>
+</div>
+
+<div class="main-content">
+    <div class="navbar">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <h2>Messages</h2>
+        <div class="profile">👤 {{ user.get_full_name|default:user.username }}</div>
+    </div>
+
+    {% if conversations %}
+        <div class="chat-container">
+            <!-- Users -->
+            <div class="users" id="userList">
+                {% for conv in conversations %}
+                    <div class="user {% if forloop.first %}active{% endif %}" onclick="selectUser({{ forloop.counter0 }})">
+                        <div class="user-name">{{ conv.customer.get_full_name|default:conv.customer.username }}</div>
+                        <div class="user-preview">{{ conv.last_message|truncatechars:30 }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Chat -->
+            <div class="chat-box">
+                <div class="chat-header" id="chatHeader">
+                    {{ conversations.0.customer.get_full_name|default:conversations.0.customer.username }}
+                </div>
+                <div class="messages" id="chatArea">
+                    {% for msg in conversations.0.messages %}
+                        <div class="msg {% if msg.sender == user %}sent{% else %}received{% endif %}">
+                            {{ msg.content }}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="input-box">
+                    <input type="text" id="msgInput" placeholder="Type a message...">
+                    <button onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <p>No messages yet.</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleSidebar() {
+    document.getElementById("sidebar").classList.toggle("active");
+}
+
+function sendMessage() {
+    const input = document.getElementById("msgInput");
+    if(input.value.trim() !== "") {
+        // Add your message sending logic here
+        alert("Message sent: " + input.value);
+        input.value = "";
+    }
+}
+</script>
+{% endblock %}

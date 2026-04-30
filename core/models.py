@@ -45,6 +45,20 @@ class Category(models.Model):
         return self.name
 
 
+    @property
+    def price_range(self):
+        """
+        Returns a string showing the min–max price range of products
+        in this category. If no products exist, returns 'No products'.
+        """
+        products = self.products.filter(status="available")
+        if products.exists():
+            min_price = min(p.price_min for p in products)
+            max_price = max(p.price_max for p in products)
+            return f"Rs.{min_price} - Rs.{max_price}"
+        return "No products"
+
+
 # Product Model
 class Product(models.Model):
     STATUS_CHOICES = [
