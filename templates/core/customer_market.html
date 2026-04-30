@@ -142,7 +142,7 @@
                     <div class="category-card" onclick="location.href='{% url 'category' category.name %}'">
                         <h3>{{ category.name }}</h3>
                         <small>{{ category.description|truncatewords:10 }}</small>
-                        <div class="pill">{{ category.products.count }} products</div>
+                        <div class="pill">{{ category.product_count }} products</div>
                     </div>
                     {% empty %}
                     <div style="text-align: center; padding: 40px; color: #666;">
@@ -189,7 +189,7 @@
                     <div class="farmer-avatar">{{ farmer.get_full_name|default:farmer.username|slice:":2"|upper }}</div>
                     <h3>{{ farmer.get_full_name|default:farmer.username }}</h3>
                     <small>{{ farmer.district|default:"Nepal" }}</small>
-                    <div class="pill">{{ farmer.products.count }} products</div>
+                    <div class="pill">{{ farmer.product_count }} products</div>
                 </div>
                 {% empty %}
                 <div style="text-align: center; padding: 40px; color: #666;">

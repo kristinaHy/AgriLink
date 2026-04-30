@@ -46,7 +46,7 @@ class HomeView(TemplateView):
         )[:3]
         
         # Categories
-        context['categories'] = Category.objects.all()
+        context['categories'] = Category.objects.annotate(product_count=Count('products'))
         
         # Statistics
         context['total_farmers'] = User.objects.filter(role='farmer', is_verified=True).count()
@@ -381,7 +381,7 @@ class CustomerDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         ).select_related('farmer', 'category').order_by('-created_at')[:8]
         
         # Categories
-        context['categories'] = Category.objects.all()[:6]
+        context['categories'] = Category.objects.annotate(product_count=Count('products'))[:6]
         
         # Featured farmers
         context['featured_farmers'] = User.objects.filter(
@@ -412,10 +412,12 @@ class CustomerMarketView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         
         context['products'] = products
         
-        # Categories for filtering
-        context['categories'] = Category.objects.all()
+        # Categories for filtering - with product count annotation
+        context['categories'] = Category.objects.annotate(
+            product_count=Count('products')
+        ).all()
         
-        # Featured farmers
+        # Featured farmers - with product count annotation
         context['featured_farmers'] = User.objects.filter(
             role='farmer',
             is_verified=True
