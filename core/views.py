@@ -721,7 +721,14 @@ class AddToCartView(LoginRequiredMixin, UserPassesTestMixin, View):
     def post(self, request, pk):
         cart, created = Cart.objects.get_or_create(customer=request.user)
         product = get_object_or_404(Product, pk=pk, status='available')
-        quantity = int(request.POST.get('quantity', 1))
+        
+        try:
+            quantity = int(request.POST.get('quantity', 1))
+            if quantity < 1:
+                raise ValueError("Quantity must be at least 1")
+        except (ValueError, TypeError):
+            messages.error(request, 'Invalid quantity. Please enter a valid number.')
+            return redirect('cart')
         
         cart_item, created = CartItem.objects.get_or_create(
             cart=cart, product=product, defaults={'quantity': quantity}
@@ -740,7 +747,13 @@ class UpdateCartItemView(LoginRequiredMixin, UserPassesTestMixin, View):
 
     def post(self, request, pk):
         cart_item = get_object_or_404(CartItem, pk=pk, cart__customer=request.user)
-        quantity = int(request.POST['quantity'])
+        
+        try:
+            quantity = int(request.POST.get('quantity', 0))
+        except (ValueError, TypeError):
+            messages.error(request, 'Invalid quantity. Please enter a valid number.')
+            return redirect('cart')
+        
         if quantity > 0:
             cart_item.quantity = quantity
             cart_item.save()
