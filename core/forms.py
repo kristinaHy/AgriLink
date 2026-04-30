@@ -39,13 +39,23 @@ class UserLoginForm(forms.Form):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ('category', 'name', 'description', 'price', 'quantity', 'unit',
+        fields = ('category', 'name', 'description', 'price_min', 'price_max', 'price', 'quantity', 'unit',
                   'image', 'additional_images', 'is_fresh', 'freshness_date',
                   'is_seasonal', 'is_limited', 'discount_percentage')
         widgets = {
             'description': forms.Textarea(attrs={'rows': 5}),
             'freshness_date': forms.DateInput(attrs={'type': 'date'}),
         }
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        price_min = cleaned_data.get('price_min')
+        price_max = cleaned_data.get('price_max')
+        
+        if price_min and price_max and price_max < price_min:
+            raise forms.ValidationError('Maximum price cannot be less than minimum price.')
+        
+        return cleaned_data
 
 
 class ReviewForm(forms.ModelForm):
