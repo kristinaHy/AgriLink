@@ -1114,11 +1114,12 @@ class AdminTransactionsView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         
         transactions = []
         for i, order in enumerate(orders):
-            farmer_name = order.items.first().product.farmer.name if order.items.exists() else "N/A"
+            first_item = order.items.first()
+            farmer_name = first_item.product.farmer.get_full_name() if first_item and first_item.product and first_item.product.farmer else "N/A"
             transactions.append({
                 'order_id': f'#ORD-{1042-i}',
                 'farmer': farmer_name,
-                'customer': order.customer.name,
+                'customer': order.customer.get_full_name() or order.customer.username,
                 'method': 'Khalti',
                 'amount': order.total_amount,
                 'date': order.created_at,
