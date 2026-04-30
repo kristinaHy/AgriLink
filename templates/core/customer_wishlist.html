@@ -95,21 +95,21 @@
                     {% for item in wishlist_items %}
                     <div class="wishlist-card" data-id="{{ item.id }}">
                         <div class="wishlist-image">
-                            {% if item.product.image %}
-                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                            {% if item.image %}
+                                <img src="{{ item.image.url }}" alt="{{ item.name }}">
                             {% else %}
                                 <div class="fallback-image">📦</div>
                             {% endif %}
                         </div>
                         <div class="wishlist-details">
-                            <h4>{{ item.product.name }}</h4>
-                            <p class="wishlist-farmer">by {{ item.product.farmer.get_full_name|default:item.product.farmer.username }}</p>
-                            <p class="wishlist-price">₹{{ item.product.price }} per {{ item.product.unit }}</p>
+                            <h4>{{ item.name }}</h4>
+                            <p class="wishlist-farmer">by {{ item.farmer.get_full_name|default:item.farmer.username }}</p>
+                            <p class="wishlist-price">₹{{ item.price }} per {{ item.unit }}</p>
                             <div class="wishlist-rating">
                                 {% for i in "12345" %}
-                                    <i class="fas fa-star{% if forloop.counter > item.product.average_rating %} empty{% endif %}"></i>
+                                    <i class="fas fa-star{% if forloop.counter > item.average_rating %} empty{% endif %}"></i>
                                 {% endfor %}
-                                <span>({{ item.product.reviews.count }})</span>
+                                <span>({{ item.reviews.count }})</span>
                             </div>
                         </div>
                         <div class="wishlist-actions">
