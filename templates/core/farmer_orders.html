@@ -1,9 +1,10 @@
-{% extends 'base.html' %}
-{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orders - Farmer Dashboard</title>
 
-{% block title %}Orders - Farmer Dashboard{% endblock %}
-
-{% block extra_css %}
 <style>
 :root {
     --primary: #4CAF50;
@@ -21,6 +22,7 @@
 
 body {
     background: var(--bg);
+    font-family: 'Segoe UI', sans-serif;
 }
 
 /* Sidebar */
@@ -185,17 +187,18 @@ tr:hover {
     }
 }
 </style>
-{% endblock %}
+</head>
 
-{% block content %}
+<body>
+
 <div class="sidebar" id="sidebar">
     <h2>🌾 AgriLink Farmer</h2>
     <a href="{% url 'farmer_dashboard' %}">Overview</a>
     <a href="{% url 'farmer_products' %}">My Listings</a>
     <a href="{% url 'farmer_orders' %}" class="active">Orders</a>
-    <a href="#">Payments</a>
-    <a href="#">Messages</a>
-    <a href="#">Profile</a>
+    <a href="{% url 'farmer_payments' %}">Payments</a>
+    <a href="{% url 'farmer_messages' %}">Messages</a>
+    <a href="{% url 'farmer_profile' %}">Profile</a>
     <a href="{% url 'logout' %}">Logout</a>
 </div>
 
@@ -265,4 +268,6 @@ function filterOrders(status) {
     }
 }
 </script>
-{% endblock %}
+
+</body>
+</html>

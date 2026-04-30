@@ -1,9 +1,13 @@
-{% extends 'base.html' %}
-{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farmer Dashboard - AgriLink</title>
 
-{% block title %}Farmer Dashboard - AgriLink{% endblock %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-{% block extra_css %}
 <style>
 :root {
     --primary: #4CAF50;
@@ -21,6 +25,7 @@
 
 body {
     background: var(--bg);
+    font-family: 'Segoe UI', sans-serif;
 }
 
 /* Sidebar */
@@ -178,17 +183,18 @@ body {
     }
 }
 </style>
-{% endblock %}
+</head>
 
-{% block content %}
+<body>
+
 <div class="sidebar" id="sidebar">
     <h2>🌾 AgriLink Farmer</h2>
     <a href="{% url 'farmer_dashboard' %}" class="active">Overview</a>
     <a href="{% url 'farmer_products' %}">My Listings</a>
     <a href="{% url 'farmer_orders' %}">Orders</a>
-    <a href="#">Payments</a>
-    <a href="#">Messages</a>
-    <a href="#">Profile</a>
+    <a href="{% url 'farmer_payments' %}">Payments</a>
+    <a href="{% url 'farmer_messages' %}">Messages</a>
+    <a href="{% url 'farmer_profile' %}">Profile</a>
     <a href="{% url 'logout' %}">Logout</a>
 </div>
 
@@ -237,7 +243,6 @@ body {
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 function toggleSidebar() {
     document.getElementById("sidebar").classList.toggle("active");
@@ -252,7 +257,7 @@ new Chart(ctx, {
         labels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
         datasets: [{
             label: 'Sales',
-            data: [5000, 7000, 4000, 8000, 9000, 6000, 10000],
+            data: [{{ sales_day1|default:"5000" }}, {{ sales_day2|default:"7000" }}, {{ sales_day3|default:"4000" }}, {{ sales_day4|default:"8000" }}, {{ sales_day5|default:"9000" }}, {{ sales_day6|default:"6000" }}, {{ sales_day7|default:"10000" }}],
             borderWidth: 2,
             tension: 0.4,
             borderColor: '#4CAF50',
@@ -265,4 +270,6 @@ new Chart(ctx, {
     }
 });
 </script>
-{% endblock %}
+
+</body>
+</html>
