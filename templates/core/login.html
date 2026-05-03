@@ -59,7 +59,7 @@
                     </button>
                 </form>
                 
-                <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-inline-flex align-items-center gap-3 mb-3 login-action-row">
                     <a href="#" class="small link-green">Forgot password?</a>
                     <a href="{% url 'register' %}" class="small link-green">Create account</a>
                 </div>
@@ -72,7 +72,7 @@
 <style>
 .login-page-bg {
     min-height: 93vh;
-    padding: 30px 0;
+    padding: 30px 16px;
     background: linear-gradient(135deg, #E8F8F1 0%, #DDF0E7 45%, #BFE7CF 100%);
     display: flex;
     align-items: center;
@@ -85,48 +85,79 @@
 }
 
 .login-card {
+    position: relative;
     background: linear-gradient(145deg, #FFFFFF 0%, #F8FFF8 50%, #EEFCE8 100%);
-    border-radius: 20px;
+    border-radius: 24px;
     border: 1px solid #CDEBD2;
-    box-shadow: 0 18px 45px rgba(16, 44, 23, 0.15);
-    padding: 30px;
+    box-shadow: 0 18px 50px rgba(15, 56, 26, 0.14);
+    padding: 34px 32px;
+    overflow: hidden;
+}
+
+.login-card::before,
+.login-card::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(39, 174, 96, 0.12);
+}
+
+.login-card::before {
+    width: 120px;
+    height: 120px;
+    top: -40px;
+    right: -40px;
+}
+
+.login-card::after {
+    width: 140px;
+    height: 140px;
+    bottom: -45px;
+    left: -35px;
 }
 
 .brand-header {
     text-align: center;
-    padding-bottom: 14px;
+    padding-bottom: 16px;
     border-bottom: 1px solid #E4F3E7;
-    margin-bottom: 22px;
+    margin-bottom: 24px;
 }
 
 .brand-icon {
-    width: 58px;
-    height: 58px;
+    width: 62px;
+    height: 62px;
     background: linear-gradient(135deg, #D0F2D0 0%, #8EE5A9 100%);
     border-radius: 50%;
-    color: #216A33;
-    font-size: 1.45rem;
+    color: #1E6D34;
+    font-size: 1.5rem;
     display: grid;
     place-items: center;
-    margin: 0 auto 12px;
+    margin: 0 auto 14px;
 }
 
 .brand-header h2 {
-    font-size: 1.9rem;
+    font-size: 2rem;
     margin: 0;
     color: #154D2D;
 }
 
 .brand-header .muted {
-    color: #637D72;
-    margin-top: 8px;
+    color: #5F7C6C;
+    margin-top: 10px;
+    font-size: 0.95rem;
+}
+
+.login-card form .mb-3,
+.login-card form .mb-4 {
+    margin-bottom: 1.45rem;
 }
 
 .form-control {
     border: 1px solid #A1D7AA;
     border-radius: 12px;
-    padding: 12px 14px;
-    font-size: 0.95rem;
+    padding: 13px 16px;
+    font-size: 0.96rem;
+    background: #FDFDF9;
 }
 
 .form-control:focus {
@@ -137,10 +168,13 @@
 .btn-success {
     background: linear-gradient(135deg, #27AE60 0%, #1B7B4F 100%);
     border: none;
-    box-shadow: 0 8px 18px rgba(19, 143, 69, 0.32);
+    border-radius: 14px;
+    font-weight: 600;
+    box-shadow: 0 10px 22px rgba(19, 143, 69, 0.22);
 }
 
-.btn-success:hover {
+.btn-success:hover,
+.btn-success:focus {
     background: linear-gradient(135deg, #2dca69 0%, #1e8d53 100%);
 }
 
@@ -149,20 +183,55 @@
     font-weight: 600;
 }
 
-.divider {
-    text-align: center;
-    padding: 16px 0;
-    color: #5C7F6B;
+.login-action-row {
+    display: inline-flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0;
+    margin: 0;
+    width: auto;
+    background: transparent !important;
 }
 
-.login-types .btn-outline-success {
-    border-color: #9BE7B8;
-    color: #2A7A4B;
+.login-action-row a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0;
+    margin: 0;
+    min-width: auto;
+    height: auto;
+    line-height: 1.4;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
-.login-types .btn-outline-success:hover {
-    background-color: rgba(39,174,96,0.08);
-    border-color: #27AE60;
+.login-action-row a:hover {
+    color: #145428;
+    text-decoration: underline;
+    background: transparent !important;
+}
+
+.link-green:hover {
+    color: #145428;
+    text-decoration: none;
+}
+
+@media (max-width: 575.98px) {
+    .login-card {
+        padding: 24px 20px;
+        border-radius: 20px;
+    }
+
+    .brand-header h2 {
+        font-size: 1.75rem;
+    }
+
+    .brand-header .muted {
+        font-size: 0.92rem;
+    }
 }
 </style>
 
