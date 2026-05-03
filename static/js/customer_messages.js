@@ -166,12 +166,9 @@ function renderConversations(conversations) {
 }
 
 function escapeHtml(str) {
-    return String(str ?? '')
-        .replaceAll('&', '&')
-        .replaceAll('<', '<')
-        .replaceAll('>', '>')
-        .replaceAll('"', '"')
-        .replaceAll("'", '&#039;');
+    const div = document.createElement('div');
+    div.textContent = String(str ?? '');
+    return div.innerHTML;
 }
 
 function ensureThreadVisible() {
