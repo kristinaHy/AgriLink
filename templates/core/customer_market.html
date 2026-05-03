@@ -76,121 +76,206 @@
     </aside>
 
     <main class="main-content">
-        <div class="top-bar">
-            <div class="page-title">
-                <h1>Farmers Market</h1>
-                <p id="dashboardPageSubtitle">Fresh produce from verified local farmers</p>
-            </div>
-            <div class="top-actions">
-                <div class="search-bar">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="marketSearchInput" placeholder="Search products...">
+        <section class="marketplace-section">
+            <div class="marketplace-header">
+                <div class="marketplace-top">
+                    <div class="page-title">
+                        <h1><i class="fas fa-shopping-bag"></i> Farmers Market</h1>
+                        <p>Fresh produce from verified local farmers - Delivered to your doorstep</p>
+                    </div>
+                    <div class="search-and-filter">
+                        <div class="search-bar-enhanced">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="marketSearchInput" placeholder="Search by product name, farmer, category...">
+                        </div>
+                        <div class="quick-filters">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="fresh">Fresh</button>
+                            <button class="filter-btn" data-filter="seasonal">Seasonal</button>
+                            <button class="filter-btn" data-filter="organic">Organic</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <section class="content-card" style="margin-bottom: 1rem;">
-            <div class="products-grid">
+            <div class="products-container">
+                <aside class="marketplace-sidebar">
+                    <div class="filter-panel">
+                        <h3>Categories</h3>
+                        <div class="category-list">
+                            {% for category in categories %}
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="{{ category.name }}" class="category-filter">
+                                <span>{{ category.name }}</span>
+                                <span class="count">{{ category.product_count }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="filter-panel">
+                        <h3>Price Range</h3>
+                        <div class="price-range">
+                            <input type="range" min="0" max="1000" value="1000" class="price-slider" id="priceSlider">
+                            <div class="price-display">Rs. 0 - Rs. <span id="priceValue">1000</span></div>
+                        </div>
+                    </div>
+                    <div class="filter-panel">
+                        <h3>Ratings</h3>
+                        <div class="rating-filter">
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="4.5">
+                                <span><i class="fas fa-star"></i> 4.5★ & up</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="4">
+                                <span><i class="fas fa-star"></i> 4★ & up</span>
+                            </label>
+                            <label class="filter-checkbox">
+                                <input type="checkbox" value="3.5">
+                                <span><i class="fas fa-star"></i> 3.5★ & up</span>
+                            </label>
+                        </div>
+                    </div>
+                </aside>
+
+                <main class="products-main">
+                    <div class="marketplace-filters-mobile">
+                        <button class="filter-toggle-btn" id="filterToggle">
+                            <i class="fas fa-sliders-h"></i> Filters
+                        </button>
+                        <select class="sort-select">
+                            <option value="latest">Latest</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                            <option value="rating">Highest Rated</option>
+                        </select>
+                    </div>
+
+                    <div class="daraz-products-grid">
                 {% for product in products %}
-                <div class="market-card" data-id="{{ product.id }}" data-name="{{ product.name }}" data-category="{{ product.category.name|default:'uncategorized' }}">
-                    {% if product.status == 'available' %}
-                    <span class="pill">Available</span>
-                    {% elif product.status == 'out_of_stock' %}
-                    <span class="pill out-of-stock">Out of Stock</span>
-                    {% endif %}
-                    {% if product.image %}
-                    <img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy">
-                    {% else %}
-                    <div style="width: 100%; height: 200px; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #666;">
-                        <i class="fas fa-image" style="font-size: 3rem;"></i>
-                    </div>
-                    {% endif %}
-                    <div class="product-info">
-                        <h3>{{ product.name }}</h3>
-                        <div class="meta-row">
-                            <i class="fas fa-star"></i> {{ product.average_rating|floatformat:1 }}
-                            | {{ product.farmer.get_full_name|default:product.farmer.username }}
+                        <div class="daraz-product-card" data-id="{{ product.id }}" data-name="{{ product.name }}" data-price="{{ product.price_min }}" data-farmer="{{ product.farmer.get_full_name|default:product.farmer.username }}">
+                            <div class="card-image-wrapper">
+                                {% if product.image %}
+                                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image" loading="lazy">
+                                {% else %}
+                                    <div class="placeholder-image">
+                                        <i class="fas fa-image"></i>
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="product-badges">
+                                    {% if product.is_fresh %}
+                                    <span class="badge fresh-badge">Fresh</span>
+                                    {% endif %}
+                                    {% if product.is_seasonal %}
+                                    <span class="badge seasonal-badge">Seasonal</span>
+                                    {% endif %}
+                                    {% if product.discount_percentage > 0 %}
+                                    <span class="badge discount-badge">-{{ product.discount_percentage }}%</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <button class="wishlist-btn" onclick="addToWishlist({{ product.id }}, '{{ product.name }}')"
+                                        title="Add to Wishlist">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="card-content">
+                                <div class="product-header">
+                                    <h3 class="product-name">{{ product.name }}</h3>
+                                    <div class="product-rating">
+                                        <span class="rating-stars">
+                                            {% for i in "12345"|slice:":product.average_rating|floatformat:0|add:"-1"%}
+                                            <i class="fas fa-star"></i>
+                                            {% endfor %}
+                                            {% for i in "12345"|slice:"product.average_rating|floatformat:0|add:"-1":"%}
+                                            <i class="far fa-star"></i>
+                                            {% endfor %}
+                                        </span>
+                                        <span class="rating-value">{{ product.average_rating|floatformat:1 }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="farmer-info">
+                                    <i class="fas fa-user-circle"></i>
+                                    <span>{{ product.farmer.get_full_name|default:product.farmer.username }}</span>
+                                </div>
+                                
+                                <div class="product-price-section">
+                                    {% if product.discount_percentage > 0 %}
+                                        <div class="price-with-discount">
+                                            <span class="current-price">Rs. {{ product.discounted_price|default:product.price }}</span>
+                                            <span class="original-price">Rs. {{ product.price }}</span>
+                                        </div>
+                                    {% else %}
+                                        <span class="current-price">Rs. {{ product.price_min }}/{{ product.unit }}</span>
+                                    {% endif %}
+                                    <span class="unit-info">per {{ product.unit }}</span>
+                                </div>
+                                
+                                <div class="stock-info">
+                                    {% if product.quantity > 10 %}
+                                        <span class="stock-available"><i class="fas fa-check-circle"></i> In Stock</span>
+                                    {% elif product.quantity > 0 %}
+                                        <span class="stock-limited"><i class="fas fa-exclamation-circle"></i> Limited Stock ({{ product.quantity }})</span>
+                                    {% else %}
+                                        <span class="stock-unavailable"><i class="fas fa-times-circle"></i> Out of Stock</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="card-actions">
+                                <button class="btn-add-to-cart" onclick="quickAddToCart({{ product.id }}, '{{ product.name }}', {{ product.price_min }})" {% if product.quantity <= 0 %}disabled{% endif %}>
+                                    <i class="fas fa-shopping-cart"></i> Add to Cart
+                                </button>
+                            </div>
                         </div>
-                        <div class="price">Rs. {{ product.price_min }}/{{ product.unit }}</div>
-                        <div class="market-actions">
-                            <button class="add-cart-btn" onclick="addToCart({{ product.id }}, '{{ product.name }}', {{ product.price_min }}, '{{ product.unit }}')">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                            <button class="wishlist-icon-btn" onclick="addToWishlist({{ product.id }}, '{{ product.name }}', {{ product.price_min }}, '{{ product.unit }}')">
-                                <i class="fas fa-heart"></i>
-                            </button>
-                        </div>
                     </div>
-                </div>
-                {% empty %}
-                <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666;">
-                    <i class="fas fa-box" style="font-size: 3rem; margin-bottom: 20px; display: block;"></i>
-                    <p>No products available</p>
-                </div>
-                {% endfor %}
+
+                    {% empty %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-shopping-bag"></i>
+                        </div>
+                        <h3>No Products Available</h3>
+                        <p>Check back soon for fresh produce from our farmers!</p>
+                    </div>
+                    {% endfor %}
+                </main>
             </div>
         </section>
 
-        <div class="two-col">
-            <article class="content-card">
-                <div class="card-header">
-                    <h2>Product Categories</h2>
-                    <a href="{% url 'category_all' %}" class="view-all">View All →</a>
+        <section class="marketplace-sections">
+            <div class="marketplace-categories-section">
+                <div class="section-title">
+                    <h2><i class="fas fa-tags"></i> Shop by Category</h2>
                 </div>
-                <div class="category-grid">
+                <div class="categories-carousel">
                     {% for category in categories %}
-                    <div class="category-card" onclick="location.href='{% url 'category' category.name %}'">
-                        <h3>{{ category.name }}</h3>
-                        <small>{{ category.description|truncatewords:10 }}</small>
-                        <div class="pill">{{ category.product_count }} products</div>
-                    </div>
-                    {% empty %}
-                    <div style="text-align: center; padding: 40px; color: #666;">
-                        <i class="fas fa-tags" style="font-size: 3rem; margin-bottom: 20px; display: block;"></i>
-                        <p>No categories available</p>
+                    <div class="category-card-large" onclick="filterByCategory('{{ category.name }}')">
+                        <div class="category-icon">
+                            <i class="fas fa-leaf"></i>
+                        </div>
+                        <h4>{{ category.name }}</h4>
+                        <p>{{ category.product_count }} products</p>
                     </div>
                     {% endfor %}
                 </div>
-            </article>
-
-            <article class="content-card">
-                <div class="card-header">
-                    <h2>Live Prices</h2>
-                </div>
-                <div class="info-card">
-                    <p class="small-text">
-                        <i class="fas fa-leaf"></i> Tomato (Local): Rs 45/kg
-                        <span style="color: #22c55e; font-weight: 600;">▲ 2%</span>
-                    </p>
-                    <p class="small-text">
-                        <i class="fas fa-carrot"></i> Carrot: Rs 60/kg
-                        <span style="color: #22c55e; font-weight: 600;">▲ 5%</span>
-                    </p>
-                    <p class="small-text">
-                        <i class="fas fa-apple"></i> Apple (Fuji): Rs 220/kg
-                        <span style="color: #ef4444; font-weight: 600;">▼ 3%</span>
-                    </p>
-                    <p class="small-text">
-                        <i class="fas fa-potato"></i> Potato: Rs 32/kg
-                        <span style="color: #22c55e; font-weight: 600;">▲ 1%</span>
-                    </p>
-                </div>
-            </article>
-        </div>
-
-        <section class="content-card" style="margin-top: 1rem;">
-            <div class="card-header">
-                <h2>Meet Our Farmers</h2>
-                <span class="small-text">Verified local farmers supplying fresh produce directly to you</span>
             </div>
-            <div class="farmers-grid">
-                {% for farmer in featured_farmers %}
-                <div class="farmer-card">
-                    <div class="farmer-avatar">{{ farmer.get_full_name|default:farmer.username|slice:":2"|upper }}</div>
-                    <h3>{{ farmer.get_full_name|default:farmer.username }}</h3>
-                    <small>{{ farmer.district|default:"Nepal" }}</small>
-                    <div class="pill">{{ farmer.product_count }} products</div>
+
+            <div class="farmers-section">
+                <div class="section-title">
+                    <h2><i class="fas fa-tractor"></i> Featured Farmers</h2>
                 </div>
+                <div class="farmers-carousel">
+                {% for farmer in featured_farmers %}
+                    <div class="farmer-card-showcase">
+                        <div class="farmer-avatar-large">{{ farmer.get_full_name|default:farmer.username|slice:":2"|upper }}</div>
+                        <h4>{{ farmer.get_full_name|default:farmer.username }}</h4>
+                        <p class="farmer-location"><i class="fas fa-map-marker-alt"></i> {{ farmer.district|default:"Nepal" }}</p>
+                        <span class="badge">{{ farmer.product_count }} products</span>
+                    </div>
                 {% empty %}
                 <div style="text-align: center; padding: 40px; color: #666;">
                     <i class="fas fa-tractor" style="font-size: 3rem; margin-bottom: 20px; display: block;"></i>

@@ -5,16 +5,18 @@
 
 {% block content %}
 
-<div class="container my-5">
-    <div class="row">
-        <div class="col-lg-6 offset-lg-3">
-            <div class="registration-card">
-                <div class="card-header text-center mb-4">
-                    <h2>Create Your Account</h2>
-                    <p class="text-muted">Join AgriLink and start your journey</p>
-                </div>
-                
-                <form method="post" enctype="multipart/form-data">
+<div class="register-page-bg">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-xl-6 col-lg-8">
+                <div class="registration-card shadow-sm">
+                    <div class="card-header text-center mb-4">
+                        <span class="badge bg-success rounded-pill mb-3 px-3 py-2">New Account</span>
+                        <h2>Create Your Account</h2>
+                        <p class="text-muted">Join AgriLink and start ordering fresh farm produce in minutes.</p>
+                    </div>
+                    
+                    <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     
                     {% if form.non_field_errors %}
@@ -127,8 +129,8 @@
                     </button>
                 </form>
                 
-                <p class="text-center text-muted">
-                    Already have an account? <a href="{% url 'login' %}" class="text-success">Login here</a>
+                <p class="text-center text-muted mb-0">
+                    Already have an account? <a href="{% url 'login' %}" class="text-success fw-semibold">Login here</a>
                 </p>
             </div>
         </div>
@@ -136,11 +138,94 @@
 </div>
 
 <style>
+    .register-page-bg {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #F5FAF5 0%, #E7F3EA 45%, #F6FCF6 100%);
+        padding-top: 50px;
+        padding-bottom: 50px;
+    }
+
     .registration-card {
-        background: white;
-        border-radius: 12px;
-        padding: 40px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        background: #ffffff;
+        border-radius: 28px;
+        padding: 44px 36px;
+        border: 1px solid rgba(71, 138, 98, 0.12);
+        overflow: hidden;
+    }
+
+    .registration-card .card-header {
+        padding-bottom: 0;
+        margin-bottom: 24px;
+    }
+
+    .registration-card .card-header h2 {
+        font-size: 2.15rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: #184c28;
+    }
+
+    .registration-card .card-header p {
+        font-size: 0.98rem;
+        color: #5f7564;
+        margin-bottom: 0;
+    }
+
+    .registration-card .form-control,
+    .registration-card .form-select {
+        border: 1px solid #D7E7DB;
+        border-radius: 14px;
+        background: #F8FBF8;
+        padding: 14px 16px;
+        font-size: 0.96rem;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .registration-card .form-control:focus,
+    .registration-card .form-select:focus {
+        border-color: #27AE60;
+        box-shadow: 0 0 0 0.2rem rgba(39, 174, 96, 0.16);
+    }
+
+    .registration-card .form-label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #2d4f38;
+    }
+
+    .registration-card .form-text {
+        color: #718975;
+    }
+
+    .registration-card .btn-success {
+        border-radius: 999px;
+        padding: 14px 18px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        box-shadow: 0 16px 30px rgba(39, 174, 96, 0.18);
+        border: none;
+    }
+
+    .registration-card .btn-success:hover {
+        background: #20994a;
+    }
+
+    .registration-card .badge {
+        font-size: 0.82rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: rgba(39, 174, 96, 0.12);
+        color: #1d5d30;
+    }
+
+    .registration-card .row > .col-md-6 {
+        margin-bottom: 1rem;
+    }
+
+    @media (max-width: 767.98px) {
+        .registration-card {
+            padding: 32px 24px;
+        }
     }
     
     .registration-card .form-control,
