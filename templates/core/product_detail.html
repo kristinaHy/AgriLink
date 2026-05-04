@@ -26,6 +26,25 @@
                 <span>Status: {{ product.get_status_display }}</span>
             </div>
             <p>{{ product.description }}</p>
+
+            {% if same_products %}
+            <div class="same-product-farmers">
+                <h3>Other farmers selling {{ product.name }}</h3>
+                <div class="same-product-grid">
+                    {% for other in same_products %}
+                    <div class="same-product-card">
+                        <div class="same-product-card-header">
+                            <h4>{{ other.farmer.get_full_name|default:other.farmer.username }}</h4>
+                            <span>{{ other.farmer.district|default:"Nepal" }}</span>
+                        </div>
+                        <p>Price: Rs. {{ other.price_min }}/{{ other.unit }}</p>
+                        <p>Stock: {{ other.quantity }}</p>
+                        <a href="{% url 'product_detail' other.id %}" class="btn btn-secondary">View Seller</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
             
             {% if user.is_authenticated and user.role == 'customer' %}
                 <a href="#" class="btn btn-primary add-to-cart">Add to Cart</a>

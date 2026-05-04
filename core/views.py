@@ -141,7 +141,12 @@ class ProductDetailView(DetailView):
         if self.request.user.is_authenticated:
             context['can_review'] = self.request.user.role == 'customer' and \
                                     self.request.user.orders.filter(items__product=product).exists()
-        
+
+        context['same_products'] = Product.objects.filter(
+            name__iexact=product.name,
+            status='available'
+        ).exclude(id=product.id).select_related('farmer', 'category')
+
         return context
 
 

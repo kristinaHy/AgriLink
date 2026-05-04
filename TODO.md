@@ -1,12 +1,8 @@
-# AgriLink Django Server Fix - TODO
+# Fix TemplateSyntaxError in customer_market.html
 
-**Current Task:** Fix ImportError: cannot import name 'Farmer' from 'core.models'
-
-## Approved Plan Steps:
-- [x] Step 1: Edit core/views.py - Remove erroneous import and refactor AdminDashboardView to use User.role filters and Order metrics
-- [ ] Step 2: Test with `python manage.py runserver`
-- [ ] Step 3: Verify admin dashboard access and metrics
-- [ ] Step 4: Complete task
-
-**Status:** Step 2 completed successfully. Server running at http://127.0.0.1:8000/. ImportError fixed. Ready for production-like testing. Task complete.
+- [x] 1. Create this TODO.md with task steps
+- [x] 2. Edit templates/core/customer_market.html to fix slice filter: change `{{ product.name|slice:\":2\"|upper }}` to `{{ product.name|slice:\"0:2\"|upper }}`
+- [x] 3. Update TODO.md to mark completion
+- [x] 4. Test by reloading http://127.0.0.1:8000/customer/market/
+- [x] 5. Attempt task completion
 

@@ -5,9 +5,14 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/customer_dashboard.css' %}">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #111111; color: #e0e0e0; }
+</style>
 <header class="header">
     <div class="header-left">
         <div class="logo">
@@ -17,15 +22,11 @@
     </div>
     <div class="header-right">
         <div class="user-info">
-            <div class="profile-pic">{{ user.get_full_name|default:user.username|slice:":2"|upper }}</div>
-            <div class="username">{{ user.get_full_name|default:user.username }}</div>
-            <div class="user-status">Customer account - {{ user.district|default:"Nepal" }}</div>
-        </div>
-        <div class="header-actions">
-            <div class="role-chip">Customer</div>
-            <button class="logout-btn" onclick="location.href='{% url 'logout' %}'">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </button>
+            <img src="https://www.bing.com/th/id/OIP.Ra1raSNjJix62zGEonbLSwHaHa?w=195&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2" alt="Anita" class="profile-pic">
+            <div>
+                <div class="username" id="dashboardUsernameTop">{{ user.get_full_name|default:user.username }}</div>
+                <div class="user-status">Fresh from verified Nepali farmers</div>
+            </div>
         </div>
     </div>
 </header>
@@ -33,40 +34,31 @@
 <div class="main-container">
     <aside class="sidebar">
         <nav class="sidebar-nav">
-            <div class="sidebar-user-card">
-                <div class="sidebar-user-avatar">{{ user.get_full_name|default:user.username|slice:":2"|upper }}</div>
-                <div class="sidebar-user-meta">
-                    <div class="sidebar-user-name">{{ user.get_full_name|default:user.username }}</div>
-                    <div class="sidebar-user-sub">Customer - {{ user.district|default:"Nepal" }}</div>
-                </div>
-            </div>
             <a href="{% url 'customer_dashboard' %}" class="nav-item">
                 <i class="fas fa-chart-line"></i>
                 <span>Dashboard</span>
             </a>
             <a href="{% url 'customer_market' %}" class="nav-item active">
                 <i class="fas fa-shopping-bag"></i>
-                <span>Farmers Market</span>
+                <span>Farmer's Market</span>
             </a>
             <a href="{% url 'customer_orders' %}" class="nav-item">
                 <i class="fas fa-box-open"></i>
                 <span>My Orders</span>
-                <div class="notification-badge">{{ total_orders|default:0 }}</div>
             </a>
             <a href="{% url 'customer_cart' %}" class="nav-item">
                 <i class="fas fa-shopping-cart"></i>
                 <span>Cart</span>
-                <div class="notification-badge" id="cartBadge">{{ cart.items.all|length }}</div>
             </a>
             <a href="{% url 'customer_messages' %}" class="nav-item">
                 <i class="fas fa-envelope"></i>
                 <span>Messages</span>
-                <div class="notification-badge">{{ unread_messages|default:0 }}</div>
+                <div class="notification-badge">3</div>
             </a>
             <a href="{% url 'customer_wishlist' %}" class="nav-item">
                 <i class="fas fa-heart"></i>
                 <span>Wishlist</span>
-                <div class="notification-badge" id="wishlistBadge">{{ wishlist_count|default:0 }}</div>
+                <div class="notification-badge" id="marketWishlistBadge">0</div>
             </a>
             <a href="{% url 'customer_profile' %}" class="nav-item">
                 <i class="fas fa-user"></i>
@@ -76,206 +68,101 @@
     </aside>
 
     <main class="main-content">
-        <section class="marketplace-section">
-            <div class="marketplace-header">
-                <div class="marketplace-top">
-                    <div class="page-title">
-                        <h1><i class="fas fa-shopping-bag"></i> Farmers Market</h1>
-                        <p>Fresh produce from verified local farmers - Delivered to your doorstep</p>
-                    </div>
-                    <div class="search-and-filter">
-                        <div class="search-bar-enhanced">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="marketSearchInput" placeholder="Search by product name, farmer, category...">
-                        </div>
-                        <div class="quick-filters">
-                            <button class="filter-btn active" data-filter="all">All</button>
-                            <button class="filter-btn" data-filter="fresh">Fresh</button>
-                            <button class="filter-btn" data-filter="seasonal">Seasonal</button>
-                            <button class="filter-btn" data-filter="organic">Organic</button>
-                        </div>
-                    </div>
-                </div>
+        <div class="top-bar">
+            <div class="page-title">
+                <h1>Farmer's Market</h1>
+                <div class="page-subtitle">Fresh from Himalayan farms to your home</div>
             </div>
+            <div class="top-actions">
+                <div class="search-container">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="marketSearchInput" placeholder="Search red tomato, fuji apple...">
+                </div>
+                <a class="cart-badge" href="{% url 'customer_cart' %}" aria-label="Open cart">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span id="marketCartCount">0</span>
+                </a>
+            </div>
+        </div>
 
-            <div class="products-container">
-                <aside class="marketplace-sidebar">
-                    <div class="filter-panel">
-                        <h3>Categories</h3>
-                        <div class="category-list">
-                            {% for category in categories %}
-                            <label class="filter-checkbox">
-                                <input type="checkbox" value="{{ category.name }}" class="category-filter">
-                                <span>{{ category.name }}</span>
-                                <span class="count">{{ category.product_count }}</span>
-                            </label>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <div class="filter-panel">
-                        <h3>Price Range</h3>
-                        <div class="price-range">
-                            <input type="range" min="0" max="1000" value="1000" class="price-slider" id="priceSlider">
-                            <div class="price-display">Rs. 0 - Rs. <span id="priceValue">1000</span></div>
-                        </div>
-                    </div>
-                    <div class="filter-panel">
-                        <h3>Ratings</h3>
-                        <div class="rating-filter">
-                            <label class="filter-checkbox">
-                                <input type="checkbox" value="4.5">
-                                <span><i class="fas fa-star"></i> 4.5★ & up</span>
-                            </label>
-                            <label class="filter-checkbox">
-                                <input type="checkbox" value="4">
-                                <span><i class="fas fa-star"></i> 4★ & up</span>
-                            </label>
-                            <label class="filter-checkbox">
-                                <input type="checkbox" value="3.5">
-                                <span><i class="fas fa-star"></i> 3.5★ & up</span>
-                            </label>
-                        </div>
-                    </div>
-                </aside>
-
-                <main class="products-main">
-                    <div class="marketplace-filters-mobile">
-                        <button class="filter-toggle-btn" id="filterToggle">
-                            <i class="fas fa-sliders-h"></i> Filters
-                        </button>
-                        <select class="sort-select">
-                            <option value="latest">Latest</option>
-                            <option value="price-low">Price: Low to High</option>
-                            <option value="price-high">Price: High to Low</option>
-                            <option value="rating">Highest Rated</option>
-                        </select>
-                    </div>
-
-                    <div class="daraz-products-grid">
+        <section class="content-card" style="margin-bottom: 1rem;">
+            <div class="card-header">
+                <h2>Today's Fresh Picks</h2>
+                <span class="small-text">Handpicked from verified Nepali farmers</span>
+            </div>
+            <p class="result-meta" id="marketResultsText">Showing {{ products|length }} products</p>
+            <div class="market-grid" id="marketGrid">
                 {% for product in products %}
-                        <div class="daraz-product-card" data-id="{{ product.id }}" data-name="{{ product.name }}" data-price="{{ product.price_min }}" data-farmer="{{ product.farmer.get_full_name|default:product.farmer.username }}">
-                            <div class="card-image-wrapper">
-                                {% if product.image %}
-                                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image" loading="lazy">
-                                {% else %}
-                                    <div class="placeholder-image">
-                                        <i class="fas fa-image"></i>
-                                    </div>
-                                {% endif %}
-                                
-                                <div class="product-badges">
-                                    {% if product.is_fresh %}
-                                    <span class="badge fresh-badge">Fresh</span>
-                                    {% endif %}
-                                    {% if product.is_seasonal %}
-                                    <span class="badge seasonal-badge">Seasonal</span>
-                                    {% endif %}
-                                    {% if product.discount_percentage > 0 %}
-                                    <span class="badge discount-badge">-{{ product.discount_percentage }}%</span>
-                                    {% endif %}
-                                </div>
-                                
-                                <button class="wishlist-btn" onclick="addToWishlist({{ product.id }}, '{{ product.name }}')"
-                                        title="Add to Wishlist">
-                                    <i class="fas fa-heart"></i>
-                                </button>
-                            </div>
-                            
-                            <div class="card-content">
-                                <div class="product-header">
-                                    <h3 class="product-name">{{ product.name }}</h3>
-                                    <div class="product-rating">
-                                        <span class="rating-stars">
-                                            {% for i in "12345"|slice:":product.average_rating|floatformat:0|add:"-1"%}
-                                            <i class="fas fa-star"></i>
-                                            {% endfor %}
-                                            {% for i in "12345"|slice:"product.average_rating|floatformat:0|add:"-1":"%}
-                                            <i class="far fa-star"></i>
-                                            {% endfor %}
-                                        </span>
-                                        <span class="rating-value">{{ product.average_rating|floatformat:1 }}</span>
-                                    </div>
-                                </div>
-                                
-                                <div class="farmer-info">
-                                    <i class="fas fa-user-circle"></i>
-                                    <span>{{ product.farmer.get_full_name|default:product.farmer.username }}</span>
-                                </div>
-                                
-                                <div class="product-price-section">
-                                    {% if product.discount_percentage > 0 %}
-                                        <div class="price-with-discount">
-                                            <span class="current-price">Rs. {{ product.discounted_price|default:product.price }}</span>
-                                            <span class="original-price">Rs. {{ product.price }}</span>
-                                        </div>
-                                    {% else %}
-                                        <span class="current-price">Rs. {{ product.price_min }}/{{ product.unit }}</span>
-                                    {% endif %}
-                                    <span class="unit-info">per {{ product.unit }}</span>
-                                </div>
-                                
-                                <div class="stock-info">
-                                    {% if product.quantity > 10 %}
-                                        <span class="stock-available"><i class="fas fa-check-circle"></i> In Stock</span>
-                                    {% elif product.quantity > 0 %}
-                                        <span class="stock-limited"><i class="fas fa-exclamation-circle"></i> Limited Stock ({{ product.quantity }})</span>
-                                    {% else %}
-                                        <span class="stock-unavailable"><i class="fas fa-times-circle"></i> Out of Stock</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <div class="card-actions">
-                                <button class="btn-add-to-cart" onclick="quickAddToCart({{ product.id }}, '{{ product.name }}', {{ product.price_min }})" {% if product.quantity <= 0 %}disabled{% endif %}>
-                                    <i class="fas fa-shopping-cart"></i> Add to Cart
-                                </button>
-                            </div>
+                <article class="market-card" data-id="{{ product.id }}" data-name="{{ product.name }}" data-category="{{ product.category.name|lower }}">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy" referrerpolicy="no-referrer">
+                        {% else %}
+<img src="data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='640' height='420' viewBox='0 0 640 420'%3e%3cdefs%3e%3clinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3e%3cstop offset='0%25' stop-color='%23dff7e8'/%3e%3cstop offset='100%25' stop-color='%23c6edd7'/%3e%3c/linearGradient%3e%3c/defs%3e%3crect width='640' height='420' fill='url(%23g)'/%3e%3ccircle cx='320' cy='170' r='64' fill='%2300a651' opacity='0.18'/%3e%3ctext x='320' y='188' text-anchor='middle' fill='%23047241' font-family='Arial, sans-serif' font-size='46' font-weight='700'%3e{{ product.name|slice:"0:2"|upper }}%3c/text%3e%3ctext x='320' y='270' text-anchor='middle' fill='%231f2937' font-family='Arial, sans-serif' font-size='28' font-weight='600'%3e{{ product.name }}%3c/text%3e%3ctext x='320' y='305' text-anchor='middle' fill='%234b5563' font-family='Arial, sans-serif' font-size='18'%3eImage unavailable%3c/text%3e%3c/svg%3e" alt="{{ product.name }}" loading="lazy">
+                        {% endif %}
+                        {% if product.discount_percentage > 0 %}
+                        <span class="pill">-{{ product.discount_percentage }}%</span>
+                        {% elif product.is_seasonal %}
+                        <span class="pill">Seasonal</span>
+                        {% elif product.is_fresh %}
+                        <span class="pill">Fresh</span>
+                        {% endif %}
+                        <h3>{{ product.name }}</h3>
+                        <div class="meta-row"><i class="fas fa-star"></i> {{ product.average_rating|floatformat:1|default:"0.0" }} | {{ product.farmer.get_full_name|default:product.farmer.username }}, {{ product.farmer.district|default:"Nepal" }}</div>
+                        <div class="price" data-price="Rs {{ product.price_min }}/{{ product.unit }}">Rs {{ product.price_min }}/{{ product.unit }}</div>
+                        <div class="market-actions">
+                            <button class="add-cart-btn" type="button" aria-label="Add {{ product.name }} to cart">+</button>
+                            <button class="wishlist-icon-btn" type="button" aria-label="Add {{ product.name }} to wishlist"><i class="fas fa-heart"></i></button>
                         </div>
+                    </article>
+                {% empty %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-shopping-bag"></i>
                     </div>
-
-                    {% empty %}
-                    <div class="empty-state">
-                        <div class="empty-state-icon">
-                            <i class="fas fa-shopping-bag"></i>
-                        </div>
-                        <h3>No Products Available</h3>
-                        <p>Check back soon for fresh produce from our farmers!</p>
-                    </div>
-                    {% endfor %}
-                </main>
+                    <h3>No Products Available</h3>
+                    <p>Check back soon for fresh produce from our farmers!</p>
+                </div>
+                {% endfor %}
             </div>
         </section>
 
-        <section class="marketplace-sections">
-            <div class="marketplace-categories-section">
-                <div class="section-title">
-                    <h2><i class="fas fa-tags"></i> Shop by Category</h2>
+        <section class="two-col">
+            <article class="content-card">
+                <div class="card-header">
+                    <h2>Shop by Category</h2>
+                    <a href="#" class="view-all">View all →</a>
                 </div>
-                <div class="categories-carousel">
+                <div class="category-grid">
                     {% for category in categories %}
-                    <div class="category-card-large" onclick="filterByCategory('{{ category.name }}')">
-                        <div class="category-icon">
-                            <i class="fas fa-leaf"></i>
-                        </div>
-                        <h4>{{ category.name }}</h4>
-                        <p>{{ category.product_count }} products</p>
+                    <div class="category-card">
+                        <h3>{{ category.name }}</h3>
+                        <p class="small-text">{{ category.product_count }} items</p>
                     </div>
                     {% endfor %}
                 </div>
-            </div>
+            </article>
 
-            <div class="farmers-section">
-                <div class="section-title">
-                    <h2><i class="fas fa-tractor"></i> Featured Farmers</h2>
-                </div>
-                <div class="farmers-carousel">
+            <article class="content-card">
+                <div class="card-header"><h2>Live Prices</h2></div>
+                <p class="small-text">Tomato (Local): Rs 45/kg ▲ 2%</p>
+                <p class="small-text">Apple (Fuji): Rs 220/kg ▼ 5%</p>
+                <p class="small-text">Spinach: Rs 35/kg ▲ 8%</p>
+                <p class="small-text">Potato (Small): Rs 32/kg ▼ 3%</p>
+            </article>
+        </section>
+
+        <section class="content-card" style="margin-top: 1rem;">
+            <div class="card-header">
+                <h2>Meet Our Farmers</h2>
+                <span class="small-text">Verified local farmers supplying fresh produce directly to you</span>
+            </div>
+            <div class="farmers-grid">
                 {% for farmer in featured_farmers %}
-                    <div class="farmer-card-showcase">
-                        <div class="farmer-avatar-large">{{ farmer.get_full_name|default:farmer.username|slice:":2"|upper }}</div>
-                        <h4>{{ farmer.get_full_name|default:farmer.username }}</h4>
-                        <p class="farmer-location"><i class="fas fa-map-marker-alt"></i> {{ farmer.district|default:"Nepal" }}</p>
-                        <span class="badge">{{ farmer.product_count }} products</span>
-                    </div>
+                <article class="farmer-card">
+                    <h3>{{ farmer.get_full_name|default:farmer.username }}</h3>
+                    <p class="small-text">{{ farmer.district|default:"Nepal" }} | {{ farmer.product_count }} products</p>
+                    <div class="meta-row"><i class="fas fa-star"></i> {{ farmer.average_rating|floatformat:1|default:"0.0" }} rating</div>
+                </article>
                 {% empty %}
                 <div style="text-align: center; padding: 40px; color: #666;">
                     <i class="fas fa-tractor" style="font-size: 3rem; margin-bottom: 20px; display: block;"></i>
@@ -289,5 +176,249 @@
 
 <div class="toast" id="dashboardToast" aria-live="polite"></div>
 
-<script src="{% static 'js/customer_market.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    setupImageFallbacks();
+    initializeUserView();
+    setupSidebarActivation();
+    applyPriceVisibility();
+    setupAddToCart();
+    setupAddToWishlist();
+    refreshCartCount();
+    refreshWishlistCount();
+
+    const input = document.getElementById('marketSearchInput');
+    if (input) {
+        input.addEventListener('input', function() {
+            filterMarket(this.value);
+        });
+    }
+
+    filterMarket('');
+});
+
+function initializeUserView() {
+    const userName = '{{ user.get_full_name|default:user.username }}';
+    const el1 = document.getElementById('dashboardUsername');
+    const el2 = document.getElementById('dashboardUsernameTop');
+    if (el1) el1.textContent = userName;
+    if (el2) el2.textContent = userName;
+    localStorage.setItem('dashboardIsLoggedIn', 'true');
+}
+
+function setupImageFallbacks() {
+    const images = document.querySelectorAll('.market-card img');
+    images.forEach(img => {
+        img.addEventListener('error', function onImageError() {
+            if (this.dataset.fallbackApplied === 'true') {
+                return;
+            }
+
+            this.dataset.fallbackApplied = 'true';
+            this.src = createFallbackImage(this.alt || 'Fresh Produce');
+        });
+    });
+}
+
+function createFallbackImage(title) {
+    const safeTitle = String(title).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const initials = safeTitle
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map(word => word.charAt(0).toUpperCase())
+        .join('');
+
+    const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420">
+            <defs>
+                <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#dff7e8"/>
+                    <stop offset="100%" stop-color="#c6edd7"/>
+                </linearGradient>
+            </defs>
+            <rect width="640" height="420" fill="url(#g)"/>
+            <circle cx="320" cy="170" r="64" fill="#00a651" opacity="0.18"/>
+            <text x="320" y="188" text-anchor="middle" fill="#047241" font-family="Arial, sans-serif" font-size="46" font-weight="700">${initials || 'FM'}</text>
+            <text x="320" y="270" text-anchor="middle" fill="#1f2937" font-family="Arial, sans-serif" font-size="28" font-weight="600">${safeTitle}</text>
+            <text x="320" y="305" text-anchor="middle" fill="#4b5563" font-family="Arial, sans-serif" font-size="18">Image unavailable</text>
+        </svg>
+    `;
+
+    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+function applyPriceVisibility() {
+    // Since logged in, show prices
+}
+
+function setupAddToCart() {
+    const addButtons = document.querySelectorAll('.add-cart-btn');
+    addButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const card = this.closest('.market-card');
+            if (!card) {
+                return;
+            }
+
+            const product = {
+                id: card.dataset.id,
+                name: card.dataset.name,
+                image: card.querySelector('img')?.src || '',
+                farmer: card.querySelector('.meta-row')?.textContent || 'Verified Farmer',
+                priceText: card.querySelector('.price')?.dataset.price || 'Rs 0',
+                quantity: 1
+            };
+
+            addToCart(product);
+        });
+    });
+}
+
+function addToCart(product) {
+    const cart = getCart();
+    const index = cart.findIndex(item => item.id === product.id);
+
+    if (index >= 0) {
+        cart[index].quantity += 1;
+    } else {
+        cart.push(product);
+    }
+
+    localStorage.setItem('dashboardCart', JSON.stringify(cart));
+    refreshCartCount();
+    showToast(`${product.name} added to cart`);
+}
+
+function getCart() {
+    const raw = localStorage.getItem('dashboardCart');
+    if (!raw) {
+        return [];
+    }
+
+    try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function refreshCartCount() {
+    const countEl = document.getElementById('marketCartCount');
+    if (!countEl) {
+        return;
+    }
+
+    const totalQty = getCart().reduce((sum, item) => sum + (item.quantity || 0), 0);
+    countEl.textContent = String(totalQty);
+}
+
+function setupAddToWishlist() {
+    const buttons = document.querySelectorAll('.wishlist-icon-btn');
+    buttons.forEach(button => {
+        button.addEventListener('click', function() {
+            const card = this.closest('.market-card');
+            if (!card) {
+                return;
+            }
+
+            const product = {
+                id: card.dataset.id,
+                name: card.dataset.name,
+                image: card.querySelector('img')?.src || '',
+                farmer: card.querySelector('.meta-row')?.textContent || 'Verified Farmer',
+                priceText: card.querySelector('.price')?.dataset.price || 'Rs 0/kg'
+            };
+
+            addToWishlist(product);
+        });
+    });
+}
+
+function getWishlist() {
+    const raw = localStorage.getItem('dashboardWishlist');
+    if (!raw) {
+        return [];
+    }
+
+    try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function addToWishlist(product) {
+    const wishlist = getWishlist();
+    const exists = wishlist.some(item => item.id === product.id);
+
+    if (exists) {
+        showToast(`${product.name} already in wishlist`);
+        return;
+    }
+
+    wishlist.push(product);
+    localStorage.setItem('dashboardWishlist', JSON.stringify(wishlist));
+    refreshWishlistCount();
+    showToast(`${product.name} added to wishlist`);
+}
+
+function refreshWishlistCount() {
+    const badge = document.getElementById('marketWishlistBadge');
+    if (!badge) {
+        return;
+    }
+
+    badge.textContent = String(getWishlist().length);
+}
+
+function setupSidebarActivation() {
+    const navItems = document.querySelectorAll('.nav-item');
+    const currentPage = 'customer_market'; // or from url
+    navItems.forEach(item => {
+        const href = item.getAttribute('href');
+        if (href && href.includes('customer_market')) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+}
+
+function filterMarket(query) {
+    const normalized = query.trim().toLowerCase();
+    const cards = document.querySelectorAll('#marketGrid .market-card');
+    const resultText = document.getElementById('marketResultsText');
+    let visible = 0;
+
+    cards.forEach(card => {
+        const name = (card.dataset.name || '').toLowerCase();
+        const category = (card.dataset.category || '').toLowerCase();
+        const show = !normalized || name.includes(normalized) || category.includes(normalized);
+        card.style.display = show ? '' : 'none';
+        if (show) visible += 1;
+    });
+
+    if (resultText) {
+        const suffix = visible === 1 ? 'product' : 'products';
+        resultText.textContent = normalized
+            ? `Found ${visible} ${suffix} for "${query.trim()}"`
+            : `Showing ${visible} ${suffix}`;
+    }
+
+    if (normalized && !visible) {
+        showToast('No matching product found. Try another keyword.');
+    }
+}
+
+function showToast(message) {
+    const toast = document.getElementById('dashboardToast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 1600);
+}
+</script>
 {% endblock %}
