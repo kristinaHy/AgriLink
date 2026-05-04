@@ -23,6 +23,7 @@ urlpatterns = [
     path('cart/add/<int:pk>/', views.AddToCartView.as_view(), name='add_to_cart'),
     path('cart/update/<int:pk>/', views.UpdateCartItemView.as_view(), name='update_cart'),
     path('cart/remove/<int:pk>/', views.RemoveFromCartView.as_view(), name='remove_from_cart'),
+    path('cart/count/', views.CartCountView.as_view(), name='cart_count'),
     path('orders/', views.CustomerOrderListView.as_view(), name='my_orders'),
     path('farmer/orders/', views.FarmerOrderListView.as_view(), name='farmer_orders'),
     path('order/<int:pk>/', views.OrderDetailView.as_view(), name='order_detail'),

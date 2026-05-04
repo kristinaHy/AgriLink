@@ -97,7 +97,7 @@
                         {% if product.image %}
                         <img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy" referrerpolicy="no-referrer">
                         {% else %}
-<img src="data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='640' height='420' viewBox='0 0 640 420'%3e%3cdefs%3e%3clinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3e%3cstop offset='0%25' stop-color='%23dff7e8'/%3e%3cstop offset='100%25' stop-color='%23c6edd7'/%3e%3c/linearGradient%3e%3c/defs%3e%3crect width='640' height='420' fill='url(%23g)'/%3e%3ccircle cx='320' cy='170' r='64' fill='%2300a651' opacity='0.18'/%3e%3ctext x='320' y='188' text-anchor='middle' fill='%23047241' font-family='Arial, sans-serif' font-size='46' font-weight='700'%3e{{ product.name|slice:"0:2"|upper }}%3c/text%3e%3ctext x='320' y='270' text-anchor='middle' fill='%231f2937' font-family='Arial, sans-serif' font-size='28' font-weight='600'%3e{{ product.name }}%3c/text%3e%3ctext x='320' y='305' text-anchor='middle' fill='%234b5563' font-family='Arial, sans-serif' font-size='18'%3eImage unavailable%3c/text%3e%3c/svg%3e" alt="{{ product.name }}" loading="lazy">
+                        <img src="data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='640' height='420' viewBox='0 0 640 420'%3e%3cdefs%3e%3clinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3e%3cstop offset='0%25' stop-color='%23dff7e8'/%3e%3cstop offset='100%25' stop-color='%23c6edd7'/%3e%3c/linearGradient%3e%3c/defs%3e%3crect width='640' height='420' fill='url(%23g)'/%3e%3ccircle cx='320' cy='170' r='64' fill='%2300a651' opacity='0.18'/%3e%3ctext x='320' y='188' text-anchor='middle' fill='%23047241' font-family='Arial, sans-serif' font-size='46' font-weight='700'%3e{{ product.name|slice:"0:2"|upper }}%3c/text%3e%3ctext x='320' y='270' text-anchor='middle' fill='%231f2937' font-family='Arial, sans-serif' font-size='28' font-weight='600'%3e{{ product.name }}%3c/text%3e%3ctext x='320' y='305' text-anchor='middle' fill='%234b5563' font-family='Arial, sans-serif' font-size='18'%3eImage unavailable%3c/text%3e%3c/svg%3e" alt="{{ product.name }}" loading="lazy">
                         {% endif %}
                         {% if product.discount_percentage > 0 %}
                         <span class="pill">-{{ product.discount_percentage }}%</span>
@@ -182,8 +182,29 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeUserView();
     setupSidebarActivation();
     applyPriceVisibility();
-    setupAddToCart();
-    setupAddToWishlist();
+    
+    // NEW: Centralized Click Listener for the Grid (Cart & Wishlist)
+    const marketGrid = document.getElementById('marketGrid');
+    if (marketGrid) {
+        marketGrid.addEventListener('click', function(e) {
+            // Find if the clicked element (or its parent) is a cart button
+            const cartBtn = e.target.closest('.add-cart-btn');
+            if (cartBtn) {
+                const card = cartBtn.closest('.market-card');
+                handleCartAction(card);
+                return;
+            }
+
+            // Find if the clicked element (or its parent) is a wishlist button
+            const wishlistBtn = e.target.closest('.wishlist-icon-btn');
+            if (wishlistBtn) {
+                const card = wishlistBtn.closest('.market-card');
+                handleWishlistAction(card);
+                return;
+            }
+        });
+    }
+
     refreshCartCount();
     refreshWishlistCount();
 
@@ -196,6 +217,87 @@ document.addEventListener('DOMContentLoaded', function() {
 
     filterMarket('');
 });
+
+// LOGIC FOR CART (Replaces setupAddToCart)
+function handleCartAction(card) {
+    if (!card) return;
+    
+    const productId = card.dataset.id;
+    const productName = card.dataset.name;
+    
+    // Make AJAX call to backend
+    addToCartBackend(productId, productName);
+}
+
+function addToCartBackend(productId, productName) {
+    const csrftoken = getCookie('csrftoken');
+    
+    fetch(`/cart/add/${productId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrftoken,
+        },
+        body: `quantity=1`
+    })
+    .then(response => {
+        if (response.ok) {
+            showToast(`${productName} added to cart`);
+            refreshCartCount();
+        } else {
+            showToast('Failed to add to cart. Please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Error adding to cart:', error);
+        showToast('Failed to add to cart. Please try again.');
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// LOGIC FOR WISHLIST (Replaces setupAddToWishlist)
+function handleWishlistAction(card) {
+    if (!card) return;
+
+    const product = {
+        id: card.dataset.id,
+        name: card.dataset.name,
+        image: card.querySelector('img')?.src || '',
+        farmer: card.querySelector('.meta-row')?.textContent || 'Verified Farmer',
+        priceText: card.querySelector('.price')?.dataset.price || 'Rs 0/kg'
+    };
+
+    const wishlist = getWishlist();
+    const exists = wishlist.some(item => item.id === product.id);
+
+    if (exists) {
+        showToast(`${product.name} already in wishlist`);
+        return;
+    }
+
+    wishlist.push(product);
+    localStorage.setItem('dashboardWishlist', JSON.stringify(wishlist));
+    refreshWishlistCount();
+    showToast(`${product.name} added to wishlist`);
+}
+
+// ---------------------------------------------------------
+// EVERYTHING BELOW THIS LINE IS YOUR EXACT ORIGINAL CODE
+// ---------------------------------------------------------
 
 function initializeUserView() {
     const userName = '{{ user.get_full_name|default:user.username }}';
@@ -252,44 +354,6 @@ function applyPriceVisibility() {
     // Since logged in, show prices
 }
 
-function setupAddToCart() {
-    const addButtons = document.querySelectorAll('.add-cart-btn');
-    addButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const card = this.closest('.market-card');
-            if (!card) {
-                return;
-            }
-
-            const product = {
-                id: card.dataset.id,
-                name: card.dataset.name,
-                image: card.querySelector('img')?.src || '',
-                farmer: card.querySelector('.meta-row')?.textContent || 'Verified Farmer',
-                priceText: card.querySelector('.price')?.dataset.price || 'Rs 0',
-                quantity: 1
-            };
-
-            addToCart(product);
-        });
-    });
-}
-
-function addToCart(product) {
-    const cart = getCart();
-    const index = cart.findIndex(item => item.id === product.id);
-
-    if (index >= 0) {
-        cart[index].quantity += 1;
-    } else {
-        cart.push(product);
-    }
-
-    localStorage.setItem('dashboardCart', JSON.stringify(cart));
-    refreshCartCount();
-    showToast(`${product.name} added to cart`);
-}
-
 function getCart() {
     const raw = localStorage.getItem('dashboardCart');
     if (!raw) {
@@ -310,29 +374,15 @@ function refreshCartCount() {
         return;
     }
 
-    const totalQty = getCart().reduce((sum, item) => sum + (item.quantity || 0), 0);
-    countEl.textContent = String(totalQty);
-}
-
-function setupAddToWishlist() {
-    const buttons = document.querySelectorAll('.wishlist-icon-btn');
-    buttons.forEach(button => {
-        button.addEventListener('click', function() {
-            const card = this.closest('.market-card');
-            if (!card) {
-                return;
-            }
-
-            const product = {
-                id: card.dataset.id,
-                name: card.dataset.name,
-                image: card.querySelector('img')?.src || '',
-                farmer: card.querySelector('.meta-row')?.textContent || 'Verified Farmer',
-                priceText: card.querySelector('.price')?.dataset.price || 'Rs 0/kg'
-            };
-
-            addToWishlist(product);
-        });
+    // Fetch cart count from backend API
+    fetch('/cart/count/')
+    .then(response => response.json())
+    .then(data => {
+        countEl.textContent = String(data.count || 0);
+    })
+    .catch(error => {
+        console.error('Error fetching cart count:', error);
+        countEl.textContent = '0';
     });
 }
 
@@ -348,21 +398,6 @@ function getWishlist() {
     } catch (error) {
         return [];
     }
-}
-
-function addToWishlist(product) {
-    const wishlist = getWishlist();
-    const exists = wishlist.some(item => item.id === product.id);
-
-    if (exists) {
-        showToast(`${product.name} already in wishlist`);
-        return;
-    }
-
-    wishlist.push(product);
-    localStorage.setItem('dashboardWishlist', JSON.stringify(wishlist));
-    refreshWishlistCount();
-    showToast(`${product.name} added to wishlist`);
 }
 
 function refreshWishlistCount() {

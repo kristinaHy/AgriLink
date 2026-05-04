@@ -782,6 +782,16 @@ class RemoveFromCartView(LoginRequiredMixin, UserPassesTestMixin, View):
         return redirect('cart')
 
 
+class CartCountView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.role == 'customer'
+
+    def get(self, request):
+        cart, created = Cart.objects.get_or_create(customer=request.user)
+        count = cart.items.count()
+        return JsonResponse({'count': count})
+
+
 # Order Views
 class CustomerOrderListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     model = Order

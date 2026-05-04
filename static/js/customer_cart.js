@@ -22,37 +22,86 @@ function setupSidebarActivation() {
 function updateQuantity(itemId, newQuantity) {
     if (newQuantity < 1) return;
 
-    // This would typically make an AJAX call to update quantity
-    showToast(`Updating quantity to ${newQuantity}`);
-    // For now, just show a toast and update UI
-    const item = document.querySelector(`.cart-item[data-id="${itemId}"]`);
-    if (item) {
-        const quantityValue = item.querySelector('.quantity-value');
-        if (quantityValue) {
-            quantityValue.textContent = newQuantity;
+    const csrftoken = getCookie('csrftoken');
+    
+    fetch(`/cart/update/${itemId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrftoken,
+        },
+        body: `quantity=${newQuantity}`
+    })
+    .then(response => {
+        if (response.ok) {
+            showToast('Cart updated');
+            // Reload page to show updated totals
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('Failed to update quantity');
         }
-    }
+    })
+    .catch(error => {
+        console.error('Error updating quantity:', error);
+        showToast('Failed to update quantity');
+    });
 }
 
 function removeFromCart(itemId) {
-    // This would typically make an AJAX call to remove item
-    showToast('Removing item from cart');
-    // For now, just show a toast and remove from UI
-    const item = document.querySelector(`.cart-item[data-id="${itemId}"]`);
-    if (item) {
-        item.remove();
-        refreshCartCount();
-    }
+    const csrftoken = getCookie('csrftoken');
+    
+    fetch(`/cart/remove/${itemId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrftoken,
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            showToast('Item removed from cart');
+            // Reload page to show updated cart
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('Failed to remove item');
+        }
+    })
+    .catch(error => {
+        console.error('Error removing item:', error);
+        showToast('Failed to remove item');
+    });
 }
 
 function refreshCartCount() {
     // This would update the cart badge
     const badge = document.getElementById('cartBadge');
     if (badge) {
-        const current = parseInt(badge.textContent) || 0;
-        const newCount = Math.max(0, current - 1);
-        badge.textContent = newCount;
+        // Fetch cart count from backend API
+        fetch('/cart/count/')
+        .then(response => response.json())
+        .then(data => {
+            badge.textContent = String(data.count || 0);
+        })
+        .catch(error => {
+            console.error('Error fetching cart count:', error);
+            badge.textContent = '0';
+        });
     }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }
 
 function proceedToCheckout() {
