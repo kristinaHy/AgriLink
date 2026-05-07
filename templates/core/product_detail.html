@@ -47,7 +47,13 @@
             {% endif %}
             
             {% if user.is_authenticated and user.role == 'customer' %}
-                <a href="#" class="btn btn-primary add-to-cart">Add to Cart</a>
+                <form action="{% url 'add_to_cart' product.pk %}" method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="input-group mb-3" style="max-width: 200px;">
+                        <input type="number" name="quantity" value="1" min="1" max="{{ product.quantity }}" class="form-control">
+                        <button type="submit" class="btn btn-primary">Add to Cart</button>
+                    </div>
+                </form>
             {% endif %}
         </div>
     </div>

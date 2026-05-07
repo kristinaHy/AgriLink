@@ -18,8 +18,46 @@
     <h3>Items</h3>
     <ul>
         {% for item in order.items.all %}
-            <li>{{ item.product.name }} x {{ item.quantity }} @ Rs. {{ item.price_at_purchase }} = Rs. {{ item.quantity|floatformat:0|mul:item.price_at_purchase }}</li>
+            <li>{{ item.product.name }} x {{ item.quantity }} @ Rs. {{ item.price_at_purchase }} = Rs. {{ item.quantity|mul:item.price_at_purchase }}</li>
         {% endfor %}
     </ul>
+
+    {% if user.role == 'customer' and order.status == 'approved' and order.payment_status == 'pending' %}
+        <div class="payment-section mt-4">
+            <h3>Complete Payment</h3>
+            <p>Your order has been approved! Select a payment method to complete your purchase.</p>
+            
+            <div class="d-flex gap-3">
+                <!-- eSewa Payment Form (Sandbox) -->
+                <form action="https://uat.esewa.com.np/epay/main" method="POST">
+                    <input value="{{ order.negotiated_price|default:order.total_amount }}" name="tAmt" type="hidden">
+                    <input value="{{ order.negotiated_price|default:order.total_amount }}" name="amt" type="hidden">
+                    <input value="0" name="txAmt" type="hidden">
+                    <input value="0" name="psc" type="hidden">
+                    <input value="0" name="pdc" type="hidden">
+                    <input value="EPAYTEST" name="scd" type="hidden">
+                    <input value="{{ order.order_number }}" name="pid" type="hidden">
+                    <input value="http://127.0.0.1:8000/payment/esewa/success?q=su" name="su" type="hidden">
+                    <input value="http://127.0.0.1:8000/payment/esewa/failure?q=fu" name="fu" type="hidden">
+                    <button type="submit" class="btn btn-success" style="background-color: #60bb46; border-color: #60bb46;">
+                        Pay with eSewa
+                    </button>
+                </form>
+
+                <!-- Khalti Payment Button (Placeholder) -->
+                <button id="payment-button" class="btn btn-primary" style="background-color: #5c2d91; border-color: #5c2d91;">
+                    Pay with Khalti
+                </button>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if user.role == 'customer' and order.status == 'negotiating' %}
+        <div class="negotiation-section mt-4">
+            <div class="alert alert-info">
+                The farmer has proposed a negotiation. Please check your <a href="{% url 'customer_messages' %}">messages</a> to discuss the price.
+            </div>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}

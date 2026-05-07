@@ -68,4 +68,8 @@ urlpatterns = [
     path('api/messages/send/', views.MessageSendAPI.as_view(), name='api_message_send'),
     path('api/messages/conversation/<int:other_user_id>/', views.MessageConversationAPI.as_view(), name='api_message_conversation'),
     path('api/messages/conversations/', views.MessageConversationsAPI.as_view(), name='api_message_conversations'),
+    # Payments
+    path('payment/esewa/success/', views.EsewaSuccessView.as_view(), name='esewa_success'),
+    path('payment/esewa/failure/', views.EsewaFailureView.as_view(), name='esewa_failure'),
+    path('payment/khalti/verify/', views.KhaltiVerifyAPI.as_view(), name='khalti_verify'),
 ]

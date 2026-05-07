@@ -243,6 +243,20 @@ tr:hover {
                             <td>{{ order.created_at|date:"Y-m-d" }}</td>
                             <td>Rs. {{ order.total_amount }}</td>
                             <td><span class="badge {{ order.status }}">{{ order.get_status_display }}</span></td>
+                            <td>
+                                <form action="{% url 'order_update_status' order.pk %}" method="post" style="display: inline-block;">
+                                    {% csrf_token %}
+                                    <select name="status" onchange="this.form.submit()" style="padding: 2px 5px; font-size: 12px;">
+                                        <option value="">Update Status</option>
+                                        <option value="approved">Approve</option>
+                                        <option value="rejected">Reject</option>
+                                        <option value="negotiating">Negotiate</option>
+                                        <option value="dispatched">Dispatch</option>
+                                        <option value="delivered">Deliver</option>
+                                    </select>
+                                </form>
+                                <a href="{% url 'order_detail' order.pk %}" style="font-size: 12px; margin-left: 5px;">View</a>
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>

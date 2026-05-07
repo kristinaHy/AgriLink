@@ -112,24 +112,34 @@ class Product(models.Model):
 class Order(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
-        ('confirmed', 'Confirmed'),
-        ('shipped', 'Shipped'),
+        ('farmer_reviewing', 'Farmer Reviewing'),
+        ('negotiating', 'Negotiating'),
+        ('approved', 'Approved'),
+        ('awaiting_payment', 'Awaiting Payment'),
+        ('paid', 'Paid'),
+        ('processing', 'Processing'),
+        ('dispatched', 'Dispatched'),
+        ('out_for_delivery', 'Out for Delivery'),
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
+        ('rejected', 'Rejected'),
     ]
     
     PAYMENT_STATUS_CHOICES = [
-        ('unpaid', 'Unpaid'),
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
         ('paid', 'Paid'),
         ('failed', 'Failed'),
+        ('refunded', 'Refunded'),
     ]
     
     customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders',
                                  limit_choices_to={'role': 'customer'})
     order_number = models.CharField(max_length=50, unique=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    negotiated_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='unpaid')
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
     payment_method = models.CharField(max_length=50, blank=True, null=True)  # eSewa, Khalti
     shipping_address = models.TextField()
     shipping_city = models.CharField(max_length=100)
@@ -153,7 +163,25 @@ class OrderItem(models.Model):
     price_at_purchase = models.DecimalField(max_digits=10, decimal_places=2)
     
     def __str__(self):
-        return f"{self.product.name} x {self.quantity}"
+        return f"{self.product.name if self.product else 'Unknown'} x {self.quantity}"
+
+
+# Payment Model
+class Payment(models.Model):
+    GATEWAY_CHOICES = [
+        ('esewa', 'eSewa'),
+        ('khalti', 'Khalti'),
+    ]
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='payments')
+    transaction_id = models.CharField(max_length=100, unique=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    gateway = models.CharField(max_length=20, choices=GATEWAY_CHOICES)
+    status = models.CharField(max_length=20, default='pending')
+    response_data = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Payment {self.transaction_id} for Order {self.order.order_number}"
 
 
 # Cart Model
@@ -208,13 +236,16 @@ class Review(models.Model):
 class Message(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
-    subject = models.CharField(max_length=200)
+    order = models.ForeignKey(Order, on_delete=models.SET_NULL, null=True, blank=True, related_name='messages')
+    subject = models.CharField(max_length=200, blank=True, null=True)
     content = models.TextField()
+    negotiated_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     is_read = models.BooleanField(default=False)
+    delivery_status = models.CharField(max_length=20, default='sent') # sent, delivered, read
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['created_at'] # Sequential for chat
     
     def __str__(self):
         return f"Message from {self.sender.username} to {self.receiver.username}"
@@ -224,12 +255,15 @@ class Message(models.Model):
 class Notification(models.Model):
     NOTIFICATION_TYPES = [
         ('order_placed', 'Order Placed'),
-        ('order_confirmed', 'Order Confirmed'),
+        ('order_approved', 'Order Approved'),
+        ('order_rejected', 'Order Rejected'),
         ('order_shipped', 'Order Shipped'),
         ('order_delivered', 'Order Delivered'),
-        ('payment_received', 'Payment Received'),
+        ('payment_success', 'Payment Successful'),
+        ('payment_failed', 'Payment Failed'),
         ('new_message', 'New Message'),
-        ('product_reviewed', 'Product Reviewed'),
+        ('verification_status', 'Verification Status Updated'),
+        ('negotiation_update', 'Negotiation Update'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
@@ -246,3 +280,18 @@ class Notification(models.Model):
     
     def __str__(self):
         return f"{self.get_notification_type_display()} for {self.user.username}"
+
+
+# Farmer Verification Model
+class FarmerVerification(models.Model):
+    farmer = models.OneToOneField(User, on_delete=models.CASCADE, related_name='verification_request',
+                                 limit_choices_to={'role': 'farmer'})
+    document_image = models.ImageField(upload_to='verification_docs/')
+    status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('verified', 'Verified'), ('rejected', 'Rejected')], default='pending')
+    admin_notes = models.TextField(blank=True, null=True)
+    verified_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Verification for {self.farmer.username}"
+

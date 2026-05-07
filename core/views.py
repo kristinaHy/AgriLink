@@ -74,24 +74,14 @@ class CategoryView(ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        category_slug = self.kwargs.get('slug')
-
-        # If "all" → show all products
+        category_slug = self.kwargs.get('slug', 'all')
+        
         if category_slug == 'all':
             return Product.objects.filter(status='available').order_by('-created_at')
 
         # If specific category
         category = get_object_or_404(Category, name__iexact=category_slug)
 
-        # Guests → no products
-        if not self.request.user.is_authenticated:
-            return Product.objects.none()
-
-        # Customers → products in category
-        if self.request.user.role == 'customer':
-            return Product.objects.filter(category=category, status='available').order_by('-created_at')
-
-        # Farmers/Admins → products in category (but template hides button)
         return Product.objects.filter(category=category, status='available').order_by('-created_at')
 
     def get_context_data(self, **kwargs):
@@ -109,13 +99,6 @@ class CategoryView(ListView):
         return context
 
     def dispatch(self, request, *args, **kwargs):
-        category_slug = kwargs.get('slug')
-
-        # Guests trying to access a category → redirect to login
-        if category_slug and category_slug != 'all':
-            if not request.user.is_authenticated:
-                return redirect('login')
-
         return super().dispatch(request, *args, **kwargs)
 
 # Product Detail View
@@ -153,12 +136,13 @@ class ProductDetailView(DetailView):
 # Search View
 class SearchView(ListView):
     model = Product
-    template_name = 'core/search_results.html'
+    template_name = 'core/product_list.html'
     context_object_name = 'products'
     paginate_by = 12
     
     def get_queryset(self):
         query = self.request.GET.get('q', '')
+        category_name = self.request.GET.get('category', '')
         products = Product.objects.filter(status='available')
         
         if query:
@@ -167,6 +151,9 @@ class SearchView(ListView):
                 Q(description__icontains=query) |
                 Q(category__name__icontains=query)
             )
+        
+        if category_name:
+            products = products.filter(category__name__iexact=category_name)
         
         # Price filtering
         price_min = self.request.GET.get('price_min')
@@ -182,12 +169,11 @@ class SearchView(ListView):
         if location:
             products = products.filter(farmer__district__icontains=location)
         
-        return products.order_by('-created_at')
+        return products.select_related('farmer', 'category').order_by('-created_at')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['search_query'] = self.request.GET.get('q', '')
-        context['categories'] = Category.objects.all()
         return context
 
 
@@ -676,7 +662,12 @@ class ProductCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     success_url = '/farmer/products/'
 
     def test_func(self):
-        return self.request.user.role == 'farmer'
+        if self.request.user.role != 'farmer':
+            return False
+        if not self.request.user.is_verified:
+            messages.warning(self.request, "Please wait until admin verifies your account to list products.")
+            return False
+        return True
 
     def form_valid(self, form):
         form.instance.farmer = self.request.user
@@ -692,7 +683,12 @@ class ProductUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
     def test_func(self):
         obj = self.get_object()
-        return self.request.user.role == 'farmer' and obj.farmer == self.request.user
+        if self.request.user.role != 'farmer' or obj.farmer != self.request.user:
+            return False
+        if not self.request.user.is_verified:
+            messages.warning(self.request, "Please wait until admin verifies your account to manage products.")
+            return False
+        return True
 
 
 # Product Delete
@@ -875,8 +871,12 @@ class CheckoutView(LoginRequiredMixin, UserPassesTestMixin, View):
             shipping_address=request.POST['shipping_address'],
             shipping_city=request.POST['shipping_city'],
             shipping_district=request.POST['shipping_district'],
-            payment_method=request.POST['payment_method']
+            payment_method=request.POST['payment_method'],
+            status='pending' # Initial state
         )
+        
+        # Track farmers involved to notify them
+        farmers = set()
         for item in cart.items.all():
             OrderItem.objects.create(
                 order=order,
@@ -884,15 +884,29 @@ class CheckoutView(LoginRequiredMixin, UserPassesTestMixin, View):
                 quantity=item.quantity,
                 price_at_purchase=item.product.price
             )
+            if item.product.farmer:
+                farmers.add(item.product.farmer)
+                
         cart.items.all().delete()
-        # Create notification
+        
+        # Create notifications
         Notification.objects.create(
             user=request.user,
             notification_type='order_placed',
-            title='New Order Placed',
-            content=f'Order #{order.order_number} created successfully.'
+            title='Order Placed - Pending Farmer Approval',
+            content=f'Your order #{order.order_number} has been sent to the farmer(s) for approval. You will be notified once they approve it.'
         )
-        messages.success(request, 'Order placed successfully!')
+        
+        for farmer in farmers:
+            Notification.objects.create(
+                user=farmer,
+                notification_type='order_placed',
+                title='New Order Received',
+                content=f'You have received a new order #{order.order_number}. Please review and approve it.',
+                related_order=order
+            )
+            
+        messages.success(request, 'Order placed successfully! Please wait for farmer approval before payment.')
         return redirect('order_detail', pk=order.pk)
 
 
@@ -909,16 +923,26 @@ class OrderUpdateStatusView(LoginRequiredMixin, UserPassesTestMixin, View):
         
         order.status = new_status
         order.save()
-        # Update payment status if confirmed
-        if new_status == 'confirmed':
-            order.payment_status = 'paid'
-            order.save()
+        
+        # Notification mapping
+        notif_map = {
+            'approved': ('Order Approved', f'Your order #{order.order_number} has been approved by the farmer. You can now proceed to payment.', 'order_approved'),
+            'rejected': ('Order Rejected', f'Your order #{order.order_number} was rejected by the farmer.', 'order_rejected'),
+            'negotiating': ('Price Negotiation', f'The farmer is negotiating the price for order #{order.order_number}. Please check your messages.', 'negotiation_update'),
+            'dispatched': ('Order Dispatched', f'Your order #{order.order_number} has been dispatched.', 'order_shipped'),
+            'delivered': ('Order Delivered', f'Your order #{order.order_number} has been delivered.', 'order_delivered'),
+        }
+        
+        if new_status in notif_map:
+            title, content, n_type = notif_map[new_status]
             Notification.objects.create(
                 user=order.customer,
-                notification_type='order_confirmed',
-                title='Order Confirmed',
-                content=f'Your order #{order.order_number} has been confirmed by the farmer.'
+                notification_type=n_type,
+                title=title,
+                content=content,
+                related_order=order
             )
+            
         messages.success(request, f'Order status updated to {new_status}.')
         return redirect('farmer_orders')
 
@@ -1317,6 +1341,8 @@ class MessageSendAPI(LoginRequiredMixin, View):
             receiver_id = payload.get('receiver_id')
             subject = payload.get('subject') or ''
             content = (payload.get('content') or '').strip()
+            order_id = payload.get('order_id')
+            negotiated_price = payload.get('negotiated_price')
 
             if not receiver_id:
                 return JsonResponse({'success': False, 'message': 'receiver_id is required'}, status=400)
@@ -1328,11 +1354,21 @@ class MessageSendAPI(LoginRequiredMixin, View):
             if receiver.id == request.user.id:
                 return JsonResponse({'success': False, 'message': 'Cannot message yourself'}, status=400)
 
+            order = None
+            if order_id:
+                order = get_object_or_404(Order, id=order_id)
+                if negotiated_price:
+                    order.negotiated_price = negotiated_price
+                    order.status = 'negotiating'
+                    order.save()
+
             msg = Message.objects.create(
                 sender=request.user,
                 receiver=receiver,
                 subject=subject[:200],
                 content=content,
+                order=order,
+                negotiated_price=negotiated_price
             )
 
             # Notification to receiver
@@ -1342,6 +1378,22 @@ class MessageSendAPI(LoginRequiredMixin, View):
                 title=f'New message from {request.user.get_full_name() or request.user.username}',
                 content=content[:500],
             )
+
+            # Admin Chatbot Logic (Simplified)
+            if receiver.role == 'admin':
+                bot_response = "Thank you for contacting AgriLink Support. Our team will get back to you shortly. For common issues, please check our help section."
+                if "verify" in content.lower():
+                    bot_response = "To verify your account, ensure you have uploaded your documents in your profile. Our admins typically review these within 24-48 hours."
+                elif "payment" in content.lower():
+                    bot_response = "We support eSewa and Khalti. Payments are only available after farmer approval."
+                
+                # Create bot response
+                Message.objects.create(
+                    sender=receiver,
+                    receiver=request.user,
+                    content=bot_response,
+                    subject="Re: " + (subject or "Query")
+                )
 
             return JsonResponse({
                 'success': True,
@@ -1383,6 +1435,8 @@ class MessageConversationAPI(LoginRequiredMixin, View):
                 'receiver_id': m.receiver_id,
                 'subject': m.subject,
                 'content': m.content,
+                'order_id': m.order_id,
+                'negotiated_price': m.negotiated_price,
                 'created_at': m.created_at.isoformat(),
                 'is_read': m.is_read,
             })
@@ -1462,3 +1516,84 @@ class ProductDeleteAPI(LoginRequiredMixin, UserPassesTestMixin, View):
             return JsonResponse({'error': 'Product not found'}, status=404)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
+
+
+# Payment Views
+class EsewaSuccessView(LoginRequiredMixin, View):
+    def get(self, request):
+        oid = request.GET.get('oid')
+        amt = request.GET.get('amt')
+        refId = request.GET.get('refId')
+        
+        order = get_object_or_404(Order, order_number=oid)
+        
+        # In a real app, verify with eSewa server here
+        # For sandbox, we'll assume success if they land here with refId
+        if refId:
+            order.status = 'paid'
+            order.payment_status = 'paid'
+            order.save()
+            
+            Payment.objects.create(
+                order=order,
+                transaction_id=refId,
+                amount=amt,
+                gateway='esewa',
+                status='success'
+            )
+            
+            Notification.objects.create(
+                user=order.customer,
+                notification_type='payment_success',
+                title='Payment Successful',
+                content=f'Payment of Rs. {amt} for order #{oid} was successful.',
+                related_order=order
+            )
+            
+            # Notify farmers
+            for item in order.items.all():
+                if item.product and item.product.farmer:
+                    Notification.objects.create(
+                        user=item.product.farmer,
+                        notification_type='payment_success',
+                        title='Payment Received',
+                        content=f'Payment for order #{oid} has been received. Please process the order.',
+                        related_order=order
+                    )
+            
+            messages.success(request, 'Payment successful!')
+            return redirect('order_detail', pk=order.pk)
+        
+        messages.error(request, 'Payment verification failed.')
+        return redirect('order_detail', pk=order.pk)
+
+
+class EsewaFailureView(LoginRequiredMixin, View):
+    def get(self, request):
+        messages.error(request, 'Payment failed or cancelled.')
+        return redirect('my_orders')
+
+
+class KhaltiVerifyAPI(LoginRequiredMixin, View):
+    def post(self, request):
+        token = request.POST.get('token')
+        amount = request.POST.get('amount')
+        order_id = request.POST.get('order_id')
+        
+        order = get_object_or_404(Order, pk=order_id)
+        
+        # Verify with Khalti server here
+        # For demo, we'll mock success
+        order.status = 'paid'
+        order.payment_status = 'paid'
+        order.save()
+        
+        Payment.objects.create(
+            order=order,
+            transaction_id=token,
+            amount=amount / 100, # Khalti uses paisa
+            gateway='khalti',
+            status='success'
+        )
+        
+        return JsonResponse({'status': 'success'})

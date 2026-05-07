@@ -238,7 +238,13 @@ body {
 
     <div class="header-actions">
         <h3>Your Products</h3>
-        <a href="{% url 'product_create' %}" class="add-btn">+ Add Product</a>
+        {% if user.is_verified %}
+            <a href="{% url 'product_create' %}" class="add-btn">+ Add Product</a>
+        {% else %}
+            <div class="alert alert-warning" style="background: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; border: 1px solid #ffeeba;">
+                <i class="fas fa-exclamation-triangle"></i> Please wait until admin verifies your account to list products.
+            </div>
+        {% endif %}
     </div>
 
     <!-- Listings -->

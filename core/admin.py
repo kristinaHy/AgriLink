@@ -1,12 +1,12 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Category, Product, Order, OrderItem, Cart, CartItem, Review, Message, Notification
+from .models import User, Category, Product, Order, OrderItem, Cart, CartItem, Review, Message, Notification, Payment, FarmerVerification
 
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
-        ('Role Information', {'fields': ('role', 'is_verified', 'phone_number', 'address', 'city', 'district')}),
+        ('Role Information', {'fields': ('role', 'is_verified', 'phone_number', 'address', 'city', 'district', 'profile_picture')}),
     )
     list_display = ('username', 'email', 'get_full_name', 'role', 'is_verified', 'created_at')
     list_filter = ('role', 'is_verified', 'created_at')
@@ -17,7 +17,6 @@ class CustomUserAdmin(UserAdmin):
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name', 'created_at')
     search_fields = ('name',)
-    prepopulated_fields = {'name': ('name',)}
 
 
 @admin.register(Product)
@@ -31,7 +30,7 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('farmer', 'category', 'name', 'description', 'unit')
         }),
         ('Pricing & Stock', {
-            'fields': ('price', 'quantity', 'discount_percentage', 'status')
+            'fields': ('price', 'price_min', 'price_max', 'quantity', 'discount_percentage', 'status')
         }),
         ('Images', {
             'fields': ('image', 'additional_images')
@@ -52,12 +51,31 @@ class OrderAdmin(admin.ModelAdmin):
     list_filter = ('status', 'payment_status', 'created_at')
     search_fields = ('order_number', 'customer__username')
     readonly_fields = ('order_number', 'created_at', 'updated_at')
+    fieldsets = (
+        ('Order Info', {'fields': ('order_number', 'customer', 'total_amount', 'negotiated_price', 'status')}),
+        ('Payment Info', {'fields': ('payment_status', 'payment_method')}),
+        ('Shipping Info', {'fields': ('shipping_address', 'shipping_city', 'shipping_district', 'estimated_delivery')}),
+    )
 
 
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
     list_display = ('order', 'product', 'quantity', 'price_at_purchase')
     search_fields = ('order__order_number', 'product__name')
+
+
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ('transaction_id', 'order', 'amount', 'gateway', 'status', 'created_at')
+    list_filter = ('gateway', 'status', 'created_at')
+    search_fields = ('transaction_id', 'order__order_number')
+
+
+@admin.register(FarmerVerification)
+class FarmerVerificationAdmin(admin.ModelAdmin):
+    list_display = ('farmer', 'status', 'created_at', 'verified_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('farmer__username', 'farmer__email')
 
 
 @admin.register(Cart)
@@ -82,9 +100,9 @@ class ReviewAdmin(admin.ModelAdmin):
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('sender', 'receiver', 'subject', 'is_read', 'created_at')
-    list_filter = ('is_read', 'created_at')
-    search_fields = ('sender__username', 'receiver__username', 'subject')
+    list_display = ('sender', 'receiver', 'order', 'is_read', 'delivery_status', 'created_at')
+    list_filter = ('is_read', 'delivery_status', 'created_at')
+    search_fields = ('sender__username', 'receiver__username', 'content')
     readonly_fields = ('created_at',)
 
 
@@ -94,3 +112,4 @@ class NotificationAdmin(admin.ModelAdmin):
     list_filter = ('notification_type', 'is_read', 'created_at')
     search_fields = ('user__username', 'title')
     readonly_fields = ('created_at',)
+

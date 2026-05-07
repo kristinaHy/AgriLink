@@ -202,7 +202,14 @@ body {
     <div class="navbar">
         <button class="menu-btn" onclick="toggleSidebar()">☰</button>
         <h2>Dashboard Overview</h2>
-        <div class="profile">👤 {{ user.get_full_name|default:user.username }}</div>
+        <div class="profile">
+            👤 {{ user.get_full_name|default:user.username }}
+            {% if user.is_verified %}
+                <span style="background: var(--primary); color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-left: 5px;">Verified</span>
+            {% else %}
+                <span style="background: #f44336; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-left: 5px;">Pending Verification</span>
+            {% endif %}
+        </div>
     </div>
 
     <!-- Cards -->
