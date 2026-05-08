@@ -238,13 +238,42 @@
             <div class="messages-search">
                 <input type="text" placeholder="Search conversations..." id="messageSearch" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
             </div>
-            <div class="conversations-list">
-                <!-- Filled by JS -->
+            <div class="conversations-list" id="conversationsList">
+                <h5 style="padding: 10px 15px; color: #888; font-size: 0.8rem; text-transform: uppercase;">Recent</h5>
+                <div id="recentConversations">
+                    <!-- Filled by JS -->
+                </div>
+
+                <h5 style="padding: 10px 15px; color: #888; font-size: 0.8rem; text-transform: uppercase; border-top: 1px solid #eee; margin-top: 10px;">Support (Admin)</h5>
+                {% for admin in available_admins %}
+                <div class="conversation-item" onclick="startNewConversation({{ admin.id }})">
+                    <div class="conversation-avatar" style="background-color: #f44336;">
+                        {{ admin.get_full_name|default:admin.username|slice:":2"|upper }}
+                    </div>
+                    <div class="conversation-info">
+                        <div class="conversation-name">{{ admin.get_full_name|default:admin.username }}</div>
+                        <div class="conversation-preview">AgriLink Support</div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <h5 style="padding: 10px 15px; color: #888; font-size: 0.8rem; text-transform: uppercase; border-top: 1px solid #eee; margin-top: 10px;">Customers</h5>
+                {% for customer in available_customers %}
+                <div class="conversation-item" onclick="startNewConversation({{ customer.id }})">
+                    <div class="conversation-avatar" style="background-color: #3498db;">
+                        {{ customer.get_full_name|default:customer.username|slice:":2"|upper }}
+                    </div>
+                    <div class="conversation-info">
+                        <div class="conversation-name">{{ customer.get_full_name|default:customer.username }}</div>
+                        <div class="conversation-preview">Customer</div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
         </div>
 
-        <div class="messages-main">
-            <div class="no-conversation-selected">
+        <div class="messages-main" id="messagesMain">
+            <div id="noConversationSelected" class="no-conversation-selected">
                 <div class="empty-icon">
                     <i class="fas fa-envelope"></i>
                 </div>
@@ -252,7 +281,7 @@
                 <p>Choose a conversation from the sidebar to start messaging</p>
             </div>
             
-            <div class="message-thread" style="display: none;">
+            <div id="messageThread" class="message-thread" style="display: none;">
                 <div class="thread-header">
                     <div class="thread-avatar"></div>
                     <div class="thread-info">
@@ -288,10 +317,6 @@
 <script>
 function toggleSidebar() {
     document.getElementById("sidebar").classList.toggle("active");
-}
-
-function ensureThreadVisible() {
-    document.querySelector('.messages-main').classList.add('thread-visible');
 }
 </script>
 {% endblock %}

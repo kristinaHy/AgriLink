@@ -94,8 +94,10 @@ git {% extends 'base.html' %}
                 <div class="messages-search">
                     <input type="text" placeholder="Search conversations..." id="messageSearch">
                 </div>
-                <div class="conversations-list">
-                    {% for message in recent_messages %}
+                <div class="conversations-list" id="conversationsList">
+                    <h5 style="padding: 10px 15px; color: #888; font-size: 0.8rem; text-transform: uppercase;">Recent</h5>
+                    <div id="recentConversations">
+                        {% for message in recent_messages %}
                     <div class="conversation-item{% if not message.is_read %} unread{% endif %}" onclick="openConversation({{ message.sender.id }})">
                         <div class="conversation-avatar">
                             {{ message.sender.get_full_name|default:message.sender.username|slice:":2"|upper }}
@@ -109,59 +111,80 @@ git {% extends 'base.html' %}
                         <div class="unread-indicator"></div>
                         {% endif %}
                     </div>
-                    {% empty %}
-                    <div class="no-conversations">
-                        <p>No messages yet</p>
-                        <p>Start a conversation with a farmer!</p>
+                    {% endfor %}
+
+                    <h5 style="padding: 10px 15px; color: #888; font-size: 0.8rem; text-transform: uppercase; border-top: 1px solid #eee; margin-top: 10px;">Support (Admin)</h5>
+                    {% for admin in available_admins %}
+                    <div class="conversation-item" onclick="startNewConversation({{ admin.id }})">
+                        <div class="conversation-avatar" style="background-color: #f44336;">
+                            {{ admin.get_full_name|default:admin.username|slice:":2"|upper }}
+                        </div>
+                        <div class="conversation-info">
+                            <div class="conversation-name">{{ admin.get_full_name|default:admin.username }}</div>
+                            <div class="conversation-preview">AgriLink Support</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <h5 style="padding: 10px 15px; color: #888; font-size: 0.8rem; text-transform: uppercase; border-top: 1px solid #eee; margin-top: 10px;">Farmers</h5>
+                    {% for farmer in available_farmers %}
+                    <div class="conversation-item" onclick="startNewConversation({{ farmer.id }})">
+                        <div class="conversation-avatar" style="background-color: #4CAF50;">
+                            {{ farmer.get_full_name|default:farmer.username|slice:":2"|upper }}
+                        </div>
+                        <div class="conversation-info">
+                            <div class="conversation-name">{{ farmer.get_full_name|default:farmer.username }}</div>
+                            <div class="conversation-preview">{{ farmer.district|default:"Verified Farmer" }}</div>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
             </div>
 
-            <div class="messages-main">
-                {% if selected_conversation %}
-                    <div class="message-thread">
-                        <div class="thread-header">
-                            <div class="thread-avatar">
-                                {{ selected_conversation.other_user.get_full_name|default:selected_conversation.other_user.username|slice:":2"|upper }}
-                            </div>
-                            <div class="thread-info">
-                                <h4>{{ selected_conversation.other_user.get_full_name|default:selected_conversation.other_user.username }}</h4>
-                                <p>{{ selected_conversation.other_user.role|title }}</p>
-                            </div>
-                        </div>
+            <div class="messages-main" id="messagesMain">
+                <div id="noConversationSelected" class="no-conversation-selected" {% if selected_conversation %}style="display: none;"{% endif %}>
+                    <div class="empty-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <h3>Select a conversation</h3>
+                    <p>Choose a farmer or admin from the list to start messaging</p>
+                </div>
 
-                        <div class="messages-list" id="messagesList">
+                <div id="messageThread" class="message-thread" {% if not selected_conversation %}style="display: none;"{% endif %}>
+                    <div class="thread-header">
+                        <div class="thread-avatar">
+                            {% if selected_conversation %}{{ selected_conversation.other_user.get_full_name|default:selected_conversation.other_user.username|slice:":2"|upper }}{% endif %}
+                        </div>
+                        <div class="thread-info">
+                            <h4>{% if selected_conversation %}{{ selected_conversation.other_user.get_full_name|default:selected_conversation.other_user.username }}{% endif %}</h4>
+                            <p>{% if selected_conversation %}{{ selected_conversation.other_user.role|title }}{% endif %}</p>
+                        </div>
+                    </div>
+
+                    <div class="messages-list" id="messagesList">
+                        {% if selected_conversation %}
                             {% for message in selected_conversation.messages %}
                             <div class="message-item{% if message.sender == user %} sent{% else %} received{% endif %}">
                                 <div class="message-content">{{ message.content }}</div>
                                 <div class="message-time">{{ message.created_at|date:"M d, H:i" }}</div>
                             </div>
                             {% endfor %}
-                        </div>
+                        {% endif %}
+                    </div>
 
-                        <div class="message-compose">
-                            <form id="messageForm" onsubmit="sendMessage(event)">
-                                {% csrf_token %}
-                                <input type="hidden" name="receiver_id" value="{{ selected_conversation.other_user.id }}">
-                                <div class="compose-input">
-                                    <textarea name="content" placeholder="Type your message..." required></textarea>
-                                    <button type="submit" class="send-btn">
-                                        <i class="fas fa-paper-plane"></i>
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                    <div class="message-compose">
+                        <form id="messageForm" onsubmit="sendMessage(event)">
+                            {% csrf_token %}
+                            <input type="hidden" name="receiver_id" value="{% if selected_conversation %}{{ selected_conversation.other_user.id }}{% endif %}">
+                            <div class="compose-input">
+                                <textarea name="content" placeholder="Type your message..." required></textarea>
+                                <button type="submit" class="send-btn">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                {% else %}
-                    <div class="no-conversation-selected">
-                        <div class="empty-icon">
-                            <i class="fas fa-envelope"></i>
-                        </div>
-                        <h3>Select a conversation</h3>
-                        <p>Choose a conversation from the sidebar to start messaging</p>
-                    </div>
-                {% endif %}
+                </div>
             </div>
         </div>
     </main>

@@ -148,8 +148,14 @@
                         </div>
                         
                         <div class="product-rating">
-                            <span class="rating-stars">★★★★☆</span>
-                            <span class="rating-count">4.8</span>
+                            <span class="rating-stars">
+                                {% if product.average_rating >= 4.5 %}★★★★★
+                                {% elif product.average_rating >= 3.5 %}★★★★☆
+                                {% elif product.average_rating >= 2.5 %}★★★☆☆
+                                {% elif product.average_rating >= 1.5 %}★★☆☆☆
+                                {% else %}★☆☆☆☆{% endif %}
+                            </span>
+                            <span class="rating-count">{{ product.average_rating|floatformat:1 }}</span>
                         </div>
                         
                         {% if user.is_authenticated %}
@@ -180,44 +186,20 @@
         <p class="section-subtitle">Browse our fresh produce by type</p>
         
         <div class="categories-grid">
-            <a href="{% url 'category' 'Vegetables' %}" class="category-link">
-                <div class="category-card vegetables-card">
-                    <div class="category-badge">0</div>
-                    <div class="category-bg vegetables-bg">
+            {% for category in categories|slice:":6" %}
+            <a href="{% url 'category' category.name %}" class="category-link">
+                <div class="category-card {% cycle 'vegetables-card' 'fruits-card' 'seasonal-card' %}">
+                    <div class="category-badge">{{ forloop.counter0 }}</div>
+                    <div class="category-bg {% cycle 'vegetables-bg' 'fruits-bg' 'seasonal-bg' %}">
                         <div class="category-overlay">
-                            <i class="fas fa-leaf"></i>
-                            <h3>Vegetables</h3>
-                            <p>120+ Items</p>
+                            <i class="fas {% if 'Fruit' in category.name %}fa-apple-alt{% elif 'Veg' in category.name %}fa-leaf{% else %}fa-seedling{% endif %}"></i>
+                            <h3>{{ category.name }}</h3>
+                            <p>{{ category.product_count|default:0 }} Items</p>
                         </div>
                     </div>
                 </div>
             </a>
-            
-            <a href="{% url 'category' 'Fruits' %}" class="category-link">
-                <div class="category-card fruits-card">
-                    <div class="category-badge">1</div>
-                    <div class="category-bg fruits-bg">
-                        <div class="category-overlay">
-                            <i class="fas fa-apple-alt"></i>
-                            <h3>Fruits</h3>
-                            <p>80+ Items</p>
-                        </div>
-                    </div>
-                </div>
-            </a>
-            
-            <a href="{% url 'category' 'Seasonal' %}" class="category-link">
-                <div class="category-card seasonal-card">
-                    <div class="category-badge">2</div>
-                    <div class="category-bg seasonal-bg">
-                        <div class="category-overlay">
-                            <i class="fas fa-leaf"></i>
-                            <h3>Seasonal</h3>
-                            <p>45+ Items</p>
-                        </div>
-                    </div>
-                </div>
-            </a>
+            {% endfor %}
         </div>
     </div>
 </section>

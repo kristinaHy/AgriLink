@@ -159,11 +159,9 @@
                 <div class="col-md-3">
                     <h6 class="mb-3">Categories</h6>
                     <ul class="list-unstyled">
-                        <li><a href="#" class="text-light text-decoration-none">Vegetables</a></li>
-                        <li><a href="#" class="text-light text-decoration-none">Fruits</a></li>
-                        <li><a href="#" class="text-light text-decoration-none">Seasonal Specials</a></li>
-                        <li><a href="#" class="text-light text-decoration-none">Organic Honey</a></li>
-                        <li><a href="#" class="text-light text-decoration-none">Dairy Products</a></li>
+                        {% for category in categories|slice:":5" %}
+                        <li><a href="{% url 'category' category.name %}" class="text-light text-decoration-none">{{ category.name }}</a></li>
+                        {% endfor %}
                     </ul>
                 </div>
                 <div class="col-md-3">

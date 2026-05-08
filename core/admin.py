@@ -15,8 +15,18 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ('name', 'created_at')
+    list_display = ('name', 'min_price', 'max_price', 'is_active_pricing', 'created_at')
+    list_filter = ('is_active_pricing', 'created_at')
     search_fields = ('name',)
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'description', 'icon', 'image')
+        }),
+        ('Pricing Policy', {
+            'fields': ('min_price', 'max_price', 'is_active_pricing'),
+            'description': 'Define the price range allowed for products in this category.'
+        }),
+    )
 
 
 @admin.register(Product)

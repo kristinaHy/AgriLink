@@ -123,13 +123,17 @@
             <!-- Unit Selection -->
             <div style="margin-bottom: 18px;">
                 <label style="display: block; color: #fff; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Unit <span style="color: #ef4444;">*</span></label>
-                <div style="display: flex; gap: 8px;">
-                    <button type="button" class="unit-btn" data-unit="kg" style="flex: 1; padding: 10px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #999; font-weight: 600; cursor: pointer;">kg</button>
-                    <button type="button" class="unit-btn" data-unit="litre" style="flex: 1; padding: 10px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #999; font-weight: 600; cursor: pointer;">litre</button>
-                    <button type="button" class="unit-btn" data-unit="piece" style="flex: 1; padding: 10px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #999; font-weight: 600; cursor: pointer;">piece</button>
-                    <button type="button" class="unit-btn" data-unit="bundle" style="flex: 1; padding: 10px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #999; font-weight: 600; cursor: pointer;">bundle</button>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" class="unit-btn" data-unit="KG" style="padding: 6px 12px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #999; font-weight: 600; cursor: pointer; font-size: 0.8rem;">KG</button>
+                    <button type="button" class="unit-btn" data-unit="Gram" style="padding: 6px 12px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #999; font-weight: 600; cursor: pointer; font-size: 0.8rem;">Gram</button>
+                    <button type="button" class="unit-btn" data-unit="Dozen" style="padding: 6px 12px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #999; font-weight: 600; cursor: pointer; font-size: 0.8rem;">Dozen</button>
+                    <button type="button" class="unit-btn" data-unit="Piece" style="padding: 6px 12px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #999; font-weight: 600; cursor: pointer; font-size: 0.8rem;">Piece</button>
+                    <button type="button" class="unit-btn" data-unit="Liter" style="padding: 6px 12px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #999; font-weight: 600; cursor: pointer; font-size: 0.8rem;">Liter</button>
+                    <button type="button" class="unit-btn" data-unit="Sack" style="padding: 6px 12px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #999; font-weight: 600; cursor: pointer; font-size: 0.8rem;">Sack</button>
+                    <button type="button" class="unit-btn" data-unit="Bundle" style="padding: 6px 12px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #999; font-weight: 600; cursor: pointer; font-size: 0.8rem;">Bundle</button>
+                    <button type="button" class="unit-btn" data-unit="Tray" style="padding: 6px 12px; background-color: #1a1a1a; border: 1px solid #333; border-radius: 6px; color: #999; font-weight: 600; cursor: pointer; font-size: 0.8rem;">Tray</button>
                 </div>
-                <input type="hidden" id="productUnit" name="unit" value="kg">
+                <input type="hidden" id="productUnit" name="unit" value="KG">
             </div>
 
             <!-- Min/Max Price -->
@@ -196,7 +200,7 @@ addProductBtn.addEventListener('click', () => {
     document.getElementById('modalTitle').textContent = 'Add New Product';
     document.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-plus-circle"></i> Add Product';
     document.querySelectorAll('.unit-btn').forEach(btn => btn.style.backgroundColor = '#1a1a1a');
-    document.querySelector('[data-unit="kg"]').style.backgroundColor = '#22c55e';
+    document.querySelector('[data-unit="KG"]').style.backgroundColor = '#22c55e';
     document.querySelectorAll('.status-btn').forEach(btn => {
         btn.style.backgroundColor = '#1a1a1a';
         btn.style.borderColor = '#333';
@@ -255,7 +259,7 @@ productForm.addEventListener('submit', async (e) => {
     const formData = new FormData(productForm);
     const productId = document.getElementById('productId').value;
     const url = productId ? `/api/admin/products/${productId}/update/` : '/api/admin/products/create/';
-    const method = productId ? 'PUT' : 'POST';
+    const method = 'POST';
     
     try {
         const response = await fetch(url, {

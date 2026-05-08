@@ -39,12 +39,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         # Save message to DB
-        msg = await self.save_message(self.user.id, receiver_id, message, order_id, negotiated_price)
+        msg, bot_msg = await self.save_message(self.user.id, receiver_id, message, order_id, negotiated_price)
 
         if not msg:
             return
 
-        # Send message to receiver's group
+        # Send user message to receiver's group
         receiver_group_name = f'chat_{receiver_id}'
         
         message_data = {
@@ -58,17 +58,22 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'negotiated_price': str(negotiated_price) if negotiated_price else None
         }
 
-        # Send to receiver
-        await self.channel_layer.group_send(
-            receiver_group_name,
-            message_data
-        )
+        await self.channel_layer.group_send(receiver_group_name, message_data)
+        await self.channel_layer.group_send(self.room_group_name, message_data)
         
-        # Send back to sender to confirm and show in their UI
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            message_data
-        )
+        # If there's a bot response, send it too
+        if bot_msg:
+            bot_data = {
+                'type': 'chat_message',
+                'id': bot_msg.id,
+                'message': bot_msg.content,
+                'sender_id': bot_msg.sender.id,
+                'receiver_id': bot_msg.receiver.id,
+                'sender_name': "AgriLink Bot (Admin)",
+                'created_at': bot_msg.created_at.isoformat(),
+            }
+            # Bot message goes to the user who sent the original message
+            await self.channel_layer.group_send(self.room_group_name, bot_data)
 
     # Receive message from room group
     async def chat_message(self, event):
@@ -96,6 +101,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 negotiated_price=negotiated_price
             )
             
+            bot_msg = None
             # Simple Bot logic for admins
             if receiver.role == 'admin':
                 bot_response = "Thank you for contacting AgriLink Support. Our team will get back to you shortly."
@@ -104,13 +110,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 elif "payment" in content.lower():
                     bot_response = "We support eSewa and Khalti. Payments are only available after farmer approval."
                 
-                Message.objects.create(
+                bot_msg = Message.objects.create(
                     sender=receiver,
                     receiver=sender,
                     content=bot_response
                 )
-                # We should theoretically broadcast the bot message too, but simplified for now
                 
-            return msg
+            return msg, bot_msg
         except User.DoesNotExist:
-            return None
+            return None, None

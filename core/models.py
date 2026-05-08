@@ -104,8 +104,32 @@ class Product(models.Model):
     class Meta:
         ordering = ['-created_at']
     
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        
+        # Ensure farmer is verified before listing
+        if self.farmer and not self.farmer.is_verified:
+            raise ValidationError("Please wait until admin verifies your account to list products.")
+            
+        # Price range validation against category
+        if self.category and self.category.is_active_pricing:
+            if self.price < self.category.min_price:
+                raise ValidationError(f'Price (Rs. {self.price}) cannot be less than the category minimum of Rs. {self.category.min_price}')
+            if self.price > self.category.max_price:
+                raise ValidationError(f'Price (Rs. {self.price}) cannot be more than the category maximum of Rs. {self.category.max_price}')
+        
+        # Ensure price_min and price_max are synced with price if not set
+        if self.price_min == 0:
+            self.price_min = self.price
+        if self.price_max == 0:
+            self.price_max = self.price
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.name} by {self.farmer.get_full_name()}"
+        return f"{self.name} by {self.farmer.get_full_name() or self.farmer.username}"
     
     @property
     def discounted_price(self):

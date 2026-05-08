@@ -138,7 +138,7 @@ function getCSRFToken() {
 }
 
 async function refreshConversations() {
-    const list = document.querySelector('.conversations-list');
+    const list = document.getElementById('recentConversations') || document.querySelector('.conversations-list');
     if (!list) return;
 
     const res = await fetch(CONVERSATIONS_URL, {
@@ -164,14 +164,13 @@ async function refreshConversations() {
 }
 
 function renderConversations(conversations) {
-    const list = document.querySelector('.conversations-list');
+    const list = document.getElementById('recentConversations') || document.querySelector('.conversations-list');
     if (!list) return;
 
     if (!conversations.length) {
         list.innerHTML = `
-            <div class="no-conversations">
-                <p>No messages yet</p>
-                <p>Start a conversation with a farmer!</p>
+            <div class="no-conversations" style="padding: 15px; color: #888; font-size: 0.9rem;">
+                No recent messages
             </div>
         `;
         return;
@@ -220,8 +219,14 @@ function escapeHtml(str) {
 }
 
 function ensureThreadVisible() {
-    const empty = document.querySelector('.no-conversation-selected');
+    const empty = document.getElementById('noConversationSelected');
+    const thread = document.getElementById('messageThread');
     if (empty) empty.style.display = 'none';
+    if (thread) thread.style.display = 'flex';
+}
+
+function startNewConversation(userId) {
+    openConversation(userId);
 }
 
 function getThreadHeaderElements() {

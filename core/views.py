@@ -345,8 +345,14 @@ class FarmerMessagesView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         
-        # Get conversations (placeholder)
-        context['conversations'] = []
+        # Recent messages
+        context['recent_messages'] = Message.objects.filter(
+            Q(sender=user) | Q(receiver=user)
+        ).order_by('-created_at')[:10]
+        
+        # Available customers and admins to chat with
+        context['available_customers'] = User.objects.filter(role='customer').order_by('username')
+        context['available_admins'] = User.objects.filter(role='admin').order_by('username')
         
         return context
 
@@ -613,11 +619,9 @@ class CustomerMessagesView(LoginRequiredMixin, UserPassesTestMixin, TemplateView
         # Wishlist count
         context['wishlist_count'] = 6  # Placeholder
         
-        # Unread messages
-        context['unread_messages'] = Message.objects.filter(
-            receiver=user,
-            is_read=False
-        ).count()
+        # Available farmers and admins to chat with
+        context['available_farmers'] = User.objects.filter(role='farmer', is_verified=True).order_by('username')
+        context['available_admins'] = User.objects.filter(role='admin').order_by('username')
         
         return context
 
@@ -1370,7 +1374,7 @@ class ProductUpdateAPI(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
         return self.request.user.is_staff or self.request.user.role == "admin"
     
-    def put(self, request, product_id):
+    def post(self, request, product_id):
         try:
             product = Product.objects.get(id=product_id)
             
