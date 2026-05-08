@@ -9,60 +9,87 @@
     
     <form method="post" enctype="multipart/form-data" class="product-form">
         {% csrf_token %}
+        
+        {% if form.errors %}
+            <div class="alert alert-danger">
+                <ul>
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <li>{{ field }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        
         <div class="form-grid">
             <div class="form-group">
                 <label for="{{ form.category.id_for_label }}">Category</label>
                 {{ form.category }}
+                {{ form.category.errors }}
             </div>
             <div class="form-group">
                 <label for="{{ form.name.id_for_label }}">Product Name</label>
                 {{ form.name }}
+                {{ form.name.errors }}
             </div>
             <div class="form-group">
                 <label for="{{ form.price.id_for_label }}">Price (Rs.)</label>
                 {{ form.price }}
+                {{ form.price.errors }}
             </div>
             <div class="form-group">
-                <label for="{{ form.quantity.id_for_label }}">Quantity</label>
-                {{ form.quantity }}
+                <label for="{{ form.produce_amount.id_for_label }}">Produce Amount</label>
+                {{ form.produce_amount }}
+                {{ form.produce_amount.errors }}
             </div>
+
             <div class="form-group">
                 <label for="{{ form.unit.id_for_label }}">Unit</label>
                 {{ form.unit }}
+                {{ form.unit.errors }}
             </div>
+            
+            <div class="form-group checkbox-group" style="display: flex; align-items: center; gap: 10px; margin: 10px 0;">
+                {{ form.is_fresh }}
+                <label style="margin: 0;">Is Fresh</label>
+                {{ form.is_fresh.errors }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.freshness_date.id_for_label }}">Freshness Date</label>
+                {{ form.freshness_date }}
+                {{ form.freshness_date.errors }}
+            </div>
+            <div class="form-group checkbox-group" style="display: flex; align-items: center; gap: 10px; margin: 10px 0;">
+                {{ form.is_seasonal }}
+                <label style="margin: 0;">Is Seasonal</label>
+                {{ form.is_seasonal.errors }}
+            </div>
+            <div class="form-group checkbox-group" style="display: flex; align-items: center; gap: 10px; margin: 10px 0;">
+                {{ form.is_limited }}
+                <label style="margin: 0;">Is Limited Stock</label>
+                {{ form.is_limited.errors }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.discount_percentage.id_for_label }}">Discount Percentage (%)</label>
+                {{ form.discount_percentage }}
+                {{ form.discount_percentage.errors }}
+            </div>
+
             <div class="form-group full-width">
                 <label for="{{ form.description.id_for_label }}">Description</label>
                 {{ form.description }}
+                {{ form.description.errors }}
             </div>
             <div class="form-group">
                 <label for="{{ form.image.id_for_label }}">Main Image</label>
                 {{ form.image }}
+                {{ form.image.errors }}
             </div>
             <div class="form-group">
                 <label for="{{ form.additional_images.id_for_label }}">Additional Images</label>
                 {{ form.additional_images }}
-            </div>
-            <div class="form-group">
-                <label>Freshness</label>
-                {{ form.is_fresh }}
-                {{ form.freshness_date }}
-            </div>
-            <div class="form-group">
-                <div class="checkbox-group">
-                    {{ form.is_seasonal }}
-                    <label for="{{ form.is_seasonal.id_for_label }}">Seasonal</label>
-                </div>
-                <div class="checkbox-group">
-                    {{ form.is_limited }}
-                    <label for="{{ form.is_limited.id_for_label }}">Limited Stock</label>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="{{ form.discount_percentage.id_for_label }}">Discount (%)</label>
-                {{ form.discount_percentage }}
-            </div>
-            <div class="form-group">
-                {{ form.status }}
+                {{ form.additional_images.errors }}
             </div>
         </div>
         <div class="form-actions">

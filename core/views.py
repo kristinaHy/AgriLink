@@ -132,6 +132,32 @@ class ProductDetailView(DetailView):
 
         return context
 
+# Add Review View
+class ReviewCreateView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        product = get_object_or_404(Product, pk=self.kwargs.get('pk'))
+        return self.request.user.role == 'customer' and \
+               self.request.user.orders.filter(items__product=product).exists()
+               
+    def handle_no_permission(self):
+        messages.error(self.request, "You can only review products you have purchased.")
+        return redirect('product_detail', pk=self.kwargs.get('pk'))
+
+    def post(self, request, pk):
+        product = get_object_or_404(Product, pk=pk)
+        rating = request.POST.get('rating')
+        title = request.POST.get('title')
+        content = request.POST.get('content')
+        
+        Review.objects.create(
+            product=product,
+            customer=request.user,
+            rating=rating,
+            title=title,
+            content=content
+        )
+        messages.success(request, 'Review added successfully!')
+        return redirect('product_detail', pk=pk)
 
 # Search View
 class SearchView(ListView):
@@ -326,15 +352,31 @@ class FarmerMessagesView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
 
 
 # Farmer Profile View
-class FarmerProfileView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+class FarmerProfileView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = 'core/farmer_profile.html'
     
     def test_func(self):
         return self.request.user.role == 'farmer'
     
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        return context
+    def get(self, request):
+        return render(request, self.template_name, {})
+
+    def post(self, request):
+        user = request.user
+        user.first_name = request.POST.get('first_name', user.first_name)
+        user.last_name = request.POST.get('last_name', user.last_name)
+        user.email = request.POST.get('email', user.email)
+        user.phone_number = request.POST.get('phone_number', user.phone_number)
+        user.address = request.POST.get('address', user.address)
+        user.city = request.POST.get('city', user.city)
+        user.district = request.POST.get('district', user.district)
+
+        if 'profile_picture' in request.FILES:
+            user.profile_picture = request.FILES['profile_picture']
+
+        user.save()
+        messages.success(request, 'Profile updated successfully.')
+        return redirect('farmer_profile')
 
 
 # Customer Dashboard View
@@ -659,18 +701,22 @@ class ProductCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Product
     form_class = ProductForm
     template_name = 'core/product_form.html'
-    success_url = '/farmer/products/'
+    success_url = reverse_lazy('farmer_products')
 
     def test_func(self):
         if self.request.user.role != 'farmer':
             return False
         if not self.request.user.is_verified:
-            messages.warning(self.request, "Please wait until admin verifies your account to list products.")
             return False
         return True
 
+    def handle_no_permission(self):
+        messages.error(self.request, "Please wait until admin verifies your account to list products.")
+        return redirect('farmer_dashboard')
+
     def form_valid(self, form):
         form.instance.farmer = self.request.user
+        messages.success(self.request, "Product created successfully!")
         return super().form_valid(form)
 
 
@@ -679,16 +725,23 @@ class ProductUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Product
     form_class = ProductForm
     template_name = 'core/product_form.html'
-    success_url = '/farmer/products/'
+    success_url = reverse_lazy('farmer_products')
+
+    def form_valid(self, form):
+        messages.success(self.request, "Product updated successfully!")
+        return super().form_valid(form)
 
     def test_func(self):
         obj = self.get_object()
         if self.request.user.role != 'farmer' or obj.farmer != self.request.user:
             return False
         if not self.request.user.is_verified:
-            messages.warning(self.request, "Please wait until admin verifies your account to manage products.")
             return False
         return True
+
+    def handle_no_permission(self):
+        messages.error(self.request, "Please wait until admin verifies your account to manage products.")
+        return redirect('farmer_dashboard')
 
 
 # Product Delete
@@ -699,7 +752,15 @@ class ProductDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         obj = self.get_object()
-        return self.request.user.role == 'farmer' and obj.farmer == self.request.user
+        if self.request.user.role != 'farmer' or obj.farmer != self.request.user:
+            return False
+        if not self.request.user.is_verified:
+            return False
+        return True
+
+    def handle_no_permission(self):
+        messages.error(self.request, "Please wait until admin verifies your account to delete products.")
+        return redirect('farmer_dashboard')
 
 
 # Cart Views
@@ -734,11 +795,16 @@ class AddToCartView(LoginRequiredMixin, UserPassesTestMixin, View):
             return redirect('cart')
         
         cart_item, created = CartItem.objects.get_or_create(
-            cart=cart, product=product, defaults={'quantity': quantity}
+            cart=cart, product=product, defaults={'quantity': 0}
         )
-        if not created:
-            cart_item.quantity += quantity
-            cart_item.save()
+        
+        total_quantity = cart_item.quantity + quantity
+        if product.produce_amount < total_quantity:
+            messages.error(request, f'Only {product.produce_amount} {product.unit} available for {product.name}.')
+            return redirect('product_detail', pk=pk)
+            
+        cart_item.quantity = total_quantity
+        cart_item.save()
         
         messages.success(request, f'{product.name} added to cart!')
         return redirect('cart')
@@ -758,6 +824,9 @@ class UpdateCartItemView(LoginRequiredMixin, UserPassesTestMixin, View):
             return redirect('cart')
         
         if quantity > 0:
+            if cart_item.product.produce_amount < quantity:
+                messages.error(request, f'Only {cart_item.product.produce_amount} {cart_item.product.unit} available for {cart_item.product.name}.')
+                return redirect('cart')
             cart_item.quantity = quantity
             cart_item.save()
             messages.success(request, 'Cart updated.')
@@ -863,16 +932,25 @@ class CheckoutView(LoginRequiredMixin, UserPassesTestMixin, View):
         if missing_fields:
             messages.error(request, f'Missing required fields: {", ".join(missing_fields)}')
             return redirect('checkout')
-        
+
+        # Validate availability again before creating order
+        for item in cart.items.all():
+            if item.product.produce_amount < item.quantity:
+                messages.error(request, f'Sorry, {item.product.name} only has {item.product.produce_amount} {item.product.unit} available.')
+                return redirect('cart')
+
+        delivery_fee = 50
+        total_payable = cart.total_price + delivery_fee
+
         order = Order.objects.create(
             customer=request.user,
             order_number=f'AGRI{timezone.now().strftime("%Y%m%d%H%M%S%f")[:10]}',
-            total_amount=cart.total_price,
+            total_amount=total_payable,
             shipping_address=request.POST['shipping_address'],
             shipping_city=request.POST['shipping_city'],
             shipping_district=request.POST['shipping_district'],
             payment_method=request.POST['payment_method'],
-            status='pending' # Initial state
+            status='farmer_reviewing' # Multi-step approval start
         )
         
         # Track farmers involved to notify them
@@ -917,11 +995,33 @@ class OrderUpdateStatusView(LoginRequiredMixin, UserPassesTestMixin, View):
     def post(self, request, pk):
         order = get_object_or_404(Order, items__product__farmer=request.user, pk=pk)
         new_status = request.POST.get('status')
+        negotiated_price = request.POST.get('negotiated_price')
+        estimated_delivery = request.POST.get('estimated_delivery')
+        
         if not new_status:
             messages.error(request, 'Invalid status update.')
             return redirect('farmer_orders')
         
+        old_status = order.status
+        
+        # Check stock before approving
+        if new_status == 'approved' and old_status != 'approved':
+            for item in order.items.all():
+                if item.product and item.product.produce_amount < item.quantity:
+                    messages.error(request, f'Cannot approve: {item.product.name} has insufficient stock ({item.product.produce_amount} available).')
+                    return redirect('farmer_orders')
+            
+            # Deduct stock
+            for item in order.items.all():
+                if item.product:
+                    item.product.produce_amount -= item.quantity
+                    item.product.save()
+
         order.status = new_status
+        if negotiated_price:
+            order.negotiated_price = negotiated_price
+        if estimated_delivery:
+            order.estimated_delivery = estimated_delivery
         order.save()
         
         # Notification mapping
@@ -1222,7 +1322,6 @@ class ProductCreateAPI(LoginRequiredMixin, UserPassesTestMixin, View):
                 price_min=price_min,
                 price_max=price_max,
                 price=price_min,
-                quantity=int(request.POST.get('quantity', 0)),
                 unit=request.POST.get('unit', 'kg'),
                 status=request.POST.get('status', 'available'),
                 is_fresh=request.POST.get('is_fresh', 'on') in ['on', 'true', '1', True],
@@ -1254,7 +1353,6 @@ class ProductDetailAPI(LoginRequiredMixin, UserPassesTestMixin, View):
                 'description': product.description,
                 'price_min': float(product.price_min),
                 'price_max': float(product.price_max),
-                'quantity': product.quantity,
                 'unit': product.unit,
                 'status': product.status,
                 'image': product.image.url if product.image else '',
@@ -1292,8 +1390,6 @@ class ProductUpdateAPI(LoginRequiredMixin, UserPassesTestMixin, View):
             if 'price_max' in request.POST:
                 product.price_max = float(request.POST.get('price_max'))
             
-            if 'quantity' in request.POST:
-                product.quantity = int(request.POST.get('quantity'))
             if 'unit' in request.POST:
                 product.unit = request.POST.get('unit')
             if 'status' in request.POST:
@@ -1527,9 +1623,27 @@ class EsewaSuccessView(LoginRequiredMixin, View):
         
         order = get_object_or_404(Order, order_number=oid)
         
-        # In a real app, verify with eSewa server here
-        # For sandbox, we'll assume success if they land here with refId
-        if refId:
+        # Verify with eSewa Sandbox
+        import requests
+        verify_url = "https://uat.esewa.com.np/epay/transrec"
+        data = {
+            'amt': amt,
+            'scd': 'EPAYTEST', # Sandbox Merchant ID
+            'pid': oid,
+            'rid': refId
+        }
+        
+        try:
+            response = requests.post(verify_url, data=data)
+            is_valid = "Success" in response.text
+        except:
+            is_valid = False
+            
+        if is_valid:
+            if order.payment_status == 'paid':
+                messages.warning(request, 'Order is already paid.')
+                return redirect('order_detail', pk=order.pk)
+                
             order.status = 'paid'
             order.payment_status = 'paid'
             order.save()
@@ -1582,18 +1696,38 @@ class KhaltiVerifyAPI(LoginRequiredMixin, View):
         
         order = get_object_or_404(Order, pk=order_id)
         
-        # Verify with Khalti server here
-        # For demo, we'll mock success
-        order.status = 'paid'
-        order.payment_status = 'paid'
-        order.save()
+        if order.payment_status == 'paid':
+            return JsonResponse({'status': 'error', 'message': 'Already paid'})
+
+        # Verify with Khalti
+        import requests
+        url = "https://khalti.com/api/v2/payment/verify/"
+        payload = {
+            "token": token,
+            "amount": amount
+        }
+        headers = {
+            "Authorization": "Key test_secret_key_697920392093209320932093" # Replace with real secret key
+        }
         
-        Payment.objects.create(
-            order=order,
-            transaction_id=token,
-            amount=amount / 100, # Khalti uses paisa
-            gateway='khalti',
-            status='success'
-        )
+        try:
+            response = requests.post(url, payload, headers=headers)
+            is_valid = response.status_code == 200
+        except:
+            is_valid = False
+
+        if is_valid:
+            order.status = 'paid'
+            order.payment_status = 'paid'
+            order.save()
+            
+            Payment.objects.create(
+                order=order,
+                transaction_id=token,
+                amount=float(amount) / 100, # Khalti uses paisa
+                gateway='khalti',
+                status='success'
+            )
+            return JsonResponse({'status': 'success'})
         
-        return JsonResponse({'status': 'success'})
+        return JsonResponse({'status': 'error', 'message': 'Verification failed'})

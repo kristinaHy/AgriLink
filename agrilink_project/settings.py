@@ -14,6 +14,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -21,6 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',  # Our main app
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -53,6 +55,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'agrilink_project.wsgi.application'
+ASGI_APPLICATION = 'agrilink_project.asgi.application'
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
 
 DATABASES = {
     'default': {

@@ -105,9 +105,7 @@ function getCookie(name) {
 }
 
 function proceedToCheckout() {
-    // This would redirect to checkout page
-    showToast('Redirecting to checkout...');
-    // For now, just show a toast
+    window.location.href = '/checkout/';
 }
 
 function showToast(message) {

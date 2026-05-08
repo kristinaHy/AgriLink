@@ -10,9 +10,10 @@ urlpatterns = [
     
     # Products and Categories
     path('products/', views.ProductListView.as_view(), name='product_list'),
-    path('category/<slug:slug>/', views.CategoryView.as_view(), name='category'),
+    path('category/<path:slug>/', views.CategoryView.as_view(), name='category'),
     path('category/', views.CategoryView.as_view(), name='category_all'),
     path('product/<int:pk>/', views.ProductDetailView.as_view(), name='product_detail'),
+    path('product/<int:pk>/review/', views.ReviewCreateView.as_view(), name='add_review'),
     path('farmer/products/', views.FarmerProductListView.as_view(), name='farmer_products'),
     path('farmer/product/create/', views.ProductCreateView.as_view(), name='product_create'),
     path('farmer/product/<int:pk>/update/', views.ProductUpdateView.as_view(), name='product_update'),

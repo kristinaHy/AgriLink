@@ -113,7 +113,7 @@ class UserLoginForm(forms.Form):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ('category', 'name', 'description', 'price_min', 'price_max', 'price', 'quantity', 'unit',
+        fields = ('category', 'name', 'description', 'price', 'produce_amount', 'unit',
                   'image', 'additional_images', 'is_fresh', 'freshness_date',
                   'is_seasonal', 'is_limited', 'discount_percentage')
         widgets = {
@@ -123,13 +123,33 @@ class ProductForm(forms.ModelForm):
     
     def clean(self):
         cleaned_data = super().clean()
-        price_min = cleaned_data.get('price_min')
-        price_max = cleaned_data.get('price_max')
+        category = cleaned_data.get('category')
+        price = cleaned_data.get('price')
         
-        if price_min and price_max and price_max < price_min:
-            raise forms.ValidationError('Maximum price cannot be less than minimum price.')
+        if price is not None:
+            cleaned_data['price_min'] = price
+            cleaned_data['price_max'] = price
+            
+        if category and price is not None:
+            if category.is_active_pricing:
+                # If defaults, don't enforce (0 and 100000) or we can just enforce.
+                # User says: if no such produce is listed by admin then farmers can put their own price.
+                if category.min_price > 0 or category.max_price < 100000:
+                    if price < category.min_price:
+                        raise forms.ValidationError(f'Price cannot be less than the category minimum of Rs. {category.min_price}')
+                    if price > category.max_price:
+                        raise forms.ValidationError(f'Price cannot be more than the category maximum of Rs. {category.max_price}')
         
         return cleaned_data
+        
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if instance.price is not None:
+            instance.price_min = instance.price
+            instance.price_max = instance.price
+        if commit:
+            instance.save()
+        return instance
 
 
 class ReviewForm(forms.ModelForm):

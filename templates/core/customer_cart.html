@@ -104,7 +104,7 @@
                         <div class="item-details">
                             <h4>{{ item.product.name }}</h4>
                             <p class="item-farmer">by {{ item.product.farmer.get_full_name|default:item.product.farmer.username }}</p>
-                            <p class="item-price">₹{{ item.product.price }} per {{ item.product.unit }}</p>
+                            <p class="item-price">Rs.{{ item.product.price }} per {{ item.product.unit }}</p>
                         </div>
                         <div class="item-quantity">
                             <button class="quantity-btn" onclick="updateQuantity({{ item.id }}, {{ item.quantity|add:-1 }})">-</button>
@@ -112,7 +112,7 @@
                             <button class="quantity-btn" onclick="updateQuantity({{ item.id }}, {{ item.quantity|add:1 }})">+</button>
                         </div>
                         <div class="item-total">
-                            <p class="total-price">₹{{ item.total_price }}</p>
+                            <p class="total-price">Rs.{{ item.total_price }}</p>
                         </div>
                         <div class="item-actions">
                             <button class="remove-btn" onclick="removeFromCart({{ item.id }})">
@@ -126,15 +126,15 @@
                 <div class="cart-summary">
                     <div class="summary-row">
                         <span>Subtotal:</span>
-                        <span>₹{{ cart.total_price }}</span>
+                        <span>Rs.{{ cart.total_price }}</span>
                     </div>
                     <div class="summary-row">
                         <span>Delivery:</span>
-                        <span>₹50</span>
+                        <span>Rs.50</span>
                     </div>
                     <div class="summary-row total">
                         <span>Total:</span>
-                        <span>₹{{ cart.total_price|add:50 }}</span>
+                        <span>Rs.{{ cart.total_price|add:50 }}</span>
                     </div>
                     <button class="btn-primary checkout-btn" onclick="proceedToCheckout()">
                         <i class="fas fa-credit-card"></i> Proceed to Checkout

@@ -1,10 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Orders - Farmer Dashboard</title>
+{% extends 'base.html' %}
+{% load static %}
 
+{% block title %}Orders - Farmer Dashboard{% endblock %}
+
+{% block extra_css %}
 <style>
 :root {
     --primary: #4CAF50;
@@ -14,24 +13,14 @@
     --gray: #888;
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    background: var(--bg);
-    font-family: 'Segoe UI', sans-serif;
-}
-
 /* Sidebar */
 .sidebar {
     width: 250px;
-    height: 100vh;
+    height: calc(100vh - 70px);
     background: #111;
     color: white;
     position: fixed;
+    top: 70px; /* Below navbar */
     padding: 20px;
     z-index: 1000;
 }
@@ -65,8 +54,8 @@ body {
     padding: 20px;
 }
 
-/* Navbar */
-.navbar {
+/* Navbar inside dashboard */
+.dash-navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -82,7 +71,7 @@ body {
     color: #333;
 }
 
-.profile {
+.profile-box {
     background: var(--card);
     padding: 8px 15px;
     border-radius: 20px;
@@ -171,6 +160,8 @@ tr:hover {
 @media(max-width: 768px) {
     .sidebar {
         left: -250px;
+        top: 0;
+        height: 100vh;
     }
 
     .sidebar.active {
@@ -187,10 +178,9 @@ tr:hover {
     }
 }
 </style>
-</head>
+{% endblock %}
 
-<body>
-
+{% block content %}
 <div class="sidebar" id="sidebar">
     <h2>🌾 AgriLink Farmer</h2>
     <a href="{% url 'farmer_dashboard' %}">Overview</a>
@@ -203,10 +193,10 @@ tr:hover {
 </div>
 
 <div class="main-content">
-    <div class="navbar">
+    <div class="dash-navbar">
         <button class="menu-btn" onclick="toggleSidebar()">☰</button>
         <h2>Orders</h2>
-        <div class="profile">👤 {{ user.get_full_name|default:user.username }}</div>
+        <div class="profile-box">👤 {{ user.get_full_name|default:user.username }}</div>
     </div>
 
     <div class="header">
@@ -232,21 +222,26 @@ tr:hover {
                         <th>Date</th>
                         <th>Amount</th>
                         <th>Status</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="orderTable">
                     {% for order in orders %}
                         <tr>
                             <td>#{{ order.id }}</td>
-                            <td>{{ order.product.name }}</td>
+                            <td>
+                                {% for item in order.items.all %}
+                                    {{ item.product.name }} (x{{ item.quantity }}){% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
                             <td>{{ order.customer.get_full_name|default:order.customer.username }}</td>
                             <td>{{ order.created_at|date:"Y-m-d" }}</td>
                             <td>Rs. {{ order.total_amount }}</td>
                             <td><span class="badge {{ order.status }}">{{ order.get_status_display }}</span></td>
                             <td>
-                                <form action="{% url 'order_update_status' order.pk %}" method="post" style="display: inline-block;">
+                                <form action="{% url 'order_update_status' order.pk %}" method="post" style="display: flex; flex-direction: column; gap: 5px;">
                                     {% csrf_token %}
-                                    <select name="status" onchange="this.form.submit()" style="padding: 2px 5px; font-size: 12px;">
+                                    <select name="status" onchange="toggleNegotiationFields(this, {{ order.id }})" style="padding: 2px 5px; font-size: 12px;">
                                         <option value="">Update Status</option>
                                         <option value="approved">Approve</option>
                                         <option value="rejected">Reject</option>
@@ -254,8 +249,13 @@ tr:hover {
                                         <option value="dispatched">Dispatch</option>
                                         <option value="delivered">Deliver</option>
                                     </select>
+                                    <div id="negotiation-{{ order.id }}" style="display: none; flex-direction: column; gap: 5px;">
+                                        <input type="number" name="negotiated_price" placeholder="Adjusted Price" step="0.01" style="padding: 2px 5px; font-size: 11px; width: 100px;">
+                                        <input type="date" name="estimated_delivery" style="padding: 2px 5px; font-size: 11px;">
+                                    </div>
+                                    <button type="submit" class="badge confirmed" style="border: none; cursor: pointer; padding: 5px;">Update</button>
                                 </form>
-                                <a href="{% url 'order_detail' order.pk %}" style="font-size: 12px; margin-left: 5px;">View</a>
+                                <a href="{% url 'order_detail' order.pk %}" style="font-size: 12px; margin-top: 5px; display: block; text-align: center;">View Details</a>
                             </td>
                         </tr>
                     {% endfor %}
@@ -268,10 +268,21 @@ tr:hover {
         {% endif %}
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 function toggleSidebar() {
     document.getElementById("sidebar").classList.toggle("active");
+}
+
+function toggleNegotiationFields(select, orderId) {
+    const div = document.getElementById('negotiation-' + orderId);
+    if (select.value === 'negotiating' || select.value === 'approved') {
+        div.style.display = 'flex';
+    } else {
+        div.style.display = 'none';
+    }
 }
 
 function filterOrders(status) {
@@ -282,6 +293,5 @@ function filterOrders(status) {
     }
 }
 </script>
+{% endblock %}
 
-</body>
-</html>

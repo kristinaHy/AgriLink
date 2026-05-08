@@ -21,7 +21,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'farmer', 'category', 'price', 'quantity', 'status', 'is_fresh', 'created_at')
+    list_display = ('name', 'farmer', 'category', 'price', 'status', 'is_fresh', 'created_at')
     list_filter = ('status', 'is_fresh', 'is_seasonal', 'is_limited', 'category', 'created_at')
     search_fields = ('name', 'farmer__username', 'category__name')
     readonly_fields = ('created_at', 'updated_at')
@@ -30,7 +30,7 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('farmer', 'category', 'name', 'description', 'unit')
         }),
         ('Pricing & Stock', {
-            'fields': ('price', 'price_min', 'price_max', 'quantity', 'discount_percentage', 'status')
+            'fields': ('price', 'price_min', 'price_max', 'discount_percentage', 'status')
         }),
         ('Images', {
             'fields': ('image', 'additional_images')

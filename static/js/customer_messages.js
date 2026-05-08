@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 let currentOtherUserId = null;
+let currentUserId = null; // We need to know who we are to render messages correctly
+let chatSocket = null;
 
 const API_BASE = '/api/messages';
 const CONVERSATIONS_URL = `${API_BASE}/conversations/`;
@@ -17,6 +19,10 @@ const CONVERSATION_URL = (otherUserId) => `${API_BASE}/conversation/${otherUserI
 
 function initializeMessaging() {
     const messageForm = document.getElementById('messageForm');
+    
+    // Connect to WebSocket
+    connectWebSocket();
+
     if (!messageForm) {
         return;
     }
@@ -25,16 +31,58 @@ function initializeMessaging() {
     const receiverInput = messageForm.querySelector('input[name="receiver_id"]');
     if (receiverInput && receiverInput.value) {
         currentOtherUserId = receiverInput.value;
-        // Load sidebar + thread via API to keep everything consistent
         refreshConversations()
             .then(() => openConversation(currentOtherUserId))
-            .catch(() => {
-                // Keep server-rendered content as fallback
-            });
+            .catch(() => {});
         return;
     }
 
-    // Otherwise just load conversations; user can click one to open it
+    refreshConversations().catch(() => {});
+}
+
+function connectWebSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    // The consumer uses self.scope["user"], so the ID in URL doesn't strictly matter but we pass 'me'
+    chatSocket = new WebSocket(`${protocol}//${window.location.host}/ws/chat/me/`);
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        if (data.type === 'chat_message') {
+            handleIncomingMessage(data);
+        }
+    };
+
+    chatSocket.onclose = function(e) {
+        console.error('Chat socket closed unexpectedly');
+        // Optional: attempt reconnect here
+    };
+}
+
+function handleIncomingMessage(data) {
+    // data has id, message, sender_id, receiver_id, sender_name, created_at, negotiated_price
+    // If we are currently chatting with this person
+    const isFromOther = String(data.sender_id) === String(currentOtherUserId);
+    const isToOther = String(data.receiver_id) === String(currentOtherUserId);
+    
+    if (isFromOther || isToOther) {
+        const messagesList = document.getElementById('messagesList');
+        if (messagesList) {
+            const isSentByMe = String(data.sender_id) !== String(currentOtherUserId);
+            const item = document.createElement('div');
+            item.className = `message-item${isSentByMe ? ' sent' : ' received'}`;
+            
+            const time = formatBackendTime(data.created_at);
+            
+            item.innerHTML = `
+                <div class="message-content">${escapeHtml(data.message)}</div>
+                <div class="message-time">${escapeHtml(time)}</div>
+            `;
+            messagesList.appendChild(item);
+            messagesList.scrollTop = messagesList.scrollHeight;
+        }
+    }
+
+    // Refresh conversation list to update previews
     refreshConversations().catch(() => {});
 }
 
@@ -267,6 +315,20 @@ async function sendMessage(event) {
     }
     if (!content) return;
 
+    // Send via WebSocket if open
+    if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+        chatSocket.send(JSON.stringify({
+            'message': content,
+            'receiver_id': receiverId,
+            'subject': subject || ''
+        }));
+        
+        const contentEl = form.querySelector('textarea[name="content"]');
+        if (contentEl) contentEl.value = '';
+        return;
+    }
+
+    // Fallback to REST API
     const csrfToken = getCSRFToken();
 
     const res = await fetch(SEND_URL, {

@@ -35,6 +35,9 @@ class Category(models.Model):
     description = models.TextField(blank=True, null=True)
     icon = models.CharField(max_length=50, blank=True, null=True)  # For emoji or icon name
     image = models.ImageField(upload_to='categories/', blank=True, null=True)
+    min_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    max_price = models.DecimalField(max_digits=10, decimal_places=2, default=100000)
+    is_active_pricing = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -66,6 +69,16 @@ class Product(models.Model):
         ('out_of_stock', 'Out of Stock'),
         ('discontinued', 'Discontinued'),
     ]
+    UNIT_CHOICES = [
+        ('KG', 'KG'),
+        ('Gram', 'Gram'),
+        ('Dozen', 'Dozen'),
+        ('Piece', 'Piece'),
+        ('Liter', 'Liter'),
+        ('Sack', 'Sack'),
+        ('Bundle', 'Bundle'),
+        ('Tray', 'Tray'),
+    ]
     
     farmer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='products', 
                                limit_choices_to={'role': 'farmer'})
@@ -75,8 +88,8 @@ class Product(models.Model):
     price_min = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     price_max = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
-    quantity = models.PositiveIntegerField()
-    unit = models.CharField(max_length=50, default='kg')  # kg, liters, bunch, etc.
+    unit = models.CharField(max_length=50, choices=UNIT_CHOICES, default='KG')
+    produce_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
     image = models.ImageField(upload_to='products/', blank=True, null=True)
     additional_images = models.ImageField(upload_to='products/', blank=True, null=True)

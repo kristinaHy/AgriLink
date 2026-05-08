@@ -1,10 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Listings - Farmer Dashboard</title>
+{% extends 'base.html' %}
+{% load static %}
 
+{% block title %}My Listings - Farmer Dashboard{% endblock %}
+
+{% block extra_css %}
 <style>
 :root {
     --primary: #4CAF50;
@@ -14,24 +13,14 @@
     --gray: #888;
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    background: var(--bg);
-    font-family: 'Segoe UI', sans-serif;
-}
-
 /* Sidebar */
 .sidebar {
     width: 250px;
-    height: 100vh;
+    height: calc(100vh - 70px);
     background: #111;
     color: white;
     position: fixed;
+    top: 70px; /* Below navbar */
     padding: 20px;
     z-index: 1000;
 }
@@ -65,8 +54,8 @@ body {
     padding: 20px;
 }
 
-/* Navbar */
-.navbar {
+/* Navbar inside dashboard */
+.dash-navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -82,7 +71,7 @@ body {
     color: #333;
 }
 
-.profile {
+.profile-box {
     background: var(--card);
     padding: 8px 15px;
     border-radius: 20px;
@@ -198,6 +187,8 @@ body {
 @media(max-width: 768px) {
     .sidebar {
         left: -250px;
+        top: 0;
+        height: 100vh;
     }
 
     .sidebar.active {
@@ -214,10 +205,9 @@ body {
     }
 }
 </style>
-</head>
+{% endblock %}
 
-<body>
-
+{% block content %}
 <div class="sidebar" id="sidebar">
     <h2>🌾 AgriLink Farmer</h2>
     <a href="{% url 'farmer_dashboard' %}">Overview</a>
@@ -230,10 +220,10 @@ body {
 </div>
 
 <div class="main-content">
-    <div class="navbar">
+    <div class="dash-navbar">
         <button class="menu-btn" onclick="toggleSidebar()">☰</button>
         <h2>My Listings</h2>
-        <div class="profile">👤 {{ user.get_full_name|default:user.username }}</div>
+        <div class="profile-box">👤 {{ user.get_full_name|default:user.username }}</div>
     </div>
 
     <div class="header-actions">
@@ -259,8 +249,8 @@ body {
                     {% endif %}
                     <div class="card-body">
                         <h3>{{ product.name }}</h3>
-                        <div class="price">Rs. {{ product.price }}</div>
-                        <div class="stock">Stock: {{ product.quantity }} {{ product.unit }}</div>
+                        <div class="price">Rs. {{ product.price }} / {{ product.unit }}</div>
+                        <div class="stock">Available Amount: {{ product.produce_amount }} {{ product.unit }}</div>
                         <div class="stock">Category: {{ product.category.name }}</div>
                         <div class="actions">
                             <a href="{% url 'product_update' product.pk %}" class="btn-action edit">Edit</a>
@@ -277,12 +267,13 @@ body {
         </div>
     {% endif %}
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 function toggleSidebar() {
     document.getElementById("sidebar").classList.toggle("active");
 }
 </script>
+{% endblock %}
 
-</body>
-</html>

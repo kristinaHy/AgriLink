@@ -1,10 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Messages - Farmer Dashboard</title>
+{% extends 'base.html' %}
+{% load static %}
 
+{% block title %}Messages - Farmer Dashboard{% endblock %}
+
+{% block extra_css %}
 <style>
 :root {
     --primary: #4CAF50;
@@ -14,24 +13,14 @@
     --gray: #888;
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    background: var(--bg);
-    font-family: 'Segoe UI', sans-serif;
-}
-
 /* Sidebar */
 .sidebar {
     width: 250px;
-    height: 100vh;
+    height: calc(100vh - 70px);
     background: #111;
     color: white;
     position: fixed;
+    top: 70px; /* Below navbar */
     padding: 20px;
     z-index: 1000;
 }
@@ -65,8 +54,8 @@ body {
     padding: 20px;
 }
 
-/* Navbar */
-.navbar {
+/* Navbar inside dashboard */
+.dash-navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -82,7 +71,7 @@ body {
     color: #333;
 }
 
-.profile {
+.profile-box {
     background: var(--card);
     padding: 8px 15px;
     border-radius: 20px;
@@ -90,125 +79,123 @@ body {
 }
 
 /* Chat Layout */
-.chat-container {
+.messages-container {
     display: flex;
-    height: 70vh;
-    background: var(--card);
+    height: calc(100vh - 170px); /* Adjusted for navbar */
+    background: #fff;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
 }
 
-/* User List */
-.users {
-    width: 30%;
+.messages-sidebar {
+    width: 300px;
     border-right: 1px solid #eee;
-    overflow-y: auto;
-}
-
-.user {
-    padding: 12px;
-    cursor: pointer;
-    border-bottom: 1px solid #eee;
-    transition: 0.2s;
-}
-
-.user:hover,
-.user.active {
-    background: var(--primary);
-    color: white;
-}
-
-.user-name {
-    font-weight: 500;
-}
-
-.user-preview {
-    font-size: 12px;
-    color: var(--gray);
-}
-
-.user.active .user-preview {
-    color: rgba(255,255,255,0.8);
-}
-
-/* Chat Area */
-.chat-box {
-    width: 70%;
     display: flex;
     flex-direction: column;
 }
 
-.chat-header {
+.messages-search {
     padding: 15px;
     border-bottom: 1px solid #eee;
-    font-weight: 500;
 }
 
-.messages {
+.conversations-list {
     flex: 1;
-    padding: 15px;
     overflow-y: auto;
 }
 
-.msg {
-    margin-bottom: 10px;
-    max-width: 60%;
-    padding: 10px;
-    border-radius: 10px;
-}
-
-.sent {
-    background: var(--primary);
-    color: white;
-    margin-left: auto;
-}
-
-.received {
-    background: #eee;
-}
-
-/* Input */
-.input-box {
+.messages-main {
+    flex: 1;
     display: flex;
+    flex-direction: column;
+    background: #fafafa;
+}
+
+.no-conversation-selected {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    color: #ddd;
+}
+
+.message-thread {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.thread-header {
+    padding: 20px;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.thread-avatar {
+    width: 45px;
+    height: 45px;
+    background: #e0f2f1;
+    color: #00796b;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.messages-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.message-compose {
+    padding: 20px;
+    background: #fff;
     border-top: 1px solid #eee;
 }
 
-.input-box input {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    outline: none;
-}
+.conversation-item { padding: 15px; display: flex; gap: 12px; cursor: pointer; border-bottom: 1px solid #eee; position: relative; transition: background 0.2s; }
+.conversation-item:hover { background: #f9f9f9; }
+.conversation-item.active { background: #e8f5e9; }
+.conversation-avatar { width: 40px; height: 40px; background: #eee; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #555; }
+.conversation-info { flex: 1; overflow: hidden; }
+.conversation-name { font-weight: 600; color: #333; margin-bottom: 3px; font-size: 14px; }
+.conversation-preview { color: #666; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conversation-time { position: absolute; right: 15px; top: 15px; font-size: 11px; color: #999; }
+.unread-indicator { position: absolute; right: 15px; top: 35px; width: 8px; height: 8px; background: #e74c3c; border-radius: 50%; }
 
-.input-box input::placeholder {
-    color: var(--gray);
-}
+.message-item { max-width: 70%; padding: 12px 16px; border-radius: 15px; position: relative; clear: both; }
+.message-item.sent { background: #27ae60; color: white; float: right; border-bottom-right-radius: 4px; align-self: flex-end; }
+.message-item.received { background: #fff; border: 1px solid #eee; color: #333; float: left; border-bottom-left-radius: 4px; align-self: flex-start; }
+.message-time { font-size: 11px; margin-top: 5px; opacity: 0.8; text-align: right; }
+.message-item.received .message-time { color: #888; }
+.message-item.sent .message-time { color: rgba(255,255,255,0.8); }
 
-.input-box button {
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    cursor: pointer;
-}
-
-/* Empty State */
-.empty-state {
-    text-align: center;
-    padding: 40px;
-    background: var(--card);
-    border-radius: 15px;
-}
-
-.empty-state p {
-    color: var(--gray);
-}
+.thread-visible .no-conversation-selected { display: none !important; }
+.thread-visible .message-thread { display: flex !important; }
 
 /* Responsive */
 @media(max-width: 768px) {
     .sidebar {
         left: -250px;
+        top: 0;
+        height: 100vh;
     }
 
     .sidebar.active {
@@ -223,25 +210,11 @@ body {
     .menu-btn {
         display: block;
     }
-
-    .chat-container {
-        flex-direction: column;
-    }
-
-    .users {
-        width: 100%;
-        height: 120px;
-    }
-
-    .chat-box {
-        width: 100%;
-    }
 }
 </style>
-</head>
+{% endblock %}
 
-<body>
-
+{% block content %}
 <div class="sidebar" id="sidebar">
     <h2>🌾 AgriLink Farmer</h2>
     <a href="{% url 'farmer_dashboard' %}">Overview</a>
@@ -254,63 +227,71 @@ body {
 </div>
 
 <div class="main-content">
-    <div class="navbar">
+    <div class="dash-navbar">
         <button class="menu-btn" onclick="toggleSidebar()">☰</button>
         <h2>Messages</h2>
-        <div class="profile">👤 {{ user.get_full_name|default:user.username }}</div>
+        <div class="profile-box">👤 {{ user.get_full_name|default:user.username }}</div>
     </div>
 
-    {% if conversations %}
-        <div class="chat-container">
-            <!-- Users -->
-            <div class="users" id="userList">
-                {% for conv in conversations %}
-                    <div class="user {% if forloop.first %}active{% endif %}" onclick="selectUser({{ forloop.counter0 }})">
-                        <div class="user-name">{{ conv.customer.get_full_name|default:conv.customer.username }}</div>
-                        <div class="user-preview">{{ conv.last_message|truncatechars:30 }}</div>
+    <div class="messages-container">
+        <div class="messages-sidebar">
+            <div class="messages-search">
+                <input type="text" placeholder="Search conversations..." id="messageSearch" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+            </div>
+            <div class="conversations-list">
+                <!-- Filled by JS -->
+            </div>
+        </div>
+
+        <div class="messages-main">
+            <div class="no-conversation-selected">
+                <div class="empty-icon">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <h3>Select a conversation</h3>
+                <p>Choose a conversation from the sidebar to start messaging</p>
+            </div>
+            
+            <div class="message-thread" style="display: none;">
+                <div class="thread-header">
+                    <div class="thread-avatar"></div>
+                    <div class="thread-info">
+                        <h4 style="margin: 0; color: #333; font-size: 16px;"></h4>
+                        <p style="margin: 0; color: #666; font-size: 13px;"></p>
                     </div>
-                {% endfor %}
-            </div>
-
-            <!-- Chat -->
-            <div class="chat-box">
-                <div class="chat-header" id="chatHeader">
-                    {{ conversations.0.customer.get_full_name|default:conversations.0.customer.username }}
                 </div>
-                <div class="messages" id="chatArea">
-                    {% for msg in conversations.0.messages %}
-                        <div class="msg {% if msg.sender == user %}sent{% else %}received{% endif %}">
-                            {{ msg.content }}
+
+                <div class="messages-list" id="messagesList">
+                    <!-- Messages go here -->
+                </div>
+
+                <div class="message-compose">
+                    <form id="messageForm" onsubmit="sendMessage(event)" style="display: flex; gap: 10px;">
+                        {% csrf_token %}
+                        <input type="hidden" name="receiver_id" value="">
+                        <div class="compose-input" style="flex: 1; display: flex; gap: 10px;">
+                            <textarea name="content" placeholder="Type your message..." required style="flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 12px 15px; resize: none; height: 45px; font-family: inherit; font-size: 14px; line-height: 1.4; outline: none;"></textarea>
+                            <button type="submit" class="send-btn" style="background: #27ae60; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
+                                Send
+                            </button>
                         </div>
-                    {% endfor %}
-                </div>
-
-                <div class="input-box">
-                    <input type="text" id="msgInput" placeholder="Type a message...">
-                    <button onclick="sendMessage()">Send</button>
+                    </form>
                 </div>
             </div>
         </div>
-    {% else %}
-        <div class="empty-state">
-            <p>No messages yet.</p>
-        </div>
-    {% endif %}
+    </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
+<script src="{% static 'js/customer_messages.js' %}"></script>
 <script>
 function toggleSidebar() {
     document.getElementById("sidebar").classList.toggle("active");
 }
 
-function sendMessage() {
-    const input = document.getElementById("msgInput");
-    if(input.value.trim() !== "") {
-        alert("Message sent: " + input.value);
-        input.value = "";
-    }
+function ensureThreadVisible() {
+    document.querySelector('.messages-main').classList.add('thread-visible');
 }
 </script>
-
-</body>
-</html>
+{% endblock %}
