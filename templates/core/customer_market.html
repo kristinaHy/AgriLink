@@ -94,7 +94,7 @@
             <p class="result-meta" id="marketResultsText">Showing {{ products|length }} products</p>
             <div class="market-grid" id="marketGrid">
                 {% for product in products %}
-                <article class="market-card" data-id="{{ product.id }}" data-name="{{ product.name }}" data-category="{{ product.category.name|lower }}">
+                <article class="market-card" data-id="{{ product.id }}" data-name="{{ product.name }}" data-category="{{ product.category.name|lower }}" data-detail-url="{% url 'product_detail' product.pk %}">
                         {% if product.image %}
                         <img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy" referrerpolicy="no-referrer">
                         {% else %}
@@ -204,6 +204,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 const card = wishlistBtn.closest('.market-card');
                 handleWishlistAction(card);
                 return;
+            }
+
+            const card = e.target.closest('.market-card');
+            if (card) {
+                const detailUrl = card.dataset.detailUrl;
+                if (detailUrl) {
+                    window.location.href = detailUrl;
+                }
             }
         });
     }
