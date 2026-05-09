@@ -1,0 +1,323 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Order Successful - AgriLink{% endblock %}
+
+{% block content %}
+<div class="order-success-container">
+    <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center py-5">
+        <div class="row justify-content-center w-100">
+            <div class="col-lg-6 col-md-8 col-sm-10">
+                <div class="success-card">
+                    <!-- Animated Success Icon -->
+                    <div class="text-center mb-4">
+                        <div class="success-icon-wrapper">
+                            <i class="fas fa-check-circle success-icon"></i>
+                        </div>
+                        <h1 class="success-title mt-3">Order Confirmed!</h1>
+                        <p class="success-subtitle">Your fresh produce is on its way</p>
+                        <div class="order-id-badge">
+                            Order #{{ order.order_number }}
+                        </div>
+                    </div>
+
+                    <!-- Order Summary Card -->
+                    <div class="order-summary-card">
+                        <h5 class="card-title">
+                            <i class="fas fa-shopping-bag me-2"></i>
+                            Order Summary
+                        </h5>
+                        <div class="order-items">
+                            {% for item in order.items.all %}
+                                <div class="order-item">
+                                    <div class="item-info">
+                                        <span class="item-name">{{ item.product.name }}</span>
+                                        <span class="item-quantity">×{{ item.quantity }}</span>
+                                    </div>
+                                    <div class="item-price">Rs. {{ item.price_at_purchase }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <hr class="divider">
+                        <div class="order-total">
+                            <div class="total-row">
+                                <span class="total-label">Total Amount</span>
+                                <span class="total-amount">Rs. {{ order.total_amount }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status Card -->
+                    <div class="status-card">
+                        <div class="status-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="status-content">
+                            <h6 class="status-title">Order Status</h6>
+                            <p class="status-text">Awaiting Farmer Approval</p>
+                            <small class="status-note">We'll notify you once your order is confirmed</small>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <a href="{% url 'customer_market' %}" class="btn btn-primary btn-lg w-100 mb-3">
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            Continue Shopping
+                        </a>
+                        <a href="{% url 'order_detail' order.pk %}" class="btn btn-outline-primary btn-lg w-100">
+                            <i class="fas fa-eye me-2"></i>
+                            View Order Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.order-success-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.success-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.success-icon-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.success-icon {
+    font-size: 4rem;
+    color: #28a745;
+    animation: checkmark 0.8s ease-in-out;
+}
+
+@keyframes checkmark {
+    0% {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.success-title {
+    color: #2c3e50;
+    font-weight: 700;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.success-subtitle {
+    color: #6c757d;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.order-id-badge {
+    display: inline-block;
+    background: linear-gradient(45deg, #28a745, #20c997);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.order-summary-card {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+    border: 1px solid #e9ecef;
+}
+
+.card-title {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.order-items {
+    margin-bottom: 1rem;
+}
+
+.order-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.order-item:last-child {
+    border-bottom: none;
+}
+
+.item-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.item-name {
+    font-weight: 600;
+    color: #343a40;
+    margin-bottom: 0.25rem;
+}
+
+.item-quantity {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.item-price {
+    font-weight: 600;
+    color: #28a745;
+}
+
+.divider {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #dee2e6, transparent);
+    margin: 1rem 0;
+}
+
+.order-total {
+    background: white;
+    border-radius: 10px;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.total-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.total-amount {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #28a745;
+}
+
+.status-card {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+    border: 1px solid #ffeaa7;
+}
+
+.status-icon {
+    background: #ffc107;
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-right: 1rem;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+}
+
+.status-content h6 {
+    margin: 0;
+    font-weight: 600;
+    color: #856404;
+}
+
+.status-content p {
+    margin: 0.25rem 0;
+    color: #856404;
+}
+
+.status-note {
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.action-buttons .btn {
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 2px solid;
+}
+
+.action-buttons .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
+}
+
+.action-buttons .btn-primary {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    border-color: #007bff;
+}
+
+.action-buttons .btn-outline-primary {
+    color: #007bff;
+    border-color: #007bff;
+}
+
+.action-buttons .btn-outline-primary:hover {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    color: white;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .success-card {
+        padding: 1.5rem;
+        margin: 1rem;
+    }
+    
+    .success-title {
+        font-size: 1.5rem;
+    }
+    
+    .success-icon {
+        font-size: 3rem;
+    }
+}
+</style>
+{% endblock %}

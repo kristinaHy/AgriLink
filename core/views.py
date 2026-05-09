@@ -10,6 +10,8 @@ from .models import Product, Category, User, Order, Review, Cart, CartItem, Mess
 from django.utils import timezone
 import json
 from .forms import UserRegistrationForm, UserLoginForm, ProductForm, ReviewForm, MessageForm
+import uuid
+
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.http import JsonResponse
 from django.middleware.csrf import get_token
@@ -923,6 +925,16 @@ class FarmerOrderListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         ).distinct().order_by('-created_at')
 
 
+class OrderSuccessView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    model = Order
+    template_name = 'core/order_success.html'
+    context_object_name = 'order'
+
+    def test_func(self):
+        order = self.get_object()
+        return self.request.user.role == 'customer' and order.customer == self.request.user
+
+
 class OrderDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
     model = Order
     template_name = 'core/order_detail.html'
@@ -981,7 +993,8 @@ class CheckoutView(LoginRequiredMixin, UserPassesTestMixin, View):
 
         order = Order.objects.create(
             customer=request.user,
-            order_number=f'AGRI{timezone.now().strftime("%Y%m%d%H%M%S%f")[:10]}',
+            order_number=f'AGRI-{timezone.now().strftime("%Y%m%d%H%M")}-{str(uuid.uuid4())[:8].upper()}',
+
             total_amount=total_payable,
             shipping_address=request.POST['shipping_address'],
             shipping_city=request.POST['shipping_city'],
@@ -1022,7 +1035,8 @@ class CheckoutView(LoginRequiredMixin, UserPassesTestMixin, View):
             )
             
         messages.success(request, 'Order placed successfully! Please wait for farmer approval before payment.')
-        return redirect('order_detail', pk=order.pk)
+        return redirect('order_success', pk=order.pk)
+
 
 
 class OrderUpdateStatusView(LoginRequiredMixin, UserPassesTestMixin, View):

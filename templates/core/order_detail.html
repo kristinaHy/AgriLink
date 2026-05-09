@@ -1,96 +1,228 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load custom_filters %}
 
 {% block title %}Order #{{ order.order_number }} - AgriLink{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Inline styles for quick overrides or additions */
+    .breadcrumb-item a { color: var(--primary-green); text-decoration: none; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="agri-container">
-    <h1>Order #{{ order.order_number }}</h1>
-    <div class="status-summary mb-4">
-        <p><strong>Date:</strong> {{ order.created_at|date }}</p>
-        <p><strong>Current Status:</strong> <span class="badge {{ order.status }}">{{ order.get_status_display }}</span></p>
-        <p><strong>Payment Status:</strong> {{ order.get_payment_status_display }}</p>
-    </div>
-    
-    <div class="row">
-        <div class="col-md-6">
-            <h3>Shipping Details</h3>
-            <p>{{ order.shipping_address }}</p>
-            <p>{{ order.shipping_city }}, {{ order.shipping_district }}</p>
-            {% if order.estimated_delivery %}
-                <p><strong>Estimated Delivery:</strong> {{ order.estimated_delivery }}</p>
+<div class="agri-container py-5">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            {% if user.role == 'customer' %}
+                <li class="breadcrumb-item"><a href="{% url 'customer_dashboard' %}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'customer_orders' %}">My Orders</a></li>
+            {% else %}
+                <li class="breadcrumb-item"><a href="{% url 'farmer_dashboard' %}">Dashboard</a></li>
             {% endif %}
-        </div>
-        <div class="col-md-6">
-            <h3>Order Items</h3>
-            <ul class="list-group">
-                {% for item in order.items.all %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        {{ item.product.name }} ({{ item.quantity }} {{ item.product.unit }})
-                        <span>Rs. {{ item.price_at_purchase }}</span>
-                    </li>
-                {% endfor %}
-            </ul>
-            <div class="mt-3 p-3 bg-light border rounded">
-                <p><strong>Original Total:</strong> Rs. {{ order.total_amount }}</p>
-                {% if order.negotiated_price %}
-                    <p class="text-success"><strong>Negotiated Total:</strong> Rs. {{ order.negotiated_price }}</p>
-                {% endif %}
-                <p class="h4"><strong>Final Amount:</strong> Rs. {{ order.negotiated_price|default:order.total_amount }}</p>
+            <li class="breadcrumb-item active">Order #{{ order.order_number }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header Section -->
+    <div class="order-detail-header mb-5">
+        <div class="order-header-content d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1 class="h2 mb-2">Order #{{ order.order_number }}</h1>
+                <p class="mb-0 opacity-75">Placed on {{ order.created_at|date:"F j, Y" }} at {{ order.created_at|time }}</p>
+            </div>
+            <div class="text-md-end">
+                <span class="status-badge-modern {{ order.status }} mb-2">{{ order.get_status_display }}</span>
+                <div class="h3 mb-0">Rs. {{ order.negotiated_price|default:order.total_amount }}</div>
             </div>
         </div>
     </div>
 
-    {% if user.role == 'customer' and order.status == 'approved' and order.payment_status == 'pending' %}
-        <div class="payment-section mt-5 p-4 border rounded shadow-sm">
-            <h3>💳 Complete Your Payment</h3>
-            <p>Your order has been approved! You can now proceed with the payment of <strong>Rs. {{ order.negotiated_price|default:order.total_amount }}</strong>.</p>
-            
-            <div class="d-flex flex-wrap gap-3 mt-3">
-                <!-- eSewa Payment Form (Sandbox) -->
-                <form action="https://uat.esewa.com.np/epay/main" method="POST">
-                    <input value="{{ order.negotiated_price|default:order.total_amount }}" name="tAmt" type="hidden">
-                    <input value="{{ order.negotiated_price|default:order.total_amount }}" name="amt" type="hidden">
-                    <input value="0" name="txAmt" type="hidden">
-                    <input value="0" name="psc" type="hidden">
-                    <input value="0" name="pdc" type="hidden">
-                    <input value="EPAYTEST" name="scd" type="hidden">
-                    <input value="{{ order.order_number }}" name="pid" type="hidden">
-                    <input value="http://127.0.0.1:8000/payment/esewa/success/" name="su" type="hidden">
-                    <input value="http://127.0.0.1:8000/payment/esewa/failure/" name="fu" type="hidden">
-                    <button type="submit" class="btn btn-success" style="background-color: #60bb46; border-color: #60bb46; padding: 12px 24px;">
-                        <i class="fas fa-wallet"></i> Pay with eSewa
-                    </button>
-                </form>
+    <!-- Progress Timeline -->
+    <div class="order-timeline">
+        <div class="timeline-step completed">
+            <div class="step-icon"><i class="fas fa-shopping-cart"></i></div>
+            <div class="step-label">Placed</div>
+        </div>
+        
+        <div class="timeline-step {% if order.status != 'pending' and order.status != 'farmer_reviewing' and order.status != 'negotiating' %}completed{% elif order.status == 'farmer_reviewing' or order.status == 'negotiating' %}active{% endif %}">
+            <div class="step-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="step-label">Confirmed</div>
+        </div>
 
-                <!-- Khalti Payment Button (Mock) -->
-                <button onclick="payWithKhalti('{{ order.id }}', '{{ order.negotiated_price|default:order.total_amount }}')" class="btn btn-primary" style="background-color: #5c2d91; border-color: #5c2d91; padding: 12px 24px;">
-                    <i class="fas fa-mobile-alt"></i> Pay with Khalti
-                </button>
+        <div class="timeline-step {% if order.payment_status == 'paid' %}completed{% elif order.status == 'approved' and order.payment_status != 'paid' %}active{% endif %}">
+            <div class="step-icon"><i class="fas fa-credit-card"></i></div>
+            <div class="step-label">Paid</div>
+        </div>
+
+        <div class="timeline-step {% if order.status == 'dispatched' or order.status == 'out_for_delivery' %}active{% elif order.status == 'delivered' %}completed{% endif %}">
+            <div class="step-icon"><i class="fas fa-truck"></i></div>
+            <div class="step-label">Shipped</div>
+        </div>
+
+        <div class="timeline-step {% if order.status == 'delivered' %}completed{% endif %}">
+            <div class="step-icon"><i class="fas fa-home"></i></div>
+            <div class="step-label">Delivered</div>
+        </div>
+    </div>
+
+    <div class="order-main-grid mt-5">
+        <!-- Left Column: Items and Details -->
+        <div class="order-left-col">
+            <div class="order-items-card mb-4">
+                <h3 class="h5 mb-4 border-bottom pb-3"><i class="fas fa-box-open me-2 text-success"></i> Order Items</h3>
+                <div class="item-list">
+                    {% for item in order.items.all %}
+                        <div class="item-row">
+                            <div class="item-image-wrapper">
+                                {% if item.product.image %}
+                                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="item-image">
+                                {% else %}
+                                    <div class="item-image d-flex align-items-center justify-content-center bg-light text-muted">
+                                        <i class="fas fa-leaf fa-2x"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="item-details">
+                                <div class="item-name">{{ item.product.name }}</div>
+                                <div class="item-meta">
+                                    <span class="me-3"><i class="fas fa-tag me-1"></i> {{ item.product.category.name }}</span>
+                                    <span><i class="fas fa-balance-scale me-1"></i> Qty: {{ item.quantity }} {{ item.product.unit }}</span>
+                                </div>
+                                <div class="item-meta mt-1">
+                                    <small><i class="fas fa-user-tie me-1"></i> Farmer: {{ item.product.farmer.get_full_name|default:item.product.farmer.username }}</small>
+                                </div>
+                            </div>
+                            <div class="item-price-info">
+                                <span class="item-price">Rs. {{ item.price_at_purchase }}</span>
+                                <small class="text-muted">per {{ item.product.unit }}</small>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Shipping Information -->
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header bg-white py-3">
+                    <h3 class="h5 mb-0"><i class="fas fa-map-marker-alt me-2 text-danger"></i> Delivery Details</h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <h6 class="text-muted mb-2">Shipping Address</h6>
+                            <p class="mb-1 fw-bold">{{ order.customer.get_full_name }}</p>
+                            <p class="mb-1 text-secondary">{{ order.shipping_address }}</p>
+                            <p class="mb-0 text-secondary">{{ order.shipping_city }}, {{ order.shipping_district }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">Estimated Delivery</h6>
+                            {% if order.estimated_delivery %}
+                                <p class="h5 text-success fw-bold"><i class="fas fa-calendar-alt me-2"></i> {{ order.estimated_delivery|date:"F j, Y" }}</p>
+                            {% else %}
+                                <p class="text-secondary italic">Awaiting farmer confirmation...</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    {% elif order.status == 'farmer_reviewing' or order.status == 'pending' %}
-        <div class="alert alert-warning mt-4">
-            <i class="fas fa-clock"></i> Awaiting Farmer Approval. You will be able to pay once the farmer confirms your order.
+
+        <!-- Right Column: Summary and Actions -->
+        <div class="order-right-col">
+            <div class="order-summary-card">
+                <h3 class="h5 mb-4 border-bottom pb-3">Order Summary</h3>
+                
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span>Rs. {{ order.total_amount|add:"-50" }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Delivery Fee</span>
+                    <span>Rs. 50</span>
+                </div>
+                
+                {% if order.negotiated_price %}
+                    <div class="summary-row text-success">
+                        <span>Negotiated Discount</span>
+                        <span>- Rs. {{ order.total_amount|add:"-order.negotiated_price" }}</span>
+                    </div>
+                {% endif %}
+
+                <div class="summary-row summary-total">
+                    <span>Total</span>
+                    <span class="text-success">Rs. {{ order.negotiated_price|default:order.total_amount }}</span>
+                </div>
+
+                <div class="mt-4 pt-3 border-top">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted">Payment Status</span>
+                        <span class="badge {% if order.payment_status == 'paid' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                            {{ order.get_payment_status_display }}
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Method</span>
+                        <span class="fw-bold">{{ order.payment_method|default:"Not Selected" }}</span>
+                    </div>
+                </div>
+
+                <!-- Action Section -->
+                {% if user.role == 'customer' and order.status == 'approved' and order.payment_status == 'pending' %}
+                    <div class="payment-section-modern mt-4">
+                        <p class="small mb-3"><strong>Action Required:</strong> Please complete your payment to start the delivery process.</p>
+                        
+                        <form action="https://uat.esewa.com.np/epay/main" method="POST" class="mb-2">
+                            <input value="{{ order.negotiated_price|default:order.total_amount }}" name="tAmt" type="hidden">
+                            <input value="{{ order.negotiated_price|default:order.total_amount }}" name="amt" type="hidden">
+                            <input value="0" name="txAmt" type="hidden">
+                            <input value="0" name="psc" type="hidden">
+                            <input value="0" name="pdc" type="hidden">
+                            <input value="EPAYTEST" name="scd" type="hidden">
+                            <input value="{{ order.order_number }}" name="pid" type="hidden">
+                            <input value="http://127.0.0.1:8000/payment/esewa/success/" name="su" type="hidden">
+                            <input value="http://127.0.0.1:8000/payment/esewa/failure/" name="fu" type="hidden">
+                            <button type="submit" class="payment-btn-modern btn-esewa-modern">
+                                <i class="fas fa-wallet"></i> Pay with eSewa
+                            </button>
+                        </form>
+
+                        <button onclick="payWithKhalti('{{ order.id }}', '{{ order.negotiated_price|default:order.total_amount }}')" class="payment-btn-modern btn-khalti-modern">
+                            <i class="fas fa-mobile-alt"></i> Pay with Khalti
+                        </button>
+                    </div>
+                {% elif order.status == 'farmer_reviewing' or order.status == 'pending' %}
+                    <div class="alert alert-warning mt-4 p-3 border-0 rounded-3">
+                        <i class="fas fa-clock me-2"></i> <strong>Awaiting Approval</strong>
+                        <p class="small mb-0 mt-2">The farmer is currently reviewing your order items and stock availability.</p>
+                    </div>
+                {% elif order.status == 'negotiating' %}
+                    <div class="alert alert-info mt-4 p-3 border-0 rounded-3">
+                        <i class="fas fa-comments me-2"></i> <strong>Price Negotiation</strong>
+                        <p class="small mb-2 mt-2">A price update has been proposed. Please check your messages.</p>
+                        <a href="{% url 'customer_messages' %}" class="btn btn-info btn-sm w-100 text-white fw-bold">Open Chat</a>
+                    </div>
+                {% endif %}
+                
+                <div class="mt-4">
+                    <a href="{% url 'customer_messages' %}" class="btn btn-outline-success w-100 py-2">
+                        <i class="fas fa-comment-dots me-2"></i> Contact Support
+                    </a>
+                </div>
+            </div>
         </div>
-    {% elif order.status == 'negotiating' %}
-        <div class="alert alert-info mt-4">
-            <i class="fas fa-comments"></i> <strong>Negotiation in Progress:</strong> The farmer has proposed a new price or is reviewing your request. 
-            Check your <a href="{% url 'customer_messages' %}" class="alert-link">Messages</a> to discuss.
-        </div>
-    {% endif %}
+    </div>
 </div>
 
 <script>
 function payWithKhalti(orderId, amount) {
-    // In a real implementation, you'd initialize Khalti Checkout here.
-    // For this "fake credentials" version, we'll prompt for a mock success.
-    
     if (confirm('Khalti Checkout: Pay Rs. ' + amount + ' for Order #' + orderId + '? (Using Mock Payment)')) {
-        // Send to backend
         const formData = new FormData();
         formData.append('token', 'mock_token');
-        formData.append('amount', amount * 100); // Khalti expects paisa
+        formData.append('amount', amount * 100);
         formData.append('order_id', orderId);
         formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 
