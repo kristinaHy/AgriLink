@@ -89,8 +89,8 @@
                     {% if user.role == 'customer' %}
                         <!-- Customers: show price + button -->
                         <p class="price-label">Rs. {{ product.price_min }} - {{ product.price_max }} / {{ product.unit }}</p>
-                        <a href="{% url 'product_detail' product.pk %}" class="btn btn-farmers">
-                            View Product Details →
+                        <a href="{% url 'customer_market' %}?category={{ product.category.name|urlencode }}" class="btn btn-farmers">
+                            Browse Market →
                         </a>
                     {% else %}
                         <!-- Farmers/Admins: show price only -->

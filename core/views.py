@@ -451,6 +451,14 @@ class CustomerMarketView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         products = Product.objects.filter(
             status='available'
         ).select_related('farmer', 'category').order_by('-created_at')
+
+        category_filter = self.request.GET.get('category', '').strip()
+        if category_filter:
+            products = products.filter(category__name__iexact=category_filter)
+            context['selected_category'] = category_filter
+        else:
+            context['selected_category'] = ''
+
         context['products'] = products
         
         # Wishlist data

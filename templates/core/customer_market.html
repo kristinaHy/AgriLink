@@ -71,8 +71,14 @@
     <main class="main-content">
         <div class="top-bar">
             <div class="page-title">
-                <h1>Farmer's Market</h1>
-                <div class="page-subtitle">Fresh from Himalayan farms to your home</div>
+                <h1>{% if selected_category %}{{ selected_category }} Market{% else %}Farmer's Market{% endif %}</h1>
+                <div class="page-subtitle">
+                    {% if selected_category %}
+                        Browse fresh {{ selected_category }} produce from verified Nepali farmers
+                    {% else %}
+                        Fresh from Himalayan farms to your home
+                    {% endif %}
+                </div>
             </div>
             <div class="top-actions">
                 <div class="search-container">
