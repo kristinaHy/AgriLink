@@ -110,6 +110,7 @@
     display: flex;
     flex-direction: column;
     background: #fafafa;
+    min-height: 0;
 }
 
 .no-conversation-selected {
@@ -131,6 +132,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 0;
 }
 
 .thread-header {
@@ -313,10 +315,262 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/customer_messages.js' %}"></script>
 <script>
 function toggleSidebar() {
     document.getElementById("sidebar").classList.toggle("active");
 }
+
+// Messaging functionality
+let currentConversationId = null;
+let currentReceiverId = null;
+let messagePollInterval = null;
+
+// Start new conversation
+function startNewConversation(receiverId) {
+    currentReceiverId = receiverId;
+    loadConversation(receiverId);
+}
+
+// Load conversation
+function loadConversation(receiverId) {
+    fetch(`/api/messages/conversation/${receiverId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayConversation(data.conversation);
+                document.getElementById('messagesMain').classList.add('thread-visible');
+                document.getElementById('messageThread').style.display = 'flex';
+                document.getElementById('noConversationSelected').style.display = 'none';
+                
+                // Set receiver ID in form
+                document.querySelector('input[name="receiver_id"]').value = receiverId;
+                
+                // Start polling for new messages
+                startMessagePolling();
+            }
+        })
+        .catch(error => console.error('Error loading conversation:', error));
+}
+
+// Display conversation
+function displayConversation(conversation) {
+    const otherUser = conversation.other_user;
+    
+    // Update thread header
+    document.querySelector('.thread-avatar').textContent = otherUser.name.slice(0, 2).toUpperCase();
+    document.querySelector('.thread-avatar').style.backgroundColor = getRoleColor(otherUser.role);
+    document.querySelector('.thread-info h4').textContent = otherUser.name;
+    document.querySelector('.thread-info p').textContent = `${otherUser.role.charAt(0).toUpperCase() + otherUser.role.slice(1)} - ${otherUser.district || 'Nepal'}`;
+    
+    // Display messages
+    const messagesList = document.getElementById('messagesList');
+    messagesList.innerHTML = '';
+    
+    if (conversation.messages && conversation.messages.length > 0) {
+        conversation.messages.forEach(message => {
+            addMessageToChat(message);
+        });
+        scrollToBottom();
+    }
+}
+
+// Add message to chat
+function addMessageToChat(message) {
+    const messagesList = document.getElementById('messagesList');
+    const messageDiv = document.createElement('div');
+    const isSent = message.sender_id === {{ user.id }};
+    
+    messageDiv.className = `message-item ${isSent ? 'sent' : 'received'}`;
+    messageDiv.innerHTML = `
+        <div class="message-content">${message.content}</div>
+        <div class="message-time">${formatTime(message.created_at)}</div>
+    `;
+    
+    messagesList.appendChild(messageDiv);
+}
+
+// Send message
+function sendMessage(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const content = formData.get('content').trim();
+    
+    if (!content || !currentReceiverId) return;
+    
+    fetch('/api/messages/send/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({
+            receiver_id: currentReceiverId,
+            content: content
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Clear input
+            event.target.reset();
+            
+            // Add message to chat immediately
+            addMessageToChat({
+                sender_id: {{ user.id }},
+                content: content,
+                created_at: new Date().toISOString()
+            });
+            
+            scrollToBottom();
+        }
+    })
+    .catch(error => console.error('Error sending message:', error));
+}
+
+// Start message polling
+function startMessagePolling() {
+    if (messagePollInterval) {
+        clearInterval(messagePollInterval);
+    }
+    
+    messagePollInterval = setInterval(() => {
+        if (currentReceiverId) {
+            checkNewMessages();
+        }
+    }, 5000); // Check every 5 seconds
+}
+
+// Check for new messages
+function checkNewMessages() {
+    fetch(`/api/messages/conversation/${currentReceiverId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.conversation.messages) {
+                const messagesList = document.getElementById('messagesList');
+                const currentMessages = messagesList.children.length;
+                
+                if (data.conversation.messages.length > currentMessages) {
+                    // Add new messages
+                    for (let i = currentMessages; i < data.conversation.messages.length; i++) {
+                        addMessageToChat(data.conversation.messages[i]);
+                    }
+                    scrollToBottom();
+                }
+            }
+        })
+        .catch(error => console.error('Error checking messages:', error));
+}
+
+// Scroll to bottom
+function scrollToBottom() {
+    const messagesList = document.getElementById('messagesList');
+    messagesList.scrollTop = messagesList.scrollHeight;
+}
+
+// Format time
+function formatTime(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+// Get role color
+function getRoleColor(role) {
+    switch(role) {
+        case 'admin': return '#f44336';
+        case 'farmer': return '#4CAF50';
+        case 'customer': return '#2196F3';
+        default: return '#757575';
+    }
+}
+
+// Get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Load recent conversations on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadRecentConversations();
+});
+
+// Load recent conversations
+function loadRecentConversations() {
+    fetch('/api/messages/conversations/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.conversations) {
+                const recentDiv = document.getElementById('recentConversations');
+                recentDiv.innerHTML = '';
+                
+                data.conversations.forEach(conv => {
+                    const convItem = document.createElement('div');
+                    convItem.className = 'conversation-item';
+                    convItem.onclick = () => startNewConversation(conv.other_user.id);
+                    
+                    convItem.innerHTML = `
+                        <div class="conversation-avatar" style="background-color: ${getRoleColor(conv.other_user.role)};">
+                            ${conv.other_user.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div class="conversation-info">
+                            <div class="conversation-name">${conv.other_user.name}</div>
+                            <div class="conversation-preview">${conv.last_message.content_preview}</div>
+                        </div>
+                        <div class="conversation-time">${formatTime(conv.last_message.created_at)}</div>
+                        ${conv.unread_count > 0 ? '<div class="unread-indicator"></div>' : ''}
+                    `;
+                    
+                    recentDiv.appendChild(convItem);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading conversations:', error));
+}
+
+// Search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('messageSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            const conversations = document.querySelectorAll('.conversation-item');
+            
+            conversations.forEach(conv => {
+                const name = conv.querySelector('.conversation-name').textContent.toLowerCase();
+                const preview = conv.querySelector('.conversation-preview').textContent.toLowerCase();
+                
+                if (name.includes(query) || preview.includes(query)) {
+                    conv.style.display = 'flex';
+                } else {
+                    conv.style.display = 'none';
+                }
+            });
+        });
+    }
+});
+
+// Clean up polling when page is hidden
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        if (messagePollInterval) {
+            clearInterval(messagePollInterval);
+        }
+    } else {
+        if (currentReceiverId) {
+            startMessagePolling();
+        }
+    }
+});
 </script>
-{% endblock %}
+{% endblock %}

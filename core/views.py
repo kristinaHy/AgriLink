@@ -1277,16 +1277,27 @@ class AdminTransactionsView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
 
 
 class AdminCommunicationView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
-    template_name = "core/admin_communication_v2.html"
+    template_name = "core/admin_communication.html"
     
     def test_func(self):
         return self.request.user.is_staff or self.request.user.role == "admin"
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Get messages/communications
-        context['messages'] = Message.objects.all().order_by('-created_at')[:20]
+        user = self.request.user
+        
+        # Recent messages for sidebar
+        context['recent_messages'] = Message.objects.filter(
+            Q(sender=user) | Q(receiver=user)
+        ).select_related('sender', 'receiver').order_by('-created_at')[:10]
+        
+        # Available farmers and customers to chat with
+        context['available_farmers'] = User.objects.filter(role='farmer').order_by('username')
+        context['available_customers'] = User.objects.filter(role='customer').order_by('username')
+        
+        # Pending verifications count
         context['pending_count'] = User.objects.filter(role='farmer', is_verified=False).count()
+        
         return context
 
 

@@ -1,196 +1,600 @@
-git {% extends 'base.html' %}
+{% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Messages - AgriLink{% endblock %}
+{% block title %}Messages - Customer Dashboard{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/customer_dashboard.css' %}">
+<style>
+:root {
+    --primary: #2196F3;
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --text: #333;
+    --gray: #888;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    height: calc(100vh - 70px);
+    background: #111;
+    color: white;
+    position: fixed;
+    top: 70px; /* Below navbar */
+    padding: 20px;
+    z-index: 1000;
+}
+
+.sidebar h2 {
+    margin-bottom: 30px;
+    color: var(--primary);
+    font-size: 24px;
+}
+
+.sidebar a {
+    display: block;
+    color: #ccc;
+    text-decoration: none;
+    margin: 15px 0;
+    padding: 10px;
+    border-radius: 8px;
+    transition: 0.2s;
+}
+
+.sidebar a:hover,
+.sidebar a.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* Main */
+.main-content {
+    margin-left: 250px;
+    width: calc(100% - 250px);
+    padding: 20px;
+}
+
+/* Navbar inside dashboard */
+.dash-navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.menu-btn {
+    display: none;
+    font-size: 22px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: #333;
+}
+
+.profile-box {
+    background: var(--card);
+    padding: 8px 15px;
+    border-radius: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* Chat Layout */
+.messages-container {
+    display: flex;
+    height: calc(100vh - 170px); /* Adjusted for navbar */
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.messages-sidebar {
+    width: 300px;
+    border-right: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+}
+
+.messages-search {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.conversations-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.messages-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #fafafa;
+    min-height: 0;
+}
+
+.no-conversation-selected {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+}
+
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    color: #ddd;
+}
+
+.message-thread {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.thread-header {
+    padding: 20px;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.thread-avatar {
+    width: 45px;
+    height: 45px;
+    background: #e3f2fd;
+    color: #1976d2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.messages-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.message-compose {
+    padding: 20px;
+    background: #fff;
+    border-top: 1px solid #eee;
+    display: block !important;
+    visibility: visible !important;
+}
+
+.conversation-item { padding: 15px; display: flex; gap: 12px; cursor: pointer; border-bottom: 1px solid #eee; position: relative; transition: background 0.2s; }
+.conversation-item:hover { background: #f9f9f9; }
+.conversation-item.active { background: #e3f2fd; }
+.conversation-avatar { width: 40px; height: 40px; background: #eee; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #555; }
+.conversation-info { flex: 1; overflow: hidden; }
+.conversation-name { font-weight: 600; color: #333; margin-bottom: 3px; font-size: 14px; }
+.conversation-preview { color: #666; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conversation-time { position: absolute; right: 15px; top: 15px; font-size: 11px; color: #999; }
+.unread-indicator { position: absolute; right: 15px; top: 35px; width: 8px; height: 8px; background: #e74c3c; border-radius: 50%; }
+
+.message-item { max-width: 70%; padding: 12px 16px; border-radius: 15px; position: relative; clear: both; }
+.message-item.sent { background: #2196F3; color: white; float: right; border-bottom-right-radius: 4px; align-self: flex-end; }
+.message-item.received { background: #fff; border: 1px solid #eee; color: #333; float: left; border-bottom-left-radius: 4px; align-self: flex-start; }
+.message-time { font-size: 11px; margin-top: 5px; opacity: 0.8; text-align: right; }
+.message-item.received .message-time { color: #888; }
+.message-item.sent .message-time { color: rgba(255,255,255,0.8); }
+
+.thread-visible .no-conversation-selected { display: none !important; }
+.thread-visible .message-thread { display: flex !important; }
+
+/* Responsive */
+@media(max-width: 768px) {
+    .sidebar {
+        left: -250px;
+        top: 0;
+        height: 100vh;
+    }
+
+    .sidebar.active {
+        left: 0;
+    }
+
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .menu-btn {
+        display: block;
+    }
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<header class="header">
-    <div class="header-left">
-        <div class="logo">
-            <img src="https://www.bing.com/th/id/OIP.Ra1raSNjJix62zGEonbLSwHaHa?w=195&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2" alt="AS">
-            <span id="dashboardUsername">{{ user.get_full_name|default:user.username }}</span>
-        </div>
-    </div>
-    <div class="header-right">
-        <div class="user-info">
-            <div class="profile-pic">{{ user.get_full_name|default:user.username|slice:":2"|upper }}</div>
-            <div class="username">{{ user.get_full_name|default:user.username }}</div>
-            <div class="user-status">Customer account - {{ user.district|default:"Nepal" }}</div>
-        </div>
-        <div class="header-actions">
-            <div class="role-chip">Customer</div>
-            <button class="logout-btn" onclick="location.href='{% url 'logout' %}'">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </button>
-        </div>
-    </div>
-</header>
-
-<div class="main-container">
-    <aside class="sidebar">
-        <nav class="sidebar-nav">
-            <div class="sidebar-user-card">
-                <div class="sidebar-user-avatar">{{ user.get_full_name|default:user.username|slice:":2"|upper }}</div>
-                <div class="sidebar-user-meta">
-                    <div class="sidebar-user-name">{{ user.get_full_name|default:user.username }}</div>
-                    <div class="sidebar-user-sub">Customer - {{ user.district|default:"Nepal" }}</div>
-                </div>
-            </div>
-            <a href="{% url 'customer_dashboard' %}" class="nav-item">
-                <i class="fas fa-chart-line"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="{% url 'customer_market' %}" class="nav-item">
-                <i class="fas fa-shopping-bag"></i>
-                <span>Farmers Market</span>
-            </a>
-            <a href="{% url 'customer_orders' %}" class="nav-item">
-                <i class="fas fa-shopping-cart"></i>
-                <span>My Orders</span>
-                {% if orders %}
-                <span class="nav-badge">{{ orders|length }}</span>
-                {% endif %}
-            </a>
-            <a href="{% url 'customer_cart' %}" class="nav-item">
-                <i class="fas fa-cart-plus"></i>
-                <span>Cart</span>
-                {% if cart_count %}
-                <span class="nav-badge">{{ cart_count }}</span>
-                {% endif %}
-            </a>
-            <a href="{% url 'customer_wishlist' %}" class="nav-item">
-                <i class="fas fa-heart"></i>
-                <span>Wishlist</span>
-                {% if wishlist_count %}
-                <span class="nav-badge">{{ wishlist_count }}</span>
-                {% endif %}
-            </a>
-            <a href="{% url 'customer_messages' %}" class="nav-item active">
-                <i class="fas fa-envelope"></i>
-                <span>Messages</span>
-                {% if unread_messages %}
-                <span class="nav-badge">{{ unread_messages }}</span>
-                {% endif %}
-            </a>
-            <a href="{% url 'customer_profile' %}" class="nav-item">
-                <i class="fas fa-user"></i>
-                <span>Profile</span>
-            </a>
-        </nav>
-    </aside>
-
-    <main class="main-content">
-        <div class="content-header">
-            <h1>Messages</h1>
-            <p>Communicate with farmers and support</p>
-        </div>
-
-        <div class="messages-container">
-            <div class="messages-sidebar">
-                <div class="messages-search">
-                    <input type="text" placeholder="Search conversations..." id="messageSearch">
-                </div>
-                <div class="conversations-list" id="conversationsList">
-                    <h5 style="padding: 10px 15px; color: #888; font-size: 0.8rem; text-transform: uppercase;">Recent</h5>
-                    <div id="recentConversations">
-                        {% for message in recent_messages %}
-                    <div class="conversation-item{% if not message.is_read %} unread{% endif %}" onclick="openConversation({{ message.sender.id }})">
-                        <div class="conversation-avatar">
-                            {{ message.sender.get_full_name|default:message.sender.username|slice:":2"|upper }}
-                        </div>
-                        <div class="conversation-info">
-                            <div class="conversation-name">{{ message.sender.get_full_name|default:message.sender.username }}</div>
-                            <div class="conversation-preview">{{ message.content|truncatechars:30 }}</div>
-                            <div class="conversation-time">{{ message.created_at|timesince }}</div>
-                        </div>
-                        {% if not message.is_read %}
-                        <div class="unread-indicator"></div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
-
-                    <h5 style="padding: 10px 15px; color: #888; font-size: 0.8rem; text-transform: uppercase; border-top: 1px solid #eee; margin-top: 10px;">Support (Admin)</h5>
-                    {% for admin in available_admins %}
-                    <div class="conversation-item" onclick="startNewConversation({{ admin.id }})">
-                        <div class="conversation-avatar" style="background-color: #f44336;">
-                            {{ admin.get_full_name|default:admin.username|slice:":2"|upper }}
-                        </div>
-                        <div class="conversation-info">
-                            <div class="conversation-name">{{ admin.get_full_name|default:admin.username }}</div>
-                            <div class="conversation-preview">AgriLink Support</div>
-                        </div>
-                    </div>
-                    {% endfor %}
-
-                    <h5 style="padding: 10px 15px; color: #888; font-size: 0.8rem; text-transform: uppercase; border-top: 1px solid #eee; margin-top: 10px;">Farmers</h5>
-                    {% for farmer in available_farmers %}
-                    <div class="conversation-item" onclick="startNewConversation({{ farmer.id }})">
-                        <div class="conversation-avatar" style="background-color: #4CAF50;">
-                            {{ farmer.get_full_name|default:farmer.username|slice:":2"|upper }}
-                        </div>
-                        <div class="conversation-info">
-                            <div class="conversation-name">{{ farmer.get_full_name|default:farmer.username }}</div>
-                            <div class="conversation-preview">{{ farmer.district|default:"Verified Farmer" }}</div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <div class="messages-main" id="messagesMain">
-                <div id="noConversationSelected" class="no-conversation-selected" {% if selected_conversation %}style="display: none;"{% endif %}>
-                    <div class="empty-icon">
-                        <i class="fas fa-envelope"></i>
-                    </div>
-                    <h3>Select a conversation</h3>
-                    <p>Choose a farmer or admin from the list to start messaging</p>
-                </div>
-
-                <div id="messageThread" class="message-thread" {% if not selected_conversation %}style="display: none;"{% endif %}>
-                    <div class="thread-header">
-                        <div class="thread-avatar">
-                            {% if selected_conversation %}{{ selected_conversation.other_user.get_full_name|default:selected_conversation.other_user.username|slice:":2"|upper }}{% endif %}
-                        </div>
-                        <div class="thread-info">
-                            <h4>{% if selected_conversation %}{{ selected_conversation.other_user.get_full_name|default:selected_conversation.other_user.username }}{% endif %}</h4>
-                            <p>{% if selected_conversation %}{{ selected_conversation.other_user.role|title }}{% endif %}</p>
-                        </div>
-                    </div>
-
-                    <div class="messages-list" id="messagesList">
-                        {% if selected_conversation %}
-                            {% for message in selected_conversation.messages %}
-                            <div class="message-item{% if message.sender == user %} sent{% else %} received{% endif %}">
-                                <div class="message-content">{{ message.content }}</div>
-                                <div class="message-time">{{ message.created_at|date:"M d, H:i" }}</div>
-                            </div>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
-
-                    <div class="message-compose">
-                        <form id="messageForm" onsubmit="sendMessage(event)">
-                            {% csrf_token %}
-                            <input type="hidden" name="receiver_id" value="{% if selected_conversation %}{{ selected_conversation.other_user.id }}{% endif %}">
-                            <div class="compose-input">
-                                <textarea name="content" placeholder="Type your message..." required></textarea>
-                                <button type="submit" class="send-btn">
-                                    <i class="fas fa-paper-plane"></i>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
+<div class="sidebar" id="sidebar">
+    <h2>🛒 AgriLink Customer</h2>
+    <a href="{% url 'customer_dashboard' %}">Overview</a>
+    <a href="{% url 'customer_market' %}">Farmers Market</a>
+    <a href="{% url 'my_orders' %}">My Orders</a>
+    <a href="{% url 'cart' %}">Cart</a>
+    <a href="{% url 'customer_wishlist' %}">Wishlist</a>
+    <a href="{% url 'customer_messages' %}" class="active">Messages</a>
+    <a href="{% url 'customer_profile' %}">Profile</a>
+    <a href="{% url 'logout' %}">Logout</a>
 </div>
 
-{% block extra_js %}
-<script src="{% static 'js/customer_messages.js' %}"></script>
+<div class="main-content">
+    <div class="dash-navbar">
+        <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+        <h2>Messages</h2>
+        <div class="profile-box">👤 {{ user.get_full_name|default:user.username }}</div>
+    </div>
+
+    <div class="messages-container">
+        <div class="messages-sidebar">
+            <div class="messages-search">
+                <input type="text" placeholder="Search conversations..." id="messageSearch" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
+            </div>
+            <div class="conversations-list" id="conversationsList">
+                <h5 style="padding: 10px 15px; color: #888; font-size: 0.8rem; text-transform: uppercase;">Recent</h5>
+                <div id="recentConversations">
+                    <!-- Filled by JS -->
+                </div>
+
+                <h5 style="padding: 10px 15px; color: #888; font-size: 0.8rem; text-transform: uppercase; border-top: 1px solid #eee; margin-top: 10px;">Support (Admin)</h5>
+                {% for admin in available_admins %}
+                <div class="conversation-item" onclick="startNewConversation({{ admin.id }})">
+                    <div class="conversation-avatar" style="background-color: #f44336;">
+                        {{ admin.get_full_name|default:admin.username|slice:":2"|upper }}
+                    </div>
+                    <div class="conversation-info">
+                        <div class="conversation-name">{{ admin.get_full_name|default:admin.username }}</div>
+                        <div class="conversation-preview">AgriLink Support</div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <h5 style="padding: 10px 15px; color: #888; font-size: 0.8rem; text-transform: uppercase; border-top: 1px solid #eee; margin-top: 10px;">Farmers</h5>
+                {% for farmer in available_farmers %}
+                <div class="conversation-item" onclick="startNewConversation({{ farmer.id }})">
+                    <div class="conversation-avatar" style="background-color: #4CAF50;">
+                        {{ farmer.get_full_name|default:farmer.username|slice:":2"|upper }}
+                    </div>
+                    <div class="conversation-info">
+                        <div class="conversation-name">{{ farmer.get_full_name|default:farmer.username }}</div>
+                        <div class="conversation-preview">Farmer - {{ farmer.district|default:"Nepal" }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="messages-main" id="messagesMain">
+            <div id="noConversationSelected" class="no-conversation-selected">
+                <div class="empty-icon">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <h3>Select a conversation</h3>
+                <p>Choose a conversation from the sidebar to start messaging</p>
+            </div>
+            
+            <div id="messageThread" class="message-thread" style="display: none;">
+                <div class="thread-header">
+                    <div class="thread-avatar"></div>
+                    <div class="thread-info">
+                        <h4 style="margin: 0; color: #333; font-size: 16px;"></h4>
+                        <p style="margin: 0; color: #666; font-size: 13px;"></p>
+                    </div>
+                </div>
+
+                <div class="messages-list" id="messagesList">
+                    <!-- Messages go here -->
+                </div>
+
+                <div class="message-compose">
+                    <form id="messageForm" onsubmit="sendMessage(event)" style="display: flex; gap: 10px;">
+                        {% csrf_token %}
+                        <input type="hidden" name="receiver_id" value="">
+                        <div class="compose-input" style="flex: 1; display: flex; gap: 10px;">
+                            <textarea name="content" placeholder="Type your message..." required style="flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 12px 15px; resize: none; height: 45px; font-family: inherit; font-size: 14px; line-height: 1.4; outline: none;"></textarea>
+                            <button type="submit" class="send-btn" style="background: #2196F3; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
+                                Send
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleSidebar() {
+    document.getElementById("sidebar").classList.toggle("active");
+}
+
+// Messaging functionality
+let currentConversationId = null;
+let currentReceiverId = null;
+let messagePollInterval = null;
+
+// Start new conversation
+function startNewConversation(receiverId) {
+    currentReceiverId = receiverId;
+    loadConversation(receiverId);
+}
+
+// Load conversation
+function loadConversation(receiverId) {
+    fetch(`/api/messages/conversation/${receiverId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayConversation(data.conversation);
+                document.getElementById('messagesMain').classList.add('thread-visible');
+                document.getElementById('messageThread').style.display = 'flex';
+                document.getElementById('noConversationSelected').style.display = 'none';
+                
+                // Set receiver ID in form
+                document.querySelector('input[name="receiver_id"]').value = receiverId;
+                
+                // Ensure message compose is always visible
+                const messageCompose = document.querySelector('.message-compose');
+                if (messageCompose) {
+                    messageCompose.style.display = 'block';
+                    messageCompose.style.visibility = 'visible';
+                }
+                
+                // Start polling for new messages
+                startMessagePolling();
+            }
+        })
+        .catch(error => console.error('Error loading conversation:', error));
+}
+
+// Display conversation
+function displayConversation(conversation) {
+    const otherUser = conversation.other_user;
+    
+    // Update thread header
+    document.querySelector('.thread-avatar').textContent = otherUser.name.slice(0, 2).toUpperCase();
+    document.querySelector('.thread-avatar').style.backgroundColor = getRoleColor(otherUser.role);
+    document.querySelector('.thread-info h4').textContent = otherUser.name;
+    document.querySelector('.thread-info p').textContent = `${otherUser.role.charAt(0).toUpperCase() + otherUser.role.slice(1)} - ${otherUser.district || 'Nepal'}`;
+    
+    // Ensure message compose is always visible
+    const messageCompose = document.querySelector('.message-compose');
+    if (messageCompose) {
+        messageCompose.style.display = 'block';
+        messageCompose.style.visibility = 'visible';
+    }
+    
+    // Display messages
+    const messagesList = document.getElementById('messagesList');
+    messagesList.innerHTML = '';
+    
+    if (conversation.messages && conversation.messages.length > 0) {
+        conversation.messages.forEach(message => {
+            addMessageToChat(message);
+        });
+        scrollToBottom();
+    }
+}
+
+// Add message to chat
+function addMessageToChat(message) {
+    const messagesList = document.getElementById('messagesList');
+    const messageDiv = document.createElement('div');
+    const isSent = message.sender_id === {{ user.id }};
+    
+    messageDiv.className = `message-item ${isSent ? 'sent' : 'received'}`;
+    messageDiv.innerHTML = `
+        <div class="message-content">${message.content}</div>
+        <div class="message-time">${formatTime(message.created_at)}</div>
+    `;
+    
+    messagesList.appendChild(messageDiv);
+}
+
+// Send message
+function sendMessage(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const content = formData.get('content').trim();
+    
+    if (!content || !currentReceiverId) return;
+    
+    // Ensure message compose is always visible
+    const messageCompose = document.querySelector('.message-compose');
+    if (messageCompose) {
+        messageCompose.style.display = 'block';
+        messageCompose.style.visibility = 'visible';
+    }
+    
+    fetch('/api/messages/send/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({
+            receiver_id: currentReceiverId,
+            content: content
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Clear input
+            event.target.reset();
+            
+            // Add message to chat immediately
+            addMessageToChat({
+                sender_id: {{ user.id }},
+                content: content,
+                created_at: new Date().toISOString()
+            });
+            
+            scrollToBottom();
+        }
+    })
+    .catch(error => console.error('Error sending message:', error));
+}
+
+// Start message polling
+function startMessagePolling() {
+    if (messagePollInterval) {
+        clearInterval(messagePollInterval);
+    }
+    
+    messagePollInterval = setInterval(() => {
+        if (currentReceiverId) {
+            checkNewMessages();
+        }
+    }, 5000); // Check every 5 seconds
+}
+
+// Check for new messages
+function checkNewMessages() {
+    fetch(`/api/messages/conversation/${currentReceiverId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.conversation.messages) {
+                const messagesList = document.getElementById('messagesList');
+                const currentMessages = messagesList.children.length;
+                
+                if (data.conversation.messages.length > currentMessages) {
+                    // Add new messages
+                    for (let i = currentMessages; i < data.conversation.messages.length; i++) {
+                        addMessageToChat(data.conversation.messages[i]);
+                    }
+                    scrollToBottom();
+                }
+            }
+        })
+        .catch(error => console.error('Error checking messages:', error));
+}
+
+// Scroll to bottom
+function scrollToBottom() {
+    const messagesList = document.getElementById('messagesList');
+    messagesList.scrollTop = messagesList.scrollHeight;
+}
+
+// Format time
+function formatTime(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+// Get role color
+function getRoleColor(role) {
+    switch(role) {
+        case 'admin': return '#f44336';
+        case 'farmer': return '#4CAF50';
+        case 'customer': return '#2196F3';
+        default: return '#757575';
+    }
+}
+
+// Get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Load recent conversations on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadRecentConversations();
+});
+
+// Load recent conversations
+function loadRecentConversations() {
+    fetch('/api/messages/conversations/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.conversations) {
+                const recentDiv = document.getElementById('recentConversations');
+                recentDiv.innerHTML = '';
+                
+                data.conversations.forEach(conv => {
+                    const convItem = document.createElement('div');
+                    convItem.className = 'conversation-item';
+                    convItem.onclick = () => startNewConversation(conv.other_user.id);
+                    
+                    convItem.innerHTML = `
+                        <div class="conversation-avatar" style="background-color: ${getRoleColor(conv.other_user.role)};">
+                            ${conv.other_user.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div class="conversation-info">
+                            <div class="conversation-name">${conv.other_user.name}</div>
+                            <div class="conversation-preview">${conv.last_message.content_preview}</div>
+                        </div>
+                        <div class="conversation-time">${formatTime(conv.last_message.created_at)}</div>
+                        ${conv.unread_count > 0 ? '<div class="unread-indicator"></div>' : ''}
+                    `;
+                    
+                    recentDiv.appendChild(convItem);
+                });
+            }
+        })
+        .catch(error => console.error('Error loading conversations:', error));
+}
+
+// Search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('messageSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            const conversations = document.querySelectorAll('.conversation-item');
+            
+            conversations.forEach(conv => {
+                const name = conv.querySelector('.conversation-name').textContent.toLowerCase();
+                const preview = conv.querySelector('.conversation-preview').textContent.toLowerCase();
+                
+                if (name.includes(query) || preview.includes(query)) {
+                    conv.style.display = 'flex';
+                } else {
+                    conv.style.display = 'none';
+                }
+            });
+        });
+    }
+});
+
+// Clean up polling when page is hidden
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        if (messagePollInterval) {
+            clearInterval(messagePollInterval);
+        }
+    } else {
+        if (currentReceiverId) {
+            startMessagePolling();
+        }
+    }
+});
+</script>
 {% endblock %}
