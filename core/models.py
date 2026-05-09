@@ -158,6 +158,7 @@ class Order(models.Model):
         ('dispatched', 'Dispatched'),
         ('out_for_delivery', 'Out for Delivery'),
         ('delivered', 'Delivered'),
+        ('received', 'Received'),
         ('cancelled', 'Cancelled'),
         ('rejected', 'Rejected'),
     ]

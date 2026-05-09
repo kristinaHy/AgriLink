@@ -1039,6 +1039,44 @@ class CheckoutView(LoginRequiredMixin, UserPassesTestMixin, View):
 
 
 
+class MarkOrderReceivedView(LoginRequiredMixin, UserPassesTestMixin, View):
+    def test_func(self):
+        return self.request.user.role == 'customer'
+
+    def post(self, request):
+        try:
+            order_id = request.POST.get('order_id')
+            order = get_object_or_404(Order, id=order_id, customer=request.user)
+            
+            # Only allow marking as received if order is delivered or out for delivery
+            if order.status not in ['delivered', 'out_for_delivery']:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'Order cannot be marked as received. Current status: {order.get_status_display()}'
+                }, status=400)
+            
+            # Update order status to received
+            order.status = 'received'
+            order.save()
+            
+            # Create notification for farmer
+            Notification.objects.create(
+                user=order.items.first().product.farmer if order.items.exists() else None,
+                message=f'Order #{order.order_number} has been marked as received by customer',
+                notification_type='order_received'
+            )
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Order marked as received successfully!'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': str(e)
+            }, status=500)
+
+
 class OrderUpdateStatusView(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
         return self.request.user.role == 'farmer'

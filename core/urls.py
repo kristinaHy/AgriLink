@@ -29,7 +29,7 @@ urlpatterns = [
     path('farmer/orders/', views.FarmerOrderListView.as_view(), name='farmer_orders'),
     path('order/<int:pk>/', views.OrderDetailView.as_view(), name='order_detail'),
     path('order/success/<int:pk>/', views.OrderSuccessView.as_view(), name='order_success'),
-
+    path('order/mark-received/', views.MarkOrderReceivedView.as_view(), name='mark_order_received'),
     path('checkout/', views.CheckoutView.as_view(), name='checkout'),
     path('order/<int:pk>/update-status/', views.OrderUpdateStatusView.as_view(), name='order_update_status'),
     
