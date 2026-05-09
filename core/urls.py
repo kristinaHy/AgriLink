@@ -73,4 +73,7 @@ urlpatterns = [
     path('payment/esewa/success/', views.EsewaSuccessView.as_view(), name='esewa_success'),
     path('payment/esewa/failure/', views.EsewaFailureView.as_view(), name='esewa_failure'),
     path('payment/khalti/verify/', views.KhaltiVerifyAPI.as_view(), name='khalti_verify'),
+    # Wishlist
+    path('wishlist/add/<int:pk>/', views.AddToWishlistView.as_view(), name='add_to_wishlist'),
+    path('wishlist/remove/<int:pk>/', views.RemoveFromWishlistView.as_view(), name='remove_from_wishlist'),
 ]

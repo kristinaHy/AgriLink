@@ -58,16 +58,12 @@
             <a href="{% url 'customer_cart' %}" class="nav-item">
                 <i class="fas fa-cart-plus"></i>
                 <span>Cart</span>
-                {% if cart_count %}
-                <span class="nav-badge">{{ cart_count }}</span>
-                {% endif %}
+                <span class="nav-badge" id="cartBadge" style="{% if not cart_count %}display: none;{% endif %}">{{ cart_count|default:0 }}</span>
             </a>
             <a href="{% url 'customer_wishlist' %}" class="nav-item active">
                 <i class="fas fa-heart"></i>
                 <span>Wishlist</span>
-                {% if wishlist_count %}
-                <span class="nav-badge">{{ wishlist_count }}</span>
-                {% endif %}
+                <span class="nav-badge" id="wishlistBadge" style="{% if not wishlist_count %}display: none;{% endif %}">{{ wishlist_count|default:0 }}</span>
             </a>
             <a href="{% url 'customer_messages' %}" class="nav-item">
                 <i class="fas fa-envelope"></i>
@@ -89,48 +85,43 @@
             <p>Your saved items for later</p>
         </div>
 
-        <div class="wishlist-container">
+        <div class="market-grid">
             {% if wishlist_items %}
-                <div class="wishlist-grid">
-                    {% for item in wishlist_items %}
-                    <div class="wishlist-card" data-id="{{ item.id }}">
-                        <div class="wishlist-image">
-                            {% if item.image %}
-                                <img src="{{ item.image.url }}" alt="{{ item.name }}">
-                            {% else %}
-                                <div class="fallback-image">📦</div>
-                            {% endif %}
-                        </div>
-                        <div class="wishlist-details">
-                            <h4>{{ item.name }}</h4>
-                            <p class="wishlist-farmer">by {{ item.farmer.get_full_name|default:item.farmer.username }}</p>
-                            <p class="wishlist-price">₹{{ item.price }} per {{ item.unit }}</p>
-                            <div class="wishlist-rating">
-                                {% for i in "12345" %}
-                                    <i class="fas fa-star{% if forloop.counter > item.average_rating %} empty{% endif %}"></i>
-                                {% endfor %}
-                                <span>({{ item.reviews.count }})</span>
-                            </div>
-                        </div>
-                        <div class="wishlist-actions">
-                            <button class="btn-primary add-cart-btn" onclick="addToCartFromWishlist({{ item.id }})">
-                                <i class="fas fa-cart-plus"></i> Add to Cart
-                            </button>
-                            <button class="btn-secondary remove-btn" onclick="removeFromWishlist({{ item.id }})">
-                                <i class="fas fa-trash"></i> Remove
-                            </button>
-                        </div>
+                {% for item in wishlist_items %}
+                <article class="market-card" data-id="{{ item.id }}" data-name="{{ item.name }}">
+                    {% if item.image %}
+                        <img src="{{ item.image.url }}" alt="{{ item.name }}" loading="lazy">
+                    {% else %}
+                        <img src="data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='640' height='420' viewBox='0 0 640 420'%3e%3cdefs%3e%3clinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3e%3cstop offset='0%25' stop-color='%23dff7e8'/%3e%3cstop offset='100%25' stop-color='%23c6edd7'/%3e%3c/linearGradient%3e%3c/defs%3e%3crect width='640' height='420' fill='url(%23g)'/%3e%3ccircle cx='320' cy='170' r='64' fill='%2300a651' opacity='0.18'/%3e%3ctext x='320' y='188' text-anchor='middle' fill='%23047241' font-family='Arial, sans-serif' font-size='46' font-weight='700'%3e{{ item.name|slice:"0:2"|upper }}%3c/text%3e%3ctext x='320' y='270' text-anchor='middle' fill='%231f2937' font-family='Arial, sans-serif' font-size='28' font-weight='600'%3e{{ item.name }}%3c/text%3e%3ctext x='320' y='305' text-anchor='middle' fill='%234b5563' font-family='Arial, sans-serif' font-size='18'%3eImage unavailable%3c/text%3e%3c/svg%3e" alt="{{ item.name }}" loading="lazy">
+                    {% endif %}
+                    
+                    <span class="pill" style="background-color: var(--primary-green);">In Wishlist</span>
+                    
+                    <h3>{{ item.name }}</h3>
+                    <div class="meta-row">
+                        <i class="fas fa-star"></i> {{ item.average_rating|floatformat:1|default:"0.0" }} | 
+                        {{ item.farmer.get_full_name|default:item.farmer.username }}
                     </div>
-                    {% endfor %}
-                </div>
+                    <div class="price">Rs {{ item.price }}/{{ item.unit }}</div>
+                    
+                    <div class="market-actions">
+                        <button class="add-cart-btn" onclick="addToCartFromWishlist({{ item.id }})" aria-label="Add to cart">
+                            <i class="fas fa-cart-plus"></i> Add
+                        </button>
+                        <button class="wishlist-icon-btn active" onclick="removeFromWishlist({{ item.id }})" style="color: var(--danger);" aria-label="Remove from wishlist">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </article>
+                {% endfor %}
             {% else %}
-                <div class="empty-state">
+                <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
                     <div class="empty-icon">
-                        <i class="fas fa-heart"></i>
+                        <i class="fas fa-heart" style="font-size: 3rem; color: var(--text-muted);"></i>
                     </div>
                     <h3>Your wishlist is empty</h3>
                     <p>Save items you like for easy access later.</p>
-                    <a href="{% url 'customer_market' %}" class="btn-primary">
+                    <a href="{% url 'customer_market' %}" class="btn-primary" style="display: inline-block; margin-top: 1rem; padding: 0.75rem 1.5rem; background: var(--primary-green); color: white; border-radius: 8px; text-decoration: none;">
                         <i class="fas fa-shopping-bag"></i> Browse Market
                     </a>
                 </div>

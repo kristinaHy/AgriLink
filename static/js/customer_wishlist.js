@@ -20,30 +20,99 @@ function setupSidebarActivation() {
 }
 
 function addToCartFromWishlist(itemId) {
-    // This would typically make an AJAX call to add to cart
-    showToast('Adding item to cart');
-    // For now, just show a toast
+    const csrftoken = getCookie('csrftoken');
+    
+    // 1. Add to cart
+    fetch(`/cart/add/${itemId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrftoken,
+        },
+        body: 'quantity=1'
+    })
+    .then(response => {
+        if (response.ok) {
+            showToast('Added to cart!');
+            // 2. Remove from wishlist
+            removeFromWishlist(itemId);
+            // Update cart count if needed
+            refreshCartCount();
+        } else {
+            showToast('Failed to add to cart');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to add to cart');
+    });
+}
+
+function refreshCartCount() {
+    const badge = document.getElementById('cartBadge');
+    if (badge) {
+        fetch('/cart/count/')
+        .then(response => response.json())
+        .then(data => {
+            badge.textContent = data.count;
+            badge.style.display = data.count > 0 ? 'flex' : 'none';
+        });
+    }
 }
 
 function removeFromWishlist(itemId) {
-    // This would typically make an AJAX call to remove from wishlist
-    showToast('Removing from wishlist');
-    // For now, just show a toast and remove from UI
-    const item = document.querySelector(`.wishlist-card[data-id="${itemId}"]`);
-    if (item) {
-        item.remove();
-        refreshWishlistCount();
+    const csrftoken = getCookie('csrftoken');
+    
+    fetch(`/wishlist/remove/${itemId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showToast(data.message);
+            const item = document.querySelector(`.market-card[data-id="${itemId}"]`);
+            if (item) {
+                item.remove();
+            }
+            refreshWishlistCount(data.count);
+            
+            // If wishlist is empty, reload to show empty state
+            if (data.count === 0) {
+                window.location.reload();
+            }
+        } else {
+            showToast(data.message || 'Error removing from wishlist');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to remove from wishlist');
+    });
+}
+
+function refreshWishlistCount(count) {
+    const badge = document.getElementById('wishlistBadge');
+    if (badge) {
+        badge.textContent = count;
     }
 }
 
-function refreshWishlistCount() {
-    // This would update the wishlist badge
-    const badge = document.getElementById('wishlistBadge');
-    if (badge) {
-        const current = parseInt(badge.textContent) || 0;
-        const newCount = Math.max(0, current - 1);
-        badge.textContent = newCount;
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
     }
+    return cookieValue;
 }
 
 function showToast(message) {

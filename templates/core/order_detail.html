@@ -83,9 +83,35 @@
 
 <script>
 function payWithKhalti(orderId, amount) {
-    alert('Khalti Integration: Verifying payment for Order #' + orderId + ' (Rs. ' + amount + ')');
-    // In real implementation, this triggers Khalti Checkout
-    // Then calls /payment/khalti/verify/ with token
+    // In a real implementation, you'd initialize Khalti Checkout here.
+    // For this "fake credentials" version, we'll prompt for a mock success.
+    
+    if (confirm('Khalti Checkout: Pay Rs. ' + amount + ' for Order #' + orderId + '? (Using Mock Payment)')) {
+        // Send to backend
+        const formData = new FormData();
+        formData.append('token', 'mock_token');
+        formData.append('amount', amount * 100); // Khalti expects paisa
+        formData.append('order_id', orderId);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch('/payment/khalti/verify/', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Payment Successful!');
+                window.location.reload();
+            } else {
+                alert('Payment Failed: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred during payment verification.');
+        });
+    }
 }
 </script>
 {% endblock %}

@@ -237,17 +237,29 @@ tr:hover {
                             <td>{{ order.customer.get_full_name|default:order.customer.username }}</td>
                             <td>{{ order.created_at|date:"Y-m-d" }}</td>
                             <td>Rs. {{ order.total_amount }}</td>
-                            <td><span class="badge {{ order.status }}">{{ order.get_status_display }}</span></td>
+                            <td>
+                                <span class="badge {{ order.status }}">{{ order.get_status_display }}</span><br>
+                                <small class="text-{% if order.payment_status == 'paid' %}success{% else %}muted{% endif %}">
+                                    {{ order.get_payment_status_display }}
+                                </small>
+                            </td>
                             <td>
                                 <form action="{% url 'order_update_status' order.pk %}" method="post" style="display: flex; flex-direction: column; gap: 5px;">
                                     {% csrf_token %}
                                     <select name="status" onchange="toggleNegotiationFields(this, {{ order.id }})" style="padding: 2px 5px; font-size: 12px;">
                                         <option value="">Update Status</option>
-                                        <option value="approved">Approve</option>
-                                        <option value="rejected">Reject</option>
-                                        <option value="negotiating">Negotiate</option>
-                                        <option value="dispatched">Dispatch</option>
-                                        <option value="delivered">Deliver</option>
+                                        {% if order.status == 'farmer_reviewing' or order.status == 'negotiating' %}
+                                            <option value="approved">Approve</option>
+                                            <option value="negotiating">Negotiate</option>
+                                            <option value="rejected">Reject</option>
+                                        {% elif order.status == 'approved' %}
+                                            <option value="negotiating">Negotiate (Adjust Price)</option>
+                                            <option value="rejected">Reject</option>
+                                        {% elif order.status == 'paid' %}
+                                            <option value="dispatched">Dispatch Goods</option>
+                                        {% elif order.status == 'dispatched' %}
+                                            <option value="delivered">Mark as Delivered</option>
+                                        {% endif %}
                                     </select>
                                     <div id="negotiation-{{ order.id }}" style="display: none; flex-direction: column; gap: 5px;">
                                         <input type="number" name="negotiated_price" placeholder="Adjusted Price" step="0.01" style="padding: 2px 5px; font-size: 11px; width: 100px;">

@@ -49,16 +49,17 @@
             <a href="{% url 'customer_cart' %}" class="nav-item">
                 <i class="fas fa-shopping-cart"></i>
                 <span>Cart</span>
+                <span class="nav-badge" id="cartBadge" style="{% if not cart_count %}display: none;{% endif %}">{{ cart_count|default:0 }}</span>
             </a>
             <a href="{% url 'customer_messages' %}" class="nav-item">
                 <i class="fas fa-envelope"></i>
                 <span>Messages</span>
-                <div class="notification-badge">3</div>
+                <div class="notification-badge" id="messagesBadge">3</div>
             </a>
             <a href="{% url 'customer_wishlist' %}" class="nav-item">
                 <i class="fas fa-heart"></i>
                 <span>Wishlist</span>
-                <div class="notification-badge" id="marketWishlistBadge">0</div>
+                <span class="nav-badge" id="wishlistBadge" style="{% if not wishlist_count %}display: none;{% endif %}">{{ wishlist_count|default:0 }}</span>
             </a>
             <a href="{% url 'customer_profile' %}" class="nav-item">
                 <i class="fas fa-user"></i>
@@ -111,7 +112,9 @@
                         <div class="price" data-price="Rs {{ product.price_min }}/{{ product.unit }}">Rs {{ product.price_min }}/{{ product.unit }}</div>
                         <div class="market-actions">
                             <button class="add-cart-btn" type="button" aria-label="Add {{ product.name }} to cart">+</button>
-                            <button class="wishlist-icon-btn" type="button" aria-label="Add {{ product.name }} to wishlist"><i class="fas fa-heart"></i></button>
+                            <button class="wishlist-icon-btn {% if product.id in wishlist_ids %}active{% endif %}" type="button" aria-label="Toggle wishlist for {{ product.name }}" style="{% if product.id in wishlist_ids %}color: var(--primary-green);{% endif %}">
+                                <i class="{% if product.id in wishlist_ids %}fas{% else %}far{% endif %} fa-heart"></i>
+                            </button>
                         </div>
                     </article>
                 {% empty %}
@@ -272,27 +275,50 @@ function getCookie(name) {
 // LOGIC FOR WISHLIST (Replaces setupAddToWishlist)
 function handleWishlistAction(card) {
     if (!card) return;
+    
+    const productId = card.dataset.id;
+    const productName = card.dataset.name;
+    const wishlistBtn = card.querySelector('.wishlist-icon-btn');
+    const icon = wishlistBtn.querySelector('i');
+    const isRemove = wishlistBtn.classList.contains('active');
+    
+    const url = isRemove ? `/wishlist/remove/${productId}/` : `/wishlist/add/${productId}/`;
+    const csrftoken = getCookie('csrftoken');
 
-    const product = {
-        id: card.dataset.id,
-        name: card.dataset.name,
-        image: card.querySelector('img')?.src || '',
-        farmer: card.querySelector('.meta-row')?.textContent || 'Verified Farmer',
-        priceText: card.querySelector('.price')?.dataset.price || 'Rs 0/kg'
-    };
-
-    const wishlist = getWishlist();
-    const exists = wishlist.some(item => item.id === product.id);
-
-    if (exists) {
-        showToast(`${product.name} already in wishlist`);
-        return;
-    }
-
-    wishlist.push(product);
-    localStorage.setItem('dashboardWishlist', JSON.stringify(wishlist));
-    refreshWishlistCount();
-    showToast(`${product.name} added to wishlist`);
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success' || data.status === 'info') {
+            if (isRemove) {
+                wishlistBtn.classList.remove('active');
+                wishlistBtn.style.color = '';
+                icon.classList.replace('fas', 'far');
+            } else {
+                wishlistBtn.classList.add('active');
+                wishlistBtn.style.color = 'var(--primary-green)';
+                icon.classList.replace('far', 'fas');
+            }
+            showToast(data.message);
+            
+            // Update badge
+            const badge = document.getElementById('wishlistBadge');
+            if (badge) {
+                badge.textContent = data.count;
+                badge.style.display = data.count > 0 ? 'flex' : 'none';
+            }
+        } else {
+            showToast(data.message || 'Error updating wishlist');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to update wishlist');
+    });
 }
 
 // ---------------------------------------------------------
@@ -369,20 +395,24 @@ function getCart() {
 }
 
 function refreshCartCount() {
-    const countEl = document.getElementById('marketCartCount');
-    if (!countEl) {
-        return;
-    }
+    const sideBadge = document.getElementById('cartBadge');
+    const topBadge = document.getElementById('marketCartCount');
 
     // Fetch cart count from backend API
     fetch('/cart/count/')
     .then(response => response.json())
     .then(data => {
-        countEl.textContent = String(data.count || 0);
+        const countStr = String(data.count || 0);
+        if (sideBadge) {
+            sideBadge.textContent = countStr;
+            sideBadge.style.display = data.count > 0 ? 'flex' : 'none';
+        }
+        if (topBadge) {
+            topBadge.textContent = countStr;
+        }
     })
     .catch(error => {
         console.error('Error fetching cart count:', error);
-        countEl.textContent = '0';
     });
 }
 
@@ -401,12 +431,7 @@ function getWishlist() {
 }
 
 function refreshWishlistCount() {
-    const badge = document.getElementById('marketWishlistBadge');
-    if (!badge) {
-        return;
-    }
-
-    badge.textContent = String(getWishlist().length);
+    // Note: Wishlist count is updated dynamically via handleWishlistAction.
 }
 
 function setupSidebarActivation() {

@@ -108,54 +108,65 @@ function setupWishlistActions() {
 }
 
 function addToWishlist(product) {
-    const wishlist = getWishlist();
-    const exists = wishlist.some(item => item.id === product.id);
-
-    if (exists) {
-        showToast(`${product.name} already in wishlist`);
-        return;
-    }
-
-    wishlist.push(product);
-    saveWishlist(wishlist);
-    refreshDashboardCounts();
-    showToast(`${product.name} added to wishlist`);
-}
-
-function getWishlist() {
-    const raw = localStorage.getItem('dashboardWishlist');
-    if (!raw) return [];
-
-    try {
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-        console.error('Error parsing wishlist:', error);
-        return [];
-    }
-}
-
-function saveWishlist(wishlist) {
-    localStorage.setItem('dashboardWishlist', JSON.stringify(wishlist));
+    const csrftoken = getCookie('csrftoken');
+    
+    fetch(`/wishlist/add/${product.id}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        showToast(data.message);
+        if (data.status === 'success' || data.status === 'info') {
+            refreshDashboardCounts();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to add to wishlist');
+    });
 }
 
 // Cart Functionality
 function addToCart(productId, productName, price, unit) {
-    // This would typically make an AJAX call to add to cart
-    // For now, we'll just show a toast
-    showToast(`${productName} added to cart`);
-    refreshDashboardCounts();
+    const csrftoken = getCookie('csrftoken');
+    
+    fetch(`/cart/add/${productId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrftoken,
+        },
+        body: 'quantity=1'
+    })
+    .then(response => {
+        if (response.ok) {
+            showToast(`${productName} added to cart`);
+            refreshDashboardCounts();
+        } else {
+            showToast('Failed to add to cart');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to add to cart');
+    });
 }
 
 // Dashboard Counts
 function refreshDashboardCounts() {
-    const wishlist = getWishlist();
-    const cartCount = 0; // This would come from server
-    const messagesCount = 0; // This would come from server
-
-    setText('wishlistBadge', String(wishlist.length));
-    setText('cartBadge', String(cartCount));
-    setText('messagesBadge', String(messagesCount));
+    // Fetch counts from server
+    fetch('/cart/count/')
+    .then(response => response.json())
+    .then(data => {
+        setText('cartBadge', String(data.count || 0));
+    });
+    
+    // Wishlist count is usually in context, but for dynamic updates:
+    // We could add a /wishlist/count/ endpoint or just trust the context on reload.
+    // For now, let's assume we update it after actions.
 }
 
 // Stats Animation
@@ -212,7 +223,25 @@ function showToast(message) {
 // Utility Functions
 function setText(id, value) {
     const el = document.getElementById(id);
-    if (el) el.textContent = value;
+    if (el) {
+        el.textContent = value;
+        el.style.display = value > 0 ? 'flex' : 'none';
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }
 
 function escapeHtml(value) {

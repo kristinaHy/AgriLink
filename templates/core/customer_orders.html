@@ -89,65 +89,52 @@
             <p>Track and manage your purchases</p>
         </div>
 
-        <div class="orders-container">
+        <div class="market-grid">
             {% if orders %}
                 {% for order in orders %}
-                <div class="order-card">
-                    <div class="order-header">
-                        <div class="order-info">
-                            <h3>Order #{{ order.id }}</h3>
-                            <p class="order-date">{{ order.created_at|date:"M d, Y" }}</p>
-                        </div>
-                        <div class="order-status">
-                            <span class="status-badge status-{{ order.status|lower }}">{{ order.status|title }}</span>
-                        </div>
-                    </div>
-
-                    <div class="order-items">
-                        {% for item in order.items.all %}
-                        <div class="order-item">
-                            <div class="item-image">
-                                {% if item.product.image %}
-                                    <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
-                                {% else %}
-                                    <div class="fallback-image">📦</div>
-                                {% endif %}
-                            </div>
-                            <div class="item-details">
-                                <h4>{{ item.product.name }}</h4>
-                                <p class="item-farmer">by {{ item.product.farmer.get_full_name|default:item.product.farmer.username }}</p>
-                                <p class="item-quantity">Quantity: {{ item.quantity }}</p>
-                                <p class="item-price">₹{{ item.price }}</p>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-
-                    <div class="order-footer">
-                        <div class="order-total">
-                            <strong>Total: ₹{{ order.total_amount }}</strong>
-                        </div>
-                        <div class="order-actions">
-                            <button class="btn-secondary" onclick="viewOrderDetails({{ order.id }})">
-                                <i class="fas fa-eye"></i> View Details
-                            </button>
-                            {% if order.status == 'delivered' %}
-                            <button class="btn-primary" onclick="writeReview({{ order.id }})">
-                                <i class="fas fa-star"></i> Write Review
-                            </button>
+                <article class="market-card" onclick="location.href='{% url 'order_detail' order.id %}'">
+                    <div class="market-image-wrapper" style="position: relative; height: 120px;">
+                        {% with first_item=order.items.first %}
+                            {% if first_item.product.image %}
+                                <img src="{{ first_item.product.image.url }}" alt="Order #{{ order.id }}" style="width: 100%; height: 100%; object-fit: cover;">
+                            {% else %}
+                                <div style="width: 100%; height: 100%; background: #222; display: flex; align-items: center; justify-content: center; font-size: 2rem;">📦</div>
                             {% endif %}
-                        </div>
+                        {% endwith %}
+                        <span class="pill status-{{ order.status|lower }}" style="position: absolute; top: 10px; right: 10px; font-size: 0.7rem; padding: 4px 8px; border-radius: 4px; background: {% if order.status == 'delivered' %}var(--success){% elif order.status == 'cancelled' or order.status == 'rejected' %}var(--danger){% else %}var(--primary-orange){% endif %}; color: white;">
+                            {{ order.get_status_display }}
+                        </span>
                     </div>
-                </div>
+                    
+                    <h3 style="margin-top: 10px;">Order #{{ order.order_number|default:order.id }}</h3>
+                    <div class="meta-row">
+                        <i class="fas fa-calendar-alt"></i> {{ order.created_at|date:"M d, Y" }}
+                    </div>
+                    <div class="meta-row">
+                        <i class="fas fa-box"></i> {{ order.items.count }} item(s)
+                    </div>
+                    <div class="price">Rs {{ order.negotiated_price|default:order.total_amount }}</div>
+                    
+                    <div class="market-actions">
+                        <button class="add-cart-btn" onclick="event.stopPropagation(); location.href='{% url 'order_detail' order.id %}'" style="background: var(--primary-blue);">
+                            View Details
+                        </button>
+                        {% if order.status == 'delivered' %}
+                        <button class="wishlist-icon-btn" title="Write Review" onclick="event.stopPropagation(); writeReview({{ order.id }})">
+                            <i class="fas fa-star"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </article>
                 {% endfor %}
             {% else %}
-                <div class="empty-state">
+                <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
                     <div class="empty-icon">
-                        <i class="fas fa-shopping-cart"></i>
+                        <i class="fas fa-shopping-cart" style="font-size: 3rem; color: var(--text-muted);"></i>
                     </div>
                     <h3>No orders yet</h3>
                     <p>You haven't placed any orders yet. Start shopping to see your orders here.</p>
-                    <a href="{% url 'customer_market' %}" class="btn-primary">
+                    <a href="{% url 'customer_market' %}" class="btn-primary" style="display: inline-block; margin-top: 1rem; padding: 0.75rem 1.5rem; background: var(--primary-green); color: white; border-radius: 8px; text-decoration: none;">
                         <i class="fas fa-shopping-bag"></i> Browse Market
                     </a>
                 </div>

@@ -623,7 +623,8 @@ select:focus-visible {
     justify-content: center;
 }
 
-.market-card .wishlist-icon-btn:hover {
+.market-card .wishlist-icon-btn:hover,
+.market-card .wishlist-icon-btn.active {
     color: var(--primary-green);
 }
 
