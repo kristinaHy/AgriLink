@@ -103,7 +103,16 @@
                         </div>
                         <div class="item-details">
                             <h4>{{ item.product.name }}</h4>
-                            <p class="item-farmer">by {{ item.product.farmer.get_full_name|default:item.product.farmer.username }}</p>
+                            <p class="item-farmer">
+                                by 
+                                {% if item.product.is_admin_listed %}
+                                    AgriLink
+                                {% elif item.product.farmer %}
+                                    {{ item.product.farmer.get_full_name|default:item.product.farmer.username }}
+                                {% else %}
+                                    Premium Selection
+                                {% endif %}
+                            </p>
                             <p class="item-price">Rs.{{ item.product.price }} per {{ item.product.unit }}</p>
                         </div>
                         <div class="item-quantity">

@@ -81,7 +81,7 @@ class Product(models.Model):
     ]
     
     farmer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='products', 
-                               limit_choices_to={'role': 'farmer'})
+                               limit_choices_to={'role': 'farmer'}, null=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name='products')
     name = models.CharField(max_length=200)
     description = models.TextField()
@@ -90,6 +90,7 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
     unit = models.CharField(max_length=50, choices=UNIT_CHOICES, default='KG')
     produce_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    is_admin_listed = models.BooleanField(default=False, help_text="Check if this product is listed by admin")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
     image = models.ImageField(upload_to='products/', blank=True, null=True)
     additional_images = models.ImageField(upload_to='products/', blank=True, null=True)
@@ -107,11 +108,20 @@ class Product(models.Model):
     def clean(self):
         from django.core.exceptions import ValidationError
         
-        # Ensure farmer is verified before listing
-        if self.farmer and not self.farmer.is_verified:
-            raise ValidationError("Please wait until admin verifies your account to list products.")
+        # For farmer-listed products, ensure farmer is verified
+        if self.farmer and not self.is_admin_listed:
+            if not self.farmer.is_verified:
+                raise ValidationError("Please wait until admin verifies your account to list products.")
+        
+        # For farmer-listed products, farmer is required
+        if not self.is_admin_listed and not self.farmer:
+            raise ValidationError("Farmer is required for farmer-listed products.")
+        
+        # For admin-listed products, farmer should not be set
+        if self.is_admin_listed and self.farmer:
+            raise ValidationError("Admin-listed products should not have a farmer assigned.")
             
-        # Price range validation against category
+        # Price range validation against category - applies to both admin and farmer products
         if self.category and self.category.is_active_pricing:
             if self.price < self.category.min_price:
                 raise ValidationError(f'Price (Rs. {self.price}) cannot be less than the category minimum of Rs. {self.category.min_price}')
@@ -129,7 +139,12 @@ class Product(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.name} by {self.farmer.get_full_name() or self.farmer.username}"
+        if self.is_admin_listed:
+            return f"{self.name} (Admin Listed)"
+        elif self.farmer:
+            return f"{self.name} by {self.farmer.get_full_name() or self.farmer.username}"
+        else:
+            return f"{self.name}"
     
     @property
     def discounted_price(self):

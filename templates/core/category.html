@@ -65,7 +65,7 @@
 
         <div class="grid" id="productGrid">
             {% for product in products %}
-            <div class="card product" data-price="{{ product.price_min }}" data-district="{{ product.farmer.district }}">
+            <div class="card product" data-price="{{ product.price_min }}" data-district="{% if product.farmer %}{{ product.farmer.district }}{% else %}Nepal{% endif %}">
                 {% if product.is_best_seller %}
                 <span class="badge green">Best Seller</span>
                 {% elif product.is_seasonal %}
@@ -82,7 +82,13 @@
                 <span class="tag">{{ product.category.name }}</span>
 
                 <p class="farmer">
-                    {{ product.farmer.get_full_name }} - {{ product.farmer.district }}
+                    {% if product.is_admin_listed %}
+                        AgriLink Curated
+                    {% elif product.farmer %}
+                        {{ product.farmer.get_full_name }} - {{ product.farmer.district }}
+                    {% else %}
+                        Premium Selection
+                    {% endif %}
                 </p>
 
                 {% if user.is_authenticated %}

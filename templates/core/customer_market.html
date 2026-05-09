@@ -114,7 +114,16 @@
                         <span class="pill">Fresh</span>
                         {% endif %}
                         <h3>{{ product.name }}</h3>
-                        <div class="meta-row"><i class="fas fa-star"></i> {{ product.average_rating|floatformat:1|default:"0.0" }} | {{ product.farmer.get_full_name|default:product.farmer.username }}, {{ product.farmer.district|default:"Nepal" }}</div>
+                        <div class="meta-row">
+                            <i class="fas fa-star"></i> {{ product.average_rating|floatformat:1|default:"0.0" }} | 
+                            {% if product.is_admin_listed %}
+                                AgriLink Curated
+                            {% elif product.farmer %}
+                                {{ product.farmer.get_full_name|default:product.farmer.username }}, {{ product.farmer.district|default:"Nepal" }}
+                            {% else %}
+                                Premium Selection
+                            {% endif %}
+                        </div>
                         <div class="price" data-price="Rs {{ product.price_min }}/{{ product.unit }}">Rs {{ product.price_min }}/{{ product.unit }}</div>
                         <div class="market-actions">
                             <button class="add-cart-btn" type="button" aria-label="Add {{ product.name }} to cart">+</button>

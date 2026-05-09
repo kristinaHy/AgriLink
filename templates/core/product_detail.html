@@ -353,7 +353,13 @@
             <div class="product-headline">
                 <h1>{{ product.name }}</h1>
                 <p class="product-farmer">
-                    Sold by <span>{{ product.farmer.get_full_name }}</span> | {{ product.farmer.district }}
+                    {% if product.is_admin_listed %}
+                        Sold by <span>AgriLink</span> | Curated Selection
+                    {% elif product.farmer %}
+                        Sold by <span>{{ product.farmer.get_full_name }}</span> | {{ product.farmer.district }}
+                    {% else %}
+                        Premium Produce
+                    {% endif %}
                 </p>
             </div>
 

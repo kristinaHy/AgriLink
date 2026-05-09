@@ -31,13 +31,13 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ('name', 'farmer', 'category', 'price', 'status', 'is_fresh', 'created_at')
-    list_filter = ('status', 'is_fresh', 'is_seasonal', 'is_limited', 'category', 'created_at')
+    list_display = ('name', 'farmer', 'category', 'price', 'is_admin_listed', 'status', 'is_fresh', 'created_at')
+    list_filter = ('is_admin_listed', 'status', 'is_fresh', 'is_seasonal', 'is_limited', 'category', 'created_at')
     search_fields = ('name', 'farmer__username', 'category__name')
     readonly_fields = ('created_at', 'updated_at')
     fieldsets = (
         ('Product Information', {
-            'fields': ('farmer', 'category', 'name', 'description', 'unit')
+            'fields': ('is_admin_listed', 'farmer', 'category', 'name', 'description', 'unit')
         }),
         ('Pricing & Stock', {
             'fields': ('price', 'price_min', 'price_max', 'discount_percentage', 'status')
@@ -53,6 +53,12 @@ class ProductAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+    
+    def get_readonly_fields(self, request, obj=None):
+        readonly = list(self.readonly_fields)
+        if obj and obj.is_admin_listed:
+            readonly.append('farmer')
+        return readonly
 
 
 @admin.register(Order)

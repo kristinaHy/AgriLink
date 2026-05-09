@@ -100,7 +100,13 @@
                     <h3>{{ item.name }}</h3>
                     <div class="meta-row">
                         <i class="fas fa-star"></i> {{ item.average_rating|floatformat:1|default:"0.0" }} | 
-                        {{ item.farmer.get_full_name|default:item.farmer.username }}
+                        {% if item.is_admin_listed %}
+                            AgriLink Curated
+                        {% elif item.farmer %}
+                            {{ item.farmer.get_full_name|default:item.farmer.username }}
+                        {% else %}
+                            Premium Selection
+                        {% endif %}
                     </div>
                     <div class="price">Rs {{ item.price }}/{{ item.unit }}</div>
                     

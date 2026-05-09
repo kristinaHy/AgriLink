@@ -134,10 +134,22 @@
                     <div class="product-info">
                         <h5 class="product-name">{{ product.name }}</h5>
                         <p class="product-farmer">
-                            <i class="fas fa-user"></i> {{ product.farmer.get_full_name }}
+                            <i class="fas fa-user"></i> 
+                            {% if product.is_admin_listed %}
+                                AgriLink
+                            {% elif product.farmer %}
+                                {{ product.farmer.get_full_name }}
+                            {% else %}
+                                Premium Selection
+                            {% endif %}
                         </p>
                         <p class="product-location">
-                            <i class="fas fa-map-marker-alt"></i> {{ product.farmer.district }}
+                            <i class="fas fa-map-marker-alt"></i> 
+                            {% if product.farmer %}
+                                {{ product.farmer.district }}
+                            {% else %}
+                                Nepal
+                            {% endif %}
                         </p>
                         
                         <div class="product-tags">
