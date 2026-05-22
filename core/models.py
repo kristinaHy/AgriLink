@@ -38,6 +38,7 @@ class Category(models.Model):
     min_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     max_price = models.DecimalField(max_digits=10, decimal_places=2, default=100000)
     is_active_pricing = models.BooleanField(default=True)
+    shelf_life_days = models.PositiveIntegerField(default=7, help_text="Average days this type of produce stays fresh.")
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -113,15 +114,11 @@ class Product(models.Model):
             if not self.farmer.is_verified:
                 raise ValidationError("Please wait until admin verifies your account to list products.")
         
-        # For farmer-listed products, farmer is required
-        if not self.is_admin_listed and not self.farmer:
-            raise ValidationError("Farmer is required for farmer-listed products.")
-        
         # For admin-listed products, farmer should not be set
         if self.is_admin_listed and self.farmer:
             raise ValidationError("Admin-listed products should not have a farmer assigned.")
             
-        # Price range validation against category - applies to both admin and farmer products
+        # Price range validation against category - farmers can list as they want but within category price range set by admin
         if self.category and self.category.is_active_pricing:
             if self.price < self.category.min_price:
                 raise ValidationError(f'Price (Rs. {self.price}) cannot be less than the category minimum of Rs. {self.category.min_price}')
@@ -158,6 +155,37 @@ class Product(models.Model):
         if reviews:
             return sum(review.rating for review in reviews) / reviews.count()
         return 0
+
+    @property
+    def stale_days(self):
+        """Calculates days since the product was picked/listed."""
+        if self.freshness_date:
+            delta = timezone.now().date() - self.freshness_date
+        else:
+            delta = timezone.now().date() - self.created_at.date()
+        return max(0, delta.days)
+
+    @property
+    def freshness_score(self):
+        """Calculates freshness percentage based on category shelf life."""
+        shelf_life = 7  # Default fallback
+        if self.category and self.category.shelf_life_days:
+            shelf_life = self.category.shelf_life_days
+            
+        # Percentage = 100 - (Days Passed / Total Shelf Life) * 100
+        loss_per_day = 100 / shelf_life
+        score = 100 - (self.stale_days * loss_per_day)
+        return max(0, min(100, round(score)))
+
+    @property
+    def freshness_status(self):
+        """Returns a text label for freshness."""
+        score = self.freshness_score
+        if score > 80: return 'Ultra Fresh'
+        if score > 60: return 'Fresh'
+        if score > 40: return 'Good'
+        if score > 20: return 'Standard'
+        return 'Stale'
 
 
 # Order Model

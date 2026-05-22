@@ -1,0 +1,10 @@
+* [33m4312ca2[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m `Updated admin listing logic and product display to include admin-listed products`
+* [33ma1e4ca1[m `Added category filtering to CustomerMarketView and updated templates to reflect changes`
+* [33m4b365ac[m[33m ([m[1;31morigin/main[m[33m)[m `Added data-detail-url attribute to market-card elements and updated JavaScript event listener to redirect to product detail page when clicked.`
+* [33m3c2b197[m fixed product detail ui
+* [33meee846e[m `Updated order detail page with new features and design changes`
+* [33mea11ed4[m `Added new view and template for order success page, updated urls and views for order detail and checkout, and modified static CSS and database files.`
+* [33m197a645[m `Added Wishlist model and views, updated templates and JavaScript files to reflect changes`
+* [33m55602b7[m `Updated admin and customer message views with new layout and functionality`
+* [33m84047da[m bugs fixes and farmers messages
+* [33m36a72e8[m `Updated various templates and views to reflect changes in models and functionality`

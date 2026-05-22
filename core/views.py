@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.db.models import Q, Avg, Sum, Count
 from .models import Product, Category, User, Order, Review, Cart, CartItem, Message, Notification, OrderItem, Wishlist, Payment
+from .utils import get_frequently_bought_together
 from django.utils import timezone
 import json
 from .forms import UserRegistrationForm, UserLoginForm, ProductForm, ReviewForm, MessageForm
@@ -28,18 +29,12 @@ class HomeView(TemplateView):
             status='available'
         ).order_by('-created_at')[:5]
         
-        # Category-based Fresh Picks (fresh products from each category)
-        categories = Category.objects.all()
-        fresh_picks = []
-        for category in categories[:3]:  # Get fresh picks from first 3 categories
-            category_fresh = Product.objects.filter(
-                is_fresh=True,
-                status='available',
-                category=category
-            ).select_related('farmer', 'category')[:2]
-            fresh_picks.extend(category_fresh)
-        
-        context['fresh_products'] = fresh_picks[:5]
+        # Dynamic Fresh Picks (sorted by calculated freshness score)
+        context['fresh_products'] = sorted(
+            Product.objects.filter(status='available').select_related('farmer', 'category'),
+            key=lambda p: p.freshness_score,
+            reverse=True
+        )[:5]
         
         # Seasonal products
         context['seasonal_products'] = Product.objects.filter(
@@ -127,6 +122,8 @@ class ProductDetailView(DetailView):
             context['can_review'] = self.request.user.role == 'customer' and \
                                     self.request.user.orders.filter(items__product=product).exists()
 
+        context['frequently_bought_together'] = get_frequently_bought_together(product.id)
+        
         context['same_products'] = Product.objects.filter(
             name__iexact=product.name,
             status='available'
@@ -1090,7 +1087,7 @@ class OrderUpdateStatusView(LoginRequiredMixin, UserPassesTestMixin, View):
         return self.request.user.role == 'farmer'
 
     def post(self, request, pk):
-        order = get_object_or_404(Order, items__product__farmer=request.user, pk=pk)
+        order = get_object_or_404(Order.objects.filter(items__product__farmer=request.user).distinct(), pk=pk)
         new_status = request.POST.get('status')
         negotiated_price = request.POST.get('negotiated_price')
         estimated_delivery = request.POST.get('estimated_delivery')
