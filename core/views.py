@@ -950,6 +950,52 @@ class OrderDetailView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
         return (self.request.user.role == 'customer' and order.customer == self.request.user) or \
                (self.request.user.role == 'farmer' and Order.objects.filter(items__product__farmer=self.request.user, pk=order.pk).exists())
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        order = self.get_object()
+        
+        # Calculate eSewa v2 signature
+        if self.request.user.role == 'customer' and order.status == 'approved' and order.payment_status == 'pending':
+            import hmac
+            import hashlib
+            import base64
+            import time
+            
+            secret_key = "8gBm/:&EnhH.1/q"
+            product_code = "EPAYTEST"
+            
+            # Format amount as string (ensuring exactly 2 decimal places to match database Decimal representation)
+            amount = order.negotiated_price or order.total_amount
+            amount_str = f"{amount:.2f}"
+            
+            # Use order number + timestamp to ensure globally unique transaction UUID on eSewa side
+            transaction_uuid = f"{order.order_number}-{int(time.time())}"
+            
+            message = f"total_amount={amount_str},transaction_uuid={transaction_uuid},product_code={product_code}"
+            
+            key = bytes(secret_key, 'utf-8')
+            message_bytes = bytes(message, 'utf-8')
+            signature_bytes = hmac.new(key, message_bytes, digestmod=hashlib.sha256).digest()
+            signature = base64.b64encode(signature_bytes).decode('utf-8')
+            
+            # success & failure URLs
+            request = self.request
+            host = request.get_host()
+            protocol = 'https' if request.is_secure() else 'http'
+            success_url = f"{protocol}://{host}/payment/esewa/success/"
+            failure_url = f"{protocol}://{host}/payment/esewa/failure/"
+            
+            context.update({
+                'esewa_amount': amount_str,
+                'esewa_product_code': product_code,
+                'esewa_transaction_uuid': transaction_uuid,
+                'esewa_signature': signature,
+                'esewa_success_url': success_url,
+                'esewa_failure_url': failure_url,
+            })
+            
+        return context
+
 
 class CheckoutView(LoginRequiredMixin, UserPassesTestMixin, View):
     template_name = 'core/checkout.html'
@@ -1730,29 +1776,81 @@ class ProductDeleteAPI(LoginRequiredMixin, UserPassesTestMixin, View):
 # Payment Views
 class EsewaSuccessView(LoginRequiredMixin, View):
     def get(self, request):
-        oid = request.GET.get('oid')
-        amt = request.GET.get('amt')
-        refId = request.GET.get('refId')
-        
-        order = get_object_or_404(Order, order_number=oid)
-        
-        # Verify with eSewa Sandbox
+        encoded_data = request.GET.get('data')
+        if not encoded_data:
+            messages.error(request, 'Payment verification failed: missing response data.')
+            return redirect('my_orders')
+            
+        import base64
+        import json
+        import hmac
+        import hashlib
         import requests
-        verify_url = "https://uat.esewa.com.np/epay/transrec"
-        data = {
-            'amt': amt,
-            'scd': 'EPAYTEST', # Sandbox Merchant ID
-            'pid': oid,
-            'rid': refId
-        }
         
         try:
-            response = requests.post(verify_url, data=data)
-            is_valid = "Success" in response.text
-        except:
-            is_valid = False
+            # Decode the base64-encoded JSON response
+            decoded_bytes = base64.b64decode(encoded_data)
+            decoded_str = decoded_bytes.decode('utf-8')
+            decoded_data = json.loads(decoded_str)
+        except Exception as e:
+            messages.error(request, 'Payment verification failed: invalid response format.')
+            return redirect('my_orders')
             
-        if is_valid:
+        # Extract fields
+        transaction_code = decoded_data.get('transaction_code')
+        status = decoded_data.get('status')
+        total_amount = decoded_data.get('total_amount')
+        transaction_uuid = decoded_data.get('transaction_uuid')
+        product_code = decoded_data.get('product_code')
+        signed_field_names = decoded_data.get('signed_field_names', '')
+        received_signature = decoded_data.get('signature')
+        
+        # Extract the original order number from the unique transaction UUID
+        if transaction_uuid and '-' in transaction_uuid:
+            order_number = "-".join(transaction_uuid.split('-')[:-1])
+        else:
+            order_number = transaction_uuid
+            
+        order = get_object_or_404(Order, order_number=order_number)
+        
+        # 1. Reconstruct message string and verify HMAC-SHA256 signature
+        secret_key = "8gBm/:&EnhH.1/q"
+        field_names = signed_field_names.split(',')
+        
+        message_parts = []
+        for field in field_names:
+            val = decoded_data.get(field)
+            message_parts.append(f"{field}={val}")
+        message_string = ",".join(message_parts)
+        
+        # Calculate expected signature
+        key = bytes(secret_key, 'utf-8')
+        message_bytes = bytes(message_string, 'utf-8')
+        expected_signature_bytes = hmac.new(key, message_bytes, digestmod=hashlib.sha256).digest()
+        expected_signature = base64.b64encode(expected_signature_bytes).decode('utf-8')
+        
+        is_signature_valid = hmac.compare_digest(expected_signature, received_signature)
+        
+        # 2. Call the server-to-server transaction status check API for extra security
+        is_status_valid = False
+        if is_signature_valid and status == 'COMPLETE':
+            status_url = "https://uat.esewa.com.np/api/epay/transaction/status/"
+            params = {
+                'product_code': product_code,
+                'total_amount': total_amount,
+                'transaction_uuid': transaction_uuid
+            }
+            try:
+                status_response = requests.get(status_url, params=params)
+                if status_response.status_code == 200:
+                    status_json = status_response.json()
+                    if status_json.get('status') == 'COMPLETE':
+                        is_status_valid = True
+            except Exception as e:
+                # If API call fails but signature is valid, fallback to signature validity
+                is_status_valid = True
+                
+        if is_signature_valid and status == 'COMPLETE' and is_status_valid:
             if order.payment_status == 'paid':
                 messages.warning(request, 'Order is already paid.')
                 return redirect('order_detail', pk=order.pk)
@@ -1763,17 +1861,18 @@ class EsewaSuccessView(LoginRequiredMixin, View):
             
             Payment.objects.create(
                 order=order,
-                transaction_id=refId,
-                amount=amt,
+                transaction_id=transaction_code,
+                amount=float(total_amount) if total_amount else float(order.negotiated_price or order.total_amount),
                 gateway='esewa',
-                status='success'
+                status='success',
+                response_data=decoded_str
             )
             
             Notification.objects.create(
                 user=order.customer,
                 notification_type='payment_success',
                 title='Payment Successful',
-                content=f'Payment of Rs. {amt} for order #{oid} was successful.',
+                content=f'Payment of Rs. {total_amount} for order #{transaction_uuid} was successful.',
                 related_order=order
             )
             
@@ -1784,7 +1883,7 @@ class EsewaSuccessView(LoginRequiredMixin, View):
                         user=item.product.farmer,
                         notification_type='payment_success',
                         title='Payment Received',
-                        content=f'Payment for order #{oid} has been received. Please process the order.',
+                        content=f'Payment for order #{transaction_uuid} has been received. Please process the order.',
                         related_order=order
                     )
             
