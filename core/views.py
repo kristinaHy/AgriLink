@@ -1,17 +1,30 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.views import View
 from django.views.generic import TemplateView, ListView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.db.models import Q, Avg, Sum, Count
-from .models import Product, Category, User, Order, Review, Cart, CartItem, Message, Notification, OrderItem, Wishlist, Payment
+from .models import Product, Category, User, Order, Review, Cart, CartItem, Message, Notification, OrderItem, Wishlist, Payment, OrderAction
 from .utils import get_frequently_bought_together
+from notifications.services import (
+    NotificationService,
+    notify_order_placed,
+    notify_order_received,
+    notify_order_approved,
+    notify_order_rejected,
+    notify_order_shipped,
+    notify_order_delivered,
+    notify_payment_success,
+)
+from notifications.constants import NotificationType
 from django.utils import timezone
+from datetime import timedelta
 import json
 from .forms import UserRegistrationForm, UserLoginForm, ProductForm, ReviewForm, MessageForm
 import uuid
+from django.conf import settings
 
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.http import JsonResponse
@@ -164,6 +177,12 @@ class SearchView(ListView):
     template_name = 'core/product_list.html'
     context_object_name = 'products'
     paginate_by = 12
+
+    def get(self, request, *args, **kwargs):
+        query_string = request.GET.urlencode()
+        if query_string:
+            return redirect(reverse('customer_market') + '?' + query_string)
+        return redirect('customer_market')
     
     def get_queryset(self):
         query = self.request.GET.get('q', '')
@@ -198,6 +217,7 @@ class SearchView(ListView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['categories'] = Category.objects.all()
         context['search_query'] = self.request.GET.get('q', '')
         return context
 
@@ -298,8 +318,22 @@ class FarmerDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         total_sales = 0
         for order in Order.objects.filter(items__product__farmer=user, status='delivered'):
             for item in order.items.filter(product__farmer=user):
-                total_sales += item.price * item.quantity
+                total_sales += item.price_at_purchase * item.quantity
         context['total_sales'] = total_sales
+
+        # Recent orders (paid/delivered)
+        recent_orders = Order.objects.filter(
+            items__product__farmer=user,
+            payment_status='paid'
+        ).select_related('customer').order_by('-created_at')[:5]
+        context['recent_orders'] = recent_orders
+
+        # Recent payments
+        recent_payments = Payment.objects.filter(
+            order__items__product__farmer=user,
+            status='success'
+        ).select_related('order').order_by('-created_at')[:5]
+        context['recent_payments'] = recent_payments
         
         return context
 
@@ -323,13 +357,27 @@ class FarmerPaymentsView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         total_earnings = 0
         for order in completed_orders:
             for item in order.items.filter(product__farmer=user):
-                total_earnings += item.price * item.quantity
-        
+                total_earnings += item.price_at_purchase * item.quantity
+
+        payments = Payment.objects.filter(
+            order__items__product__farmer=user
+        ).select_related('order').distinct().order_by('-created_at')
+
+        pending_payments = payments.filter(
+            order__payment_status='paid'
+        ).exclude(
+            order__status__in=['delivered', 'received']
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        monthly_earnings = payments.filter(
+            created_at__gte=timezone.now() - timedelta(days=30)
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
         context['total_earnings'] = total_earnings
-        context['monthly_earnings'] = total_earnings  # Placeholder
-        context['pending_payments'] = 0  # Placeholder
-        context['payments'] = []  # Placeholder for payment history
-        
+        context['monthly_earnings'] = monthly_earnings
+        context['pending_payments'] = pending_payments
+        context['payments'] = payments
+
         return context
 
 
@@ -395,10 +443,20 @@ class CustomerDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
         context = super().get_context_data(**kwargs)
         user = self.request.user
         
-        # Orders data
-        orders = Order.objects.filter(customer=user).order_by('-created_at')
+        # Orders data with recent orders first
+        orders = Order.objects.filter(customer=user).select_related('customer').order_by('-created_at')
         context['orders'] = orders
         context['total_orders'] = orders.count()
+
+        # Recent orders (last 5)
+        recent_orders = orders[:5]
+        context['recent_orders'] = recent_orders
+
+        # Recent payments
+        recent_payments = Payment.objects.filter(
+            order__customer=user
+        ).select_related('order').order_by('-created_at')[:5]
+        context['recent_payments'] = recent_payments
         
         # Cart data
         cart, created = Cart.objects.get_or_create(customer=user)
@@ -448,6 +506,15 @@ class CustomerMarketView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         products = Product.objects.filter(
             status='available'
         ).select_related('farmer', 'category').order_by('-created_at')
+
+        query = self.request.GET.get('q', '').strip()
+        if query:
+            products = products.filter(
+                Q(name__icontains=query) |
+                Q(description__icontains=query) |
+                Q(category__name__icontains=query)
+            )
+        context['search_query'] = query
 
         category_filter = self.request.GET.get('category', '').strip()
         if category_filter:
@@ -628,14 +695,33 @@ class CustomerMessagesView(LoginRequiredMixin, UserPassesTestMixin, TemplateView
             receiver=user
         ).select_related('sender').order_by('-created_at')[:10]
         
-        # For demo purposes, we'll show a selected conversation if there are messages
-        # In a real implementation, this would be based on URL parameters or AJAX
+        # Default to the most recent conversation when no conversation parameter is provided
         latest_message = Message.objects.filter(
             Q(sender=user) | Q(receiver=user)
         ).order_by('-created_at').first()
         
-        if latest_message:
-            # Get the other user in the conversation
+        other_user = None
+        order_id = self.request.GET.get('order_id')
+        other_user_id = self.request.GET.get('other_user')
+        if other_user_id:
+            try:
+                other_user = User.objects.get(id=other_user_id)
+            except User.DoesNotExist:
+                other_user = None
+
+        if other_user:
+            conversation_messages = Message.objects.filter(
+                (Q(sender=user) & Q(receiver=other_user)) |
+                (Q(sender=other_user) & Q(receiver=user))
+            ).order_by('created_at')
+            if order_id:
+                conversation_messages = conversation_messages.filter(order_id=order_id)
+            context['selected_conversation'] = {
+                'other_user': other_user,
+                'messages': conversation_messages
+            }
+        elif latest_message:
+            # Get the other user in the most recent conversation
             other_user = latest_message.sender if latest_message.receiver == user else latest_message.receiver
             
             # Get all messages in this conversation
@@ -657,7 +743,8 @@ class CustomerMessagesView(LoginRequiredMixin, UserPassesTestMixin, TemplateView
         context['orders'] = Order.objects.filter(customer=user)
         
         # Wishlist count
-        context['wishlist_count'] = 6  # Placeholder
+        wishlist, _ = Wishlist.objects.get_or_create(user=user)
+        context['wishlist_count'] = wishlist.products.count()
         
         # Available farmers and admins to chat with
         context['available_farmers'] = User.objects.filter(role='farmer', is_verified=True).order_by('username')
@@ -689,7 +776,8 @@ class CustomerProfileView(LoginRequiredMixin, UserPassesTestMixin, TemplateView)
         ).count()
         
         # Wishlist count
-        context['wishlist_count'] = 6  # Placeholder
+        wishlist, _ = Wishlist.objects.get_or_create(user=user)
+        context['wishlist_count'] = wishlist.products.count()
         
         # Cart count
         cart, created = Cart.objects.get_or_create(customer=user)
@@ -927,7 +1015,7 @@ class FarmerOrderListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     def get_queryset(self):
         return Order.objects.filter(
             items__product__farmer=self.request.user
-        ).distinct().order_by('-created_at')
+        ).distinct().select_related('customer').prefetch_related('items__product', 'actions').order_by('-created_at')
 
 
 class OrderSuccessView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
@@ -1068,23 +1156,9 @@ class CheckoutView(LoginRequiredMixin, UserPassesTestMixin, View):
                 
         cart.items.all().delete()
         
-        # Create notifications
-        Notification.objects.create(
-            user=request.user,
-            notification_type='order_placed',
-            title='Order Placed - Pending Farmer Approval',
-            content=f'Your order #{order.order_number} has been sent to the farmer(s) for approval. You will be notified once they approve it.'
-        )
-        
-        for farmer in farmers:
-            Notification.objects.create(
-                user=farmer,
-                notification_type='order_placed',
-                title='New Order Received',
-                content=f'You have received a new order #{order.order_number}. Please review and approve it.',
-                related_order=order
-            )
-            
+        # Create notifications via the shared notification service
+        notify_order_placed(order)
+
         messages.success(request, 'Order placed successfully! Please wait for farmer approval before payment.')
         return redirect('order_success', pk=order.pk)
 
@@ -1106,17 +1180,17 @@ class MarkOrderReceivedView(LoginRequiredMixin, UserPassesTestMixin, View):
                     'message': f'Order cannot be marked as received. Current status: {order.get_status_display()}'
                 }, status=400)
             
-            # Update order status to received
-            order.status = 'received'
+            # Treat customer confirmation as final delivery: mark delivered and log action
+            order.status = 'delivered'
             order.save()
-            
-            # Create notification for farmer
-            Notification.objects.create(
-                user=order.items.first().product.farmer if order.items.exists() else None,
-                message=f'Order #{order.order_number} has been marked as received by customer',
-                notification_type='order_received'
-            )
-            
+
+            try:
+                OrderAction.objects.create(order=order, actor=request.user, action='delivered', note='Customer confirmed receipt')
+            except Exception:
+                pass
+
+            notify_order_delivered(order)
+
             return JsonResponse({
                 'status': 'success',
                 'message': 'Order marked as received successfully!'
@@ -1171,26 +1245,60 @@ class OrderUpdateStatusView(LoginRequiredMixin, UserPassesTestMixin, View):
         if estimated_delivery:
             order.estimated_delivery = estimated_delivery
         order.save()
-        
-        # Notification mapping
-        notif_map = {
-            'approved': ('Order Approved', f'Your order #{order.order_number} has been approved by the farmer. You can now proceed to payment.', 'order_approved'),
-            'rejected': ('Order Rejected', f'Your order #{order.order_number} was rejected by the farmer.', 'order_rejected'),
-            'negotiating': ('Price Negotiation', f'The farmer is negotiating the price for order #{order.order_number}. Please check your messages.', 'negotiation_update'),
-            'dispatched': ('Order Dispatched', f'Your order #{order.order_number} has been dispatched.', 'order_shipped'),
-            'delivered': ('Order Delivered', f'Your order #{order.order_number} has been delivered.', 'order_delivered'),
-        }
-        
-        if new_status in notif_map:
-            title, content, n_type = notif_map[new_status]
-            Notification.objects.create(
-                user=order.customer,
-                notification_type=n_type,
-                title=title,
-                content=content,
-                related_order=order
+        # Log this action
+        try:
+            OrderAction.objects.create(
+                order=order,
+                actor=request.user,
+                action=new_status,
+                note=(f"Negotiated price: {negotiated_price}" if negotiated_price else None)
             )
-            
+        except Exception:
+            pass
+        
+        if new_status == 'approved':
+            notify_order_approved(order)
+        elif new_status == 'rejected':
+            notify_order_rejected(order)
+        elif new_status == 'dispatched':
+            notify_order_shipped(order)
+        elif new_status == 'delivered':
+            notify_order_delivered(order)
+        elif new_status == 'negotiating':
+            # Create a message from farmer to customer with the negotiated price and link notification to that conversation
+            try:
+                first_item = order.items.first()
+                product_name = first_item.product.name if first_item and first_item.product else 'product'
+                negotiated_text = f'Proposed price for {product_name} is Rs. {negotiated_price}' if negotiated_price else f'Farmer has proposed a price update for {product_name}.'
+                msg = Message.objects.create(
+                    sender=request.user,
+                    receiver=order.customer,
+                    order=order,
+                    content=negotiated_text,
+                    negotiated_price=(negotiated_price if negotiated_price else None)
+                )
+                # Notify customer and redirect notification directly to the conversation (preserve query params)
+                convo_url = f'/customer/messages/?other_user={request.user.id}&order_id={order.pk}'
+                NotificationService.create_notification(
+                    recipient=order.customer,
+                    sender=request.user,
+                    notification_type=NotificationType.NEGOTIATION_UPDATE,
+                    title='Price Negotiation',
+                    message=negotiated_text,
+                    order=order,
+                    redirect_url=convo_url,
+                )
+            except Exception:
+                # Fallback to generic notification
+                NotificationService.create_notification(
+                    recipient=order.customer,
+                    sender=request.user,
+                    notification_type=NotificationType.NEGOTIATION_UPDATE,
+                    title='Price Negotiation',
+                    message=f'The farmer is negotiating the price for order #{order.order_number}. Please check your messages.',
+                    order=order,
+                )
+
         messages.success(request, f'Order status updated to {new_status}.')
         return redirect('farmer_orders')
 
@@ -1334,7 +1442,7 @@ class AdminFarmersView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
             farmer.total_sales = Order.objects.filter(
                 items__product__farmer=farmer
             ).aggregate(total=Sum('total_amount'))['total'] or 0
-            farmer.rating = 4.6  # Mock rating - update based on reviews
+            farmer.rating = Review.objects.filter(product__farmer=farmer).aggregate(avg=Avg('rating'))['avg'] or 0
             farmer_list.append(farmer)
         
         context['farmers'] = farmer_list[:10]
@@ -1355,7 +1463,7 @@ class AdminVerificationsView(LoginRequiredMixin, UserPassesTestMixin, TemplateVi
         
         farmer_list = []
         for farmer in pending_farmers:
-            farmer.total_products = 3  # Mock - update based on actual pending products
+            farmer.total_products = Product.objects.filter(farmer=farmer).count()
             farmer_list.append(farmer)
         
         context['pending_farmers'] = farmer_list[:5]
@@ -1375,12 +1483,11 @@ class FarmerVerifyView(LoginRequiredMixin, UserPassesTestMixin, View):
             farmer.is_verified = True
             farmer.save()
             messages.success(request, f'Farmer {farmer.get_full_name()} has been verified.')
-            # Create notification for farmer
-            Notification.objects.create(
-                user=farmer,
+            NotificationService.create_notification(
+                recipient=farmer,
                 notification_type='new_message',
                 title='Account Verified',
-                content='Congratulations! Your farmer account has been verified. You can now start selling products.'
+                message='Congratulations! Your farmer account has been verified. You can now start selling products.',
             )
         elif action == 'reject':
             farmer.delete()  # Or mark as rejected
@@ -1398,21 +1505,25 @@ class AdminTransactionsView(LoginRequiredMixin, UserPassesTestMixin, TemplateVie
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Create mock transaction data
-        orders = Order.objects.all().select_related('customer').prefetch_related('items__product__farmer')[:10]
+        # Get actual payment transactions
+        payments = Payment.objects.select_related('order__customer').prefetch_related(
+            'order__items__product__farmer'
+        ).order_by('-created_at')[:20]
         
         transactions = []
-        for i, order in enumerate(orders):
+        for payment in payments:
+            order = payment.order
             first_item = order.items.first()
             farmer_name = first_item.product.farmer.get_full_name() if first_item and first_item.product and first_item.product.farmer else "N/A"
             transactions.append({
-                'order_id': f'#ORD-{1042-i}',
+                'payment_id': f'#{payment.id}',
+                'order_id': f'#{order.order_number}',
                 'farmer': farmer_name,
                 'customer': order.customer.get_full_name() or order.customer.username,
-                'method': 'Khalti',
-                'amount': order.total_amount,
-                'date': order.created_at,
-                'status': 'COMPLETED' if order.payment_status == 'completed' else 'PENDING'
+                'gateway': payment.gateway.upper(),
+                'amount': payment.amount,
+                'date': payment.created_at,
+                'status': payment.status.upper()
             })
         
         context['transactions'] = transactions
@@ -1627,12 +1738,7 @@ class MessageSendAPI(LoginRequiredMixin, View):
             )
 
             # Notification to receiver
-            Notification.objects.create(
-                user=receiver,
-                notification_type='new_message',
-                title=f'New message from {request.user.get_full_name() or request.user.username}',
-                content=content[:500],
-            )
+            notify_new_message(msg)
 
             # Admin Chatbot Logic (Simplified)
             if receiver.role == 'admin':
@@ -1858,6 +1964,12 @@ class EsewaSuccessView(LoginRequiredMixin, View):
             order.status = 'paid'
             order.payment_status = 'paid'
             order.save()
+
+            # Log payment action
+            try:
+                OrderAction.objects.create(order=order, actor=request.user, action='paid', note=f'Gateway: eSewa')
+            except Exception:
+                pass
             
             Payment.objects.create(
                 order=order,
@@ -1868,24 +1980,7 @@ class EsewaSuccessView(LoginRequiredMixin, View):
                 response_data=decoded_str
             )
             
-            Notification.objects.create(
-                user=order.customer,
-                notification_type='payment_success',
-                title='Payment Successful',
-                content=f'Payment of Rs. {total_amount} for order #{transaction_uuid} was successful.',
-                related_order=order
-            )
-            
-            # Notify farmers
-            for item in order.items.all():
-                if item.product and item.product.farmer:
-                    Notification.objects.create(
-                        user=item.product.farmer,
-                        notification_type='payment_success',
-                        title='Payment Received',
-                        content=f'Payment for order #{transaction_uuid} has been received. Please process the order.',
-                        related_order=order
-                    )
+            notify_payment_success(order)
             
             messages.success(request, 'Payment successful!')
             return redirect('order_detail', pk=order.pk)
@@ -1911,8 +2006,8 @@ class KhaltiVerifyAPI(LoginRequiredMixin, View):
         if order.payment_status == 'paid':
             return JsonResponse({'status': 'error', 'message': 'Already paid'})
 
-        # Mock success for testing if using test key
-        if token == "mock_token":
+        # For local testing allow mock token only when DEBUG is True
+        if token == "mock_token" and getattr(settings, 'DEBUG', False):
             is_valid = True
         else:
             # Verify with Khalti
@@ -1937,16 +2032,7 @@ class KhaltiVerifyAPI(LoginRequiredMixin, View):
             order.payment_status = 'paid'
             order.save()
             
-            # Notify farmers
-            for item in order.items.all():
-                if item.product and item.product.farmer:
-                    Notification.objects.create(
-                        user=item.product.farmer,
-                        notification_type='payment_success',
-                        title='Payment Received (Khalti)',
-                        content=f'Payment for order #{order.order_number} has been received. Please process the order.',
-                        related_order=order
-                    )
+            notify_payment_success(order)
             
             Payment.objects.create(
                 order=order,
@@ -1955,6 +2041,10 @@ class KhaltiVerifyAPI(LoginRequiredMixin, View):
                 gateway='khalti',
                 status='success'
             )
+            try:
+                OrderAction.objects.create(order=order, actor=request.user, action='paid', note='Gateway: Khalti')
+            except Exception:
+                pass
             return JsonResponse({'status': 'success'})
         
         return JsonResponse({'status': 'error', 'message': 'Verification failed'})

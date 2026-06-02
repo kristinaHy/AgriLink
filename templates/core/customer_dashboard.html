@@ -8,27 +8,6 @@
 {% endblock %}
 
 {% block content %}
-<header class="header">
-    <div class="header-left">
-        <div class="logo">
-            <img src="https://www.bing.com/th/id/OIP.Ra1raSNjJix62zGEonbLSwHaHa?w=195&h=211&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2" alt="AS">
-            <span id="dashboardUsername">{{ user.get_full_name|default:user.username }}</span>
-        </div>
-    </div>
-    <div class="header-right">
-        <div class="user-info">
-            <div class="profile-pic">{{ user.get_full_name|default:user.username|slice:":2"|upper }}</div>
-            <div class="username">{{ user.get_full_name|default:user.username }}</div>
-            <div class="user-status">Customer account - {{ user.district|default:"Nepal" }}</div>
-        </div>
-        <div class="header-actions">
-            <div class="role-chip">Customer</div>
-            <button class="logout-btn" onclick="location.href='{% url 'logout' %}'">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </button>
-        </div>
-    </div>
-</header>
 
 <div class="main-container">
     <aside class="sidebar">
@@ -82,10 +61,10 @@
                 <p id="dashboardPageSubtitle">Welcome {{ user.get_full_name|default:user.username }}</p>
             </div>
             <div class="top-actions">
-                <div class="search-bar">
+                <form method="get" action="{% url 'customer_market' %}" class="search-bar">
                     <i class="fas fa-search"></i>
-                    <input type="text" placeholder="{{ user.get_full_name|default:user.username|slice:':1' }}, search farmers products...">
-                </div>
+                    <input type="text" name="q" placeholder="{{ user.get_full_name|default:user.username|slice:':1' }}, search farmers products...">
+                </form>
             </div>
         </div>
 

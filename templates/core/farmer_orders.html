@@ -242,6 +242,14 @@ tr:hover {
                                 <small class="text-{% if order.payment_status == 'paid' %}success{% else %}muted{% endif %}">
                                     {{ order.get_payment_status_display }}
                                 </small>
+                                {% with last_action=order.actions.last %}
+                                    {% if last_action %}
+                                        <div style="margin-top:6px; font-size:12px; color:#555;">
+                                            <strong>{{ last_action.get_action_display }}</strong>
+                                            <div style="font-size:11px; color:#888;">{{ last_action.created_at|date:"M j, g:i a" }}</div>
+                                        </div>
+                                    {% endif %}
+                                {% endwith %}
                             </td>
                             <td>
                                 <form action="{% url 'order_update_status' order.pk %}" method="post" style="display: flex; flex-direction: column; gap: 5px;">

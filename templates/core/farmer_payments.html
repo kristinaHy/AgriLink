@@ -224,10 +224,10 @@ tr {
                 {% for payment in payments %}
                     <tr>
                         <td>#{{ payment.id }}</td>
-                        <td>#{{ payment.order.id }}</td>
+                        <td>#{{ payment.order.order_number }}</td>
                         <td>{{ payment.created_at|date:"Y-m-d" }}</td>
                         <td>Rs. {{ payment.amount }}</td>
-                        <td><span class="status {% if payment.status == 'completed' %}success{% else %}pending{% endif %}">{{ payment.get_status_display }}</span></td>
+                        <td><span class="status {% if payment.status == 'success' %}success{% else %}pending{% endif %}">{{ payment.status|capfirst }}</span></td>
                     </tr>
                 {% empty %}
                     <tr>
@@ -246,4 +246,4 @@ function toggleSidebar() {
     document.getElementById("sidebar").classList.toggle("active");
 }
 </script>
-{% endblock %}
+{% endblock %}

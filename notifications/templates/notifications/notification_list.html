@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Notifications - AgriLink{% endblock %}
+
+{% block extra_css %}
+<style>
+    .notification-container {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .notification-header {
+        padding: 25px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .notification-header h2 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+    }
+
+    .notification-stats {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        font-size: 14px;
+    }
+
+    .notification-stats-item {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 8px 15px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .notification-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .notification-actions form {
+        margin: 0;
+    }
+
+    .notification-actions button {
+        background: rgba(255, 255, 255, 0.3);
+        border: none;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .notification-actions button:hover {
+        background: rgba(255, 255, 255, 0.5);
+    }
+
+    .notification-filters {
+        padding: 20px 25px;
+        background: #f9f9f9;
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        padding: 8px 16px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        color: #666;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+
+    .filter-btn:hover {
+        border-color: #667eea;
+        color: #667eea;
+    }
+
+    .filter-btn.active {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+
+    .notification-list {
+        padding: 0;
+    }
+
+    .notification-list-item {
+        padding: 20px 25px;
+        border-bottom: 1px solid #f0f0f0;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        gap: 15px;
+        align-items: flex-start;
+    }
+
+    .notification-list-item:hover {
+        background: #f9f9f9;
+    }
+
+    .notification-list-item.unread {
+        background: #f8f9ff;
+        border-left: 4px solid #667eea;
+    }
+
+    .notification-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 20px;
+        color: white;
+    }
+
+    .notification-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .notification-title {
+        margin: 0 0 5px 0;
+        font-weight: 600;
+        font-size: 15px;
+        color: #333;
+    }
+
+    .notification-message {
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        color: #666;
+        line-height: 1.5;
+    }
+
+    .notification-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12px;
+        color: #999;
+    }
+
+    .notification-time {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .notification-actions-small {
+        display: flex;
+        gap: 15px;
+    }
+
+    .notification-actions-small a,
+    .notification-actions-small form {
+        margin: 0;
+    }
+
+    .notification-actions-small button {
+        background: none;
+        border: none;
+        color: #999;
+        cursor: pointer;
+        font-size: 13px;
+        padding: 0;
+        transition: color 0.2s ease;
+    }
+
+    .notification-actions-small button:hover {
+        color: #667eea;
+    }
+
+    .notification-empty {
+        padding: 60px 25px;
+        text-align: center;
+        color: #999;
+    }
+
+    .notification-empty i {
+        font-size: 60px;
+        color: #ddd;
+        margin-bottom: 15px;
+        display: block;
+    }
+
+    .notification-pagination {
+        padding: 25px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .pagination a,
+    .pagination span {
+        padding: 8px 12px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #667eea;
+        font-size: 13px;
+        transition: all 0.2s ease;
+    }
+
+    .pagination a:hover {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+
+    .pagination .current {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+
+    .page-info {
+        font-size: 13px;
+        color: #999;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+    <div class="row">
+        <div class="col-12 col-lg-8 offset-lg-2">
+            <div class="notification-container">
+                <!-- Header -->
+                <div class="notification-header">
+                    <h2><i class="fas fa-bell"></i> Notifications</h2>
+                    <div class="notification-actions">
+                        {% if stats.unread > 0 %}
+                            <form method="post" action="{% url 'notifications:mark_all_as_read' %}" style="margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" title="Mark all as read">
+                                    <i class="fas fa-check-double"></i> Mark All Read
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="notification-stats" style="padding: 20px 25px; background: #f9f9f9; border-bottom: 1px solid #e0e0e0; gap: 15px;">
+                    <div class="notification-stats-item" style="background: transparent; gap: 5px;">
+                        <strong style="font-size: 16px;">{{ stats.total }}</strong>
+                        <span>Total</span>
+                    </div>
+                    <div class="notification-stats-item" style="background: transparent; gap: 5px;">
+                        <strong style="font-size: 16px; color: #dc3545;">{{ stats.unread }}</strong>
+                        <span>Unread</span>
+                    </div>
+                    <div class="notification-stats-item" style="background: transparent; gap: 5px;">
+                        <strong style="font-size: 16px; color: #198754;">{{ stats.read }}</strong>
+                        <span>Read</span>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="notification-filters">
+                    <a href="{% url 'notifications:list' %}" class="filter-btn {% if not current_filter %}active{% endif %}">
+                        <i class="fas fa-list"></i> All
+                    </a>
+                    <a href="{% url 'notifications:list' %}?read=unread" class="filter-btn {% if current_filter == 'unread' %}active{% endif %}">
+                        <i class="fas fa-envelope"></i> Unread
+                    </a>
+                    <a href="{% url 'notifications:list' %}?read=read" class="filter-btn {% if current_filter == 'read' %}active{% endif %}">
+                        <i class="fas fa-check"></i> Read
+                    </a>
+                </div>
+
+                <!-- Notifications List -->
+                <div class="notification-list">
+                    {% if notifications %}
+                        {% for notification in notifications %}
+                            <div class="notification-list-item {% if not notification.is_read %}unread{% endif %}">
+                                <div class="notification-icon" style="background-color: {{ notification.color }};">
+                                    <i class="{{ notification.icon }}"></i>
+                                </div>
+                                <div class="notification-content">
+                                    <h6 class="notification-title">{{ notification.title }}</h6>
+                                    <p class="notification-message">{{ notification.message }}</p>
+                                    <div class="notification-footer">
+                                        <span class="notification-time">
+                                            <i class="fas fa-clock"></i>
+                                            {{ notification.time_ago }}
+                                        </span>
+                                        <div class="notification-actions-small">
+                                            {% if not notification.is_read %}
+                                                <form method="post" action="{% url 'notifications:mark_as_read' notification.id %}" style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" title="Mark as read">
+                                        <i class="fas fa-check"></i> Mark Read
+                                    </button>
+                                                </form>
+                                            {% endif %}
+                                            <a href="{% if notification.effective_redirect_url %}{{ notification.effective_redirect_url }}{% else %}{% url 'notifications:detail' notification.id %}{% endif %}" title="View details">
+                                                <i class="fas fa-arrow-right"></i> View
+                                            </a>
+                                            <form method="post" action="{% url 'notifications:delete' notification.id %}" style="display: inline;">
+                                                {% csrf_token %}
+                                                <button type="submit" title="Delete" onclick="return confirm('Delete this notification?')">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="notification-empty">
+                            <i class="fas fa-inbox"></i>
+                            <h5>No Notifications</h5>
+                            <p>You're all caught up!</p>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                    <div class="notification-pagination">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1">
+                                <i class="fas fa-chevron-left"></i> First
+                            </a>
+                            <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                        {% endif %}
+
+                        <span class="page-info">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        </span>
+
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}">Next</a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}">
+                                Last <i class="fas fa-chevron-right"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

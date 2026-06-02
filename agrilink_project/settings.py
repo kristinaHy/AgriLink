@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',  # Our main app
+    'notifications',  # Centralized notification system
     'channels',
 ]
 
@@ -49,6 +50,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.categories_processor',
+                'notifications.context_processors.notifications_processor',
             ],
         },
     },

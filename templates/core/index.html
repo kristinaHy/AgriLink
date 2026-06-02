@@ -31,9 +31,7 @@
             <p class="hero-description">
                 Buy directly from local Nepali farmers. Zero middlemen, maximum freshness.
             </p>
-            
-            <!-- Search Bar -->
-            <form method="get" action="{% url 'search' %}" class="search-form-wrapper">
+                <form method="get" action="{% url 'customer_market' %}" class="search-form-wrapper">
                 <div class="search-box">
                     <input type="text" class="search-input" 
                            name="q" placeholder="Search tomatoes, apples, spinach...">
@@ -46,10 +44,10 @@
             <!-- Popular Tags -->
             <div class="popular-section">
                 <span class="popular-label">Popular:</span>
-                <a href="#" class="popular-tag">Red Tomato</a>
-                <a href="#" class="popular-tag">Fuji Apple</a>
-                <a href="#" class="popular-tag">Fresh Spinach</a>
-                <a href="#" class="popular-tag">Small Potato</a>
+                <a href="{% url 'customer_market' %}?q=Red+Tomato" class="popular-tag">Red Tomato</a>
+                <a href="{% url 'customer_market' %}?q=Fuji+Apple" class="popular-tag">Fuji Apple</a>
+                <a href="{% url 'customer_market' %}?q=Fresh+Spinach" class="popular-tag">Fresh Spinach</a>
+                <a href="{% url 'customer_market' %}?q=Small+Potato" class="popular-tag">Small Potato</a>
             </div>
         </div>
     </div>
@@ -99,7 +97,7 @@
                 <h2 class="section-title">Today's Fresh Picks</h2>
                 <p class="section-subtitle">Handpicked from verified Nepali farmers</p>
             </div>
-            <a href="{% url 'search' %}" class="view-all-btn">View All <i class="fas fa-arrow-right"></i></a>
+            <a href="{% url 'customer_market' %}" class="view-all-btn">View All <i class="fas fa-arrow-right"></i></a>
         </div>
         
         <div class="products-scroll">

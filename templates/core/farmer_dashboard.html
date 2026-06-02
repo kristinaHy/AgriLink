@@ -229,10 +229,19 @@
     <div class="activity">
         <h3>Recent Activity</h3>
         <ul>
-            <li>✅ New order received</li>
-            <li>📦 Product listed</li>
-            <li>💰 Payment received</li>
-            <li>🚚 Order delivered</li>
+            {% if recent_orders %}
+                {% for order in recent_orders %}
+                    <li>📦 Order #{{ order.order_number }} from {{ order.customer.get_full_name|default:order.customer.username }}</li>
+                {% endfor %}
+            {% endif %}
+            {% if recent_payments %}
+                {% for payment in recent_payments %}
+                    <li>💰 Payment Rs. {{ payment.amount }} received for Order #{{ payment.order.order_number }}</li>
+                {% endfor %}
+            {% endif %}
+            {% if not recent_orders and not recent_payments %}
+                <li>No recent activity</li>
+            {% endif %}
         </ul>
     </div>
 </div>

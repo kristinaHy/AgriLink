@@ -105,7 +105,8 @@
         color: #721c24;
     }
 
-    .status-badge.delivered {
+    .status-badge.delivered,
+    .status-badge.received {
         background: #d4edda;
         color: #155724;
     }
@@ -736,7 +737,11 @@
                         </a>
                         {% endif %}
                         <div class="status-badge {{ order.status }}">
-                            {{ order.get_status_display }}
+                            {% if order.status == 'received' %}
+                                Delivered
+                            {% else %}
+                                {{ order.get_status_display }}
+                            {% endif %}
                         </div>
                         <div class="order-total-amount">
                             Rs. {{ order.negotiated_price|default:order.total_amount|floatformat:"2" }}
@@ -786,28 +791,28 @@
                 </div>
 
                 <div
-                    class="timeline-connector {% if order.status == 'dispatched' or order.status == 'out_for_delivery' or order.status == 'delivered' %}completed{% endif %}">
+                    class="timeline-connector {% if order.status == 'dispatched' or order.status == 'out_for_delivery' or order.status == 'delivered' or order.status == 'received' %}completed{% endif %}">
                 </div>
 
                 <div
-                    class="timeline-step {% if order.status == 'dispatched' or order.status == 'out_for_delivery' %}active{% elif order.status == 'delivered' %}completed{% endif %}">
+                    class="timeline-step {% if order.status == 'dispatched' or order.status == 'out_for_delivery' %}active{% elif order.status == 'delivered' or order.status == 'received' %}completed{% endif %}">
                     <div class="step-circle">
                         <i class="fas fa-truck"></i>
                     </div>
                     <div class="step-label">Shipped</div>
-                    {% if order.status == 'dispatched' or order.status == 'out_for_delivery' or order.status == 'delivered' %}
+                    {% if order.status == 'dispatched' or order.status == 'out_for_delivery' or order.status == 'delivered' or order.status == 'received' %}
                     <div class="step-date">{{ order.updated_at|date:"M j" }}</div>
                     {% endif %}
                 </div>
 
-                <div class="timeline-connector {% if order.status == 'delivered' %}completed{% endif %}"></div>
+                <div class="timeline-connector {% if order.status == 'delivered' or order.status == 'received' %}completed{% endif %}"></div>
 
-                <div class="timeline-step {% if order.status == 'delivered' %}completed{% endif %}">
+                <div class="timeline-step {% if order.status == 'delivered' or order.status == 'received' %}completed{% endif %}">
                     <div class="step-circle">
                         <i class="fas fa-home"></i>
                     </div>
                     <div class="step-label">Delivered</div>
-                    {% if order.status == 'delivered' %}
+                    {% if order.status == 'delivered' or order.status == 'received' %}
                     <div class="step-date">{{ order.updated_at|date:"M j" }}</div>
                     {% endif %}
                 </div>
@@ -1006,28 +1011,23 @@
                                 </a>
                             </div>
                         </div>
-                        {% elif order.status == 'received' %}
-                        <div class="status-alert received-alert">
-                            <div class="alert-icon">
-                                <i class="fas fa-box"></i>
-                            </div>
-                            <div class="alert-content">
-                                <h6>Order Received</h6>
-                                <p>Thank you! Your order has been confirmed as received.</p>
-                            </div>
-                        </div>
-                        {% elif order.status == 'delivered' %}
+                        {% elif order.status == 'delivered' or order.status == 'received' %}
                         <div class="status-alert delivered-alert">
                             <div class="alert-icon">
                                 <i class="fas fa-check-circle"></i>
                             </div>
                             <div class="alert-content">
                                 <h6>Order Delivered</h6>
-                                <p>Your order has been delivered successfully!</p>
-                                <button onclick="markOrderReceived({{ order.id }})" class="btn btn-success btn-sm">
-                                    <i class="fas fa-check-double me-1"></i>
-                                    Confirm Receipt
-                                </button>
+                                {% if order.status == 'delivered' %}
+                                    <p>Your order has been delivered successfully!</p>
+                                    <button onclick="markOrderReceived({{ order.id }})" class="btn btn-success btn-sm">
+                                        <i class="fas fa-check-double me-1"></i>
+                                        Confirm Receipt
+                                    </button>
+                                {% else %}
+                                    <p>Your delivery has been confirmed and the order is successfully completed.</p>
+                                    <p class="mb-0">All admin actions (negotiating, dispatched, delivered) are complete and payment is reflected above.</p>
+                                {% endif %}
                             </div>
                         </div>
                         {% elif order.status == 'out_for_delivery' %}
@@ -1072,6 +1072,28 @@
                                 Contact Support
                             </a>
                         </div>
+                        
+                        <!-- Order Action History -->
+                        <div class="mt-4">
+                            <div class="card-header-modern">
+                                <h3 class="card-title">Order Activity</h3>
+                            </div>
+                            <div class="card-body-modern" style="background: rgba(255,255,255,0.9); border-radius:12px; margin-top:8px;">
+                                {% if order.actions.exists %}
+                                    <ul class="list-unstyled mb-0">
+                                        {% for act in order.actions.all %}
+                                            <li style="padding: .5rem 0; border-bottom:1px solid #eef0f2;">
+                                                <div style="font-weight:600; color:#2c3e50;">{{ act.get_action_display }} <small style="color:#6c757d; font-weight:400;">by {{ act.actor.get_full_name|default:act.actor.username|default:'System' }}</small></div>
+                                                {% if act.note %}<div style="color:#6c757d; font-size:.9rem;">{{ act.note }}</div>{% endif %}
+                                                <div style="color:#9aa0a6; font-size:.8rem; margin-top:.25rem;">{{ act.created_at|date:"F j, Y, g:i a" }}</div>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <p class="mb-0" style="color:#6c757d;">No actions recorded yet.</p>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1081,9 +1103,8 @@
 
 <script>
     function payWithKhalti(orderId, amount) {
-        if (confirm('Khalti Checkout: Pay Rs. ' + amount + ' for Order #' + orderId + '? (Using Mock Payment)')) {
+        if (confirm('Khalti Checkout: Pay Rs. ' + amount + ' for Order #' + orderId + '?')) {
             const formData = new FormData();
-            formData.append('token', 'mock_token');
             formData.append('amount', amount * 100);
             formData.append('order_id', orderId);
             formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');

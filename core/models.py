@@ -236,6 +236,37 @@ class Order(models.Model):
         return f"Order #{self.order_number} by {self.customer.get_full_name()}"
 
 
+class OrderAction(models.Model):
+    """Log of actions performed on an order by farmers/customers/admins.
+
+    Examples: approved, negotiating, rejected, dispatched, out_for_delivery, delivered, paid, received
+    """
+    ACTION_CHOICES = [
+        ('approved', 'Approved'),
+        ('negotiating', 'Negotiating'),
+        ('rejected', 'Rejected'),
+        ('dispatched', 'Dispatched'),
+        ('out_for_delivery', 'Out for Delivery'),
+        ('delivered', 'Delivered'),
+        ('paid', 'Paid'),
+        ('received', 'Received Confirmation'),
+        ('other', 'Other'),
+    ]
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='actions')
+    actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='order_actions')
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    note = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        actor = self.actor.get_full_name() if self.actor else 'System'
+        return f"{self.get_action_display()} on {self.order.order_number} by {actor}"
+
+
 # Order Item Model
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')

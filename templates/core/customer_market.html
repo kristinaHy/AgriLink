@@ -83,7 +83,7 @@
             <div class="top-actions">
                 <div class="search-container">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="marketSearchInput" placeholder="Search red tomato, fuji apple...">
+                    <input type="text" id="marketSearchInput" value="{{ search_query|default:'' }}" placeholder="Search red tomato, fuji apple...">
                 </div>
                 <a class="cart-badge" href="{% url 'customer_cart' %}" aria-label="Open cart">
                     <i class="fas fa-shopping-cart"></i>

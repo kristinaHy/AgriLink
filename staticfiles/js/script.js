@@ -37,16 +37,32 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Search form validation
-    const searchForm = document.querySelector('.search-form');
-    if (searchForm) {
-        searchForm.addEventListener('submit', function (e) {
+    const searchForms = document.querySelectorAll('form.search-form, form.search-form-wrapper');
+    searchForms.forEach(form => {
+        form.addEventListener('submit', function (e) {
             const searchInput = this.querySelector('input[name="q"]');
+            if (!searchInput) {
+                return;
+            }
             if (searchInput.value.trim() === '') {
                 e.preventDefault();
                 searchInput.classList.add('is-invalid');
             }
         });
-    }
+    });
+
+    // Global search inputs outside forms
+    const globalSearchInputs = document.querySelectorAll('.search-bar input[type="text"]');
+    globalSearchInputs.forEach(input => {
+        input.addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter') {
+                return;
+            }
+            const query = this.value.trim();
+            e.preventDefault();
+            window.location.href = '/search/' + (query ? '?q=' + encodeURIComponent(query) : '');
+        });
+    });
 });
 
 // Add animation keyframes
